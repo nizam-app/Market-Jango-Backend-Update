@@ -1,7 +1,10 @@
 import 'package:carousel_slider/carousel_options.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:market_jango/features/buyer/logic/slider_manage.dart';
+import 'package:riverpod/riverpod.dart';
 class BuyerHomeScreen extends StatefulWidget {
   const BuyerHomeScreen({super.key});
   static const String routeName = '/buyerHomeScreen';
@@ -81,7 +84,7 @@ class BuyerHomeSearchBar extends StatelessWidget {
                 BoxShadow(
                   color: Colors.black12,
                   blurRadius: 4.sp,
-                  offset: Offset(0, 2),
+                  offset: Offset(0, 0.5.sp),
                 ),
               ],
             ),
@@ -108,7 +111,7 @@ class BuyerHomeSearchBar extends StatelessWidget {
                 BoxShadow(
                   color: Colors.black12,
                   blurRadius: 4,
-                  offset: Offset(0, 2),
+                  offset: Offset(0,0.5.sp),
                 ),
               ],
             ),
@@ -126,13 +129,7 @@ class BuyerHomeSearchBar extends StatelessWidget {
   void openingFilter(BuildContext context) {}
 }
 
-class PromoSlider extends StatefulWidget {
-  @override
-  _PromoSliderState createState() => _PromoSliderState();
-}
-
-class _PromoSliderState extends State<PromoSlider> {
-  int _currentIndex = 0;
+class PromoSlider extends ConsumerWidget {
   final CarouselSliderController _controller = CarouselSliderController();
 
   final List<String> imageList = [
@@ -142,16 +139,20 @@ class _PromoSliderState extends State<PromoSlider> {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentIndex = ref.watch(sliderIndexProvider);
+    final currentIndexNotifier = ref.read(sliderIndexProvider.notifier);
+
     return Column(
       children: [
-        SizedBox(height: 30.h,),
+        SizedBox(height: 30.h),
+
         CarouselSlider.builder(
           carouselController: _controller,
           itemCount: imageList.length,
           itemBuilder: (context, index, realIndex) {
             return ClipRRect(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16.r),
               child: Image.asset(
                 imageList[index],
                 fit: BoxFit.cover,
@@ -166,31 +167,30 @@ class _PromoSliderState extends State<PromoSlider> {
             enlargeCenterPage: false,
             viewportFraction: 1.0,
             onPageChanged: (index, reason) {
-              setState(() {
-                _currentIndex = index;
-              });
+              currentIndexNotifier.state = index;
             },
             scrollDirection: Axis.horizontal,
-            reverse: false, // non-return back
-            enableInfiniteScroll: true, // nonstop
+            reverse: false,
+            enableInfiniteScroll: true,
           ),
         ),
 
         SizedBox(height: 12),
 
-        // Dot Indicator
+        // Dot Indicator (Reactive with Riverpod)
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: imageList.asMap().entries.map((entry) {
-            return Container(
-              width: _currentIndex == entry.key ? 24.0 : 8.0,
-              height: 8.0,
-              margin: EdgeInsets.symmetric(horizontal: 4.0),
+            return AnimatedContainer(
+              duration: Duration(milliseconds: 300),
+              width: currentIndex == entry.key ? 30.0.w : 8.0.w,
+              height: 8.0.h,
+              margin: EdgeInsets.symmetric(horizontal: 8.0.w),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: _currentIndex == entry.key
+                borderRadius: BorderRadius.circular(8.r),
+                color: currentIndex == entry.key
                     ? Colors.orange
-                    : Colors.orange.withOpacity(0.3),
+                    : Colors.orange.withOpacity(0.1.sp),
               ),
             );
           }).toList(),
