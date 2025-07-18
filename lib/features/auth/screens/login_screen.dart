@@ -114,6 +114,7 @@ class LoginTextFormField extends StatelessWidget {
     TextFormField(
       obscureText: true,
       decoration: InputDecoration(
+        suffixIcon: Icon(Icons.visibility_off_outlined),
         hintText: "Password",
       ),
     )
