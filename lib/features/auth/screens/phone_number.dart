@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+import 'package:market_jango/core/widget/custom_auth_button.dart';
 import 'package:market_jango/core/widget/sreeen_brackground.dart';
+import 'package:market_jango/features/auth/screens/code_screen.dart';
 
 class PhoneNumberScreen extends StatelessWidget {
   const PhoneNumberScreen({super.key});
@@ -15,6 +18,8 @@ class PhoneNumberScreen extends StatelessWidget {
           child: Padding(padding: EdgeInsets.symmetric(horizontal: 20.w),
           child: Column(
             children: [
+              NumberText(),
+              NextBotton(), 
         
             ],
           ),),
@@ -22,5 +27,55 @@ class PhoneNumberScreen extends StatelessWidget {
       ),
 
     );
+  }
+}
+
+class NumberText extends StatelessWidget {
+  const NumberText({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(height: 30.h),
+        IconButton(
+          onPressed: () {
+            context.pop();
+          },
+          icon: Icon(Icons.arrow_back_ios),
+        ),
+        SizedBox(height: 20.h),
+        Center(child: Text("Can we get to your number? ", style: textTheme.titleLarge)),
+        SizedBox(height: 24.h),
+        
+      ],
+    );
+  }
+}
+ 
+ 
+class NextBotton extends StatelessWidget {
+  const NextBotton({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        SizedBox(height: 120.h),
+        CustomAuthButton(
+          buttonText: "Next",
+          onTap: () => nextButonDone(context),
+        ),
+      ],
+    );
+  }
+
+  void nextButonDone(BuildContext context) {
+    goToCodeScreen(context);
+  }
+
+  void goToCodeScreen(BuildContext context) {
+    context.push(CodeScreen.routeName);
   }
 }
