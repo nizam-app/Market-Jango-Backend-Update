@@ -13,6 +13,17 @@ return new class extends Migration
     {
         Schema::create('vendors', function (Blueprint $table) {
             $table->id();
+            $table->string('country', 100);
+            $table->json('document');
+            $table->foreignId('user_id')->constrained('users')
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
+            $table->foreignId('setting_id')->constrained('settings')
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
+            $table->foreignId('business_type_id')->constrained('business_types')
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
             $table->timestamps();
         });
     }

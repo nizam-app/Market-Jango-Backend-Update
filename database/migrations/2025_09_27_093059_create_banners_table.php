@@ -11,8 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('business_types', function (Blueprint $table) {
+        Schema::create('banners', function (Blueprint $table) {
             $table->id();
+            $table->string('title', 50);
+            $table->text('description');
+            $table->string('discount', 50);
+            $table->string('image', 200);
+            $table->foreignId('product_id')->constrained('products')
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
             $table->timestamps();
         });
     }
@@ -22,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('business_types');
+        Schema::dropIfExists('banners');
     }
 };

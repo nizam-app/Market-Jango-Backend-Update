@@ -11,8 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('rout_lists', function (Blueprint $table) {
+        Schema::create('notifications', function (Blueprint $table) {
             $table->id();
+            $table->string('title', 50);
+            $table->string('message', 50);
+            $table->boolean('is_read')->default(false);
+            $table->string('type', 200);
             $table->timestamps();
         });
     }
@@ -22,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('rout_lists');
+        Schema::dropIfExists('notifications');
     }
 };

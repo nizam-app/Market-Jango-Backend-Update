@@ -11,8 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('order_details', function (Blueprint $table) {
+        Schema::create('order_trackings', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('order_id')->constrained('orders')
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
+            $table->enum('status', ['pending','shipped','delivered','cancelled'])->default('pending'); // Example status
             $table->timestamps();
         });
     }
@@ -22,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('order_details');
+        Schema::dropIfExists('order_trackings');
     }
 };
