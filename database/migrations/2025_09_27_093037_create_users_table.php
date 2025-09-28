@@ -13,11 +13,15 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('title', 50)->unique();
+            $table->string('name', 50)->nullable();
+            $table->string('user_image', 200)->nullable();
+            $table->string('email', 50)->nullable();
             $table->string('phone', 14)->nullable();
-            $table->string('password');
-            $table->string('otp', 8);
-            $table->enum('role', ['Buyer','Vendor','Driver','Transport'])->default('Buyer');
+            $table->string('token');
+            $table->string('password')->nullable();
+            $table->string('otp', 8)->nullable();
+            $table->enum('user_type', ['Buyer','Vendor','Driver','Transport'])->default('Buyer');
+            $table->enum('language', ['English','Français','Русский','Tiếng Việt'])->default('English');
             $table->enum('status', ['Pending','Approved','Rejected'])->default('Pending');
             $table->timestamp('phone_verified_at')->nullable();
             $table->rememberToken();

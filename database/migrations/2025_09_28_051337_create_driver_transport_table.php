@@ -11,8 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('settings', function (Blueprint $table) {
+        Schema::create('driver_transport', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('transport_id')->constrained()->cascadeOnUpdate()->restrictOnDelete();
+            $table->foreignId('driver_id')->constrained()->cascadeOnUpdate()->restrictOnDelete();
             $table->timestamps();
         });
     }
@@ -22,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('settings');
+        Schema::dropIfExists('driver_transport');
     }
 };

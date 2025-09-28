@@ -19,29 +19,13 @@ use Illuminate\Validation\ValidationException;
 class AuthController extends Controller
 {
 
-    //get types
-    public function types():JsonResponse
-    {
-        try {
-            return response()->json([
-                'success' => true,
-                'data' => ['buyer', 'vendor', 'driver', 'transport']
-            ],200);
 
-        }catch (Exception $e) {
-            return response()->json([
-                'status' => 'Fail',
-                'message' => 'Something went wrong',
-                'errors' => $e->getMessage()
-            ], 500);
-        }
-    }
     //store user type
     public function registerType(Request $request):JsonResponse
     {
         try {
             $request->validate([
-                'user_type' => 'required|in:buyer,vendor,transport,driver,admin',
+                'user_type' => 'required|in:Buyer,Vendor,Driver,Transport,Admin',
             ]);
             $user = User::create([
                 'user_type' => $request->input('user_type'),

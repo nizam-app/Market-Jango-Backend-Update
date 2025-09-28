@@ -13,10 +13,8 @@ return new class extends Migration
     {
         Schema::create('order_trackings', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('order_id')->constrained('orders')
-                ->cascadeOnUpdate()
-                ->restrictOnDelete();
-            $table->enum('status', ['pending','shipped','delivered','cancelled'])->default('pending'); // Example status
+            $table->foreignId('order_id')->constrained('orders')->cascadeOnUpdate()->restrictOnDelete();
+            $table->enum('status', ['ongoing','complete','cancelled'])->default('ongoing'); // Example status
             $table->timestamps();
         });
     }

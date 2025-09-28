@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('chats', function (Blueprint $table) {
             $table->string('message', 50);
-            $table->string('message_type', 50);
-            $table->boolean('is_read')->default(false);
-            $table->foreignId('sender_id')->constrained('users')->cascadeOnUpdate()->restrictOnDelete();
-            $table->foreignId('receiver_id')->constrained('users')->cascadeOnUpdate()->restrictOnDelete();
-            $table->foreignId('order_id')->constrained('orders')->cascadeOnUpdate()->restrictOnDelete();
+            $table->string('message_type', 50)->nullable();
+            $table->boolean('is_read')->nullable()->default(false);
+            $table->foreignId('sender_id')->nullable()->constrained('users')->cascadeOnUpdate()->restrictOnDelete();
+            $table->foreignId('receiver_id')->nullable()->constrained('users')->cascadeOnUpdate()->restrictOnDelete();
+            $table->foreignId('order_id')->nullable()->constrained('orders')->cascadeOnUpdate()->restrictOnDelete();
             $table->timestamps();
         });
     }

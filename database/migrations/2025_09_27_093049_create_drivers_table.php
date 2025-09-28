@@ -17,14 +17,12 @@ return new class extends Migration
             $table->string('brand_model', 100);
             $table->string('location', 255);
             $table->string('price', 255);
+            $table->integer('rating');
             $table->json('document');
             $table->foreignId('user_id')->constrained('users')
                 ->cascadeOnUpdate()
                 ->restrictOnDelete();
             $table->foreignId('route_id')->constrained('routes')
-                ->cascadeOnUpdate()
-                ->restrictOnDelete();
-            $table->foreignId('setting_id')->constrained('settings')
                 ->cascadeOnUpdate()
                 ->restrictOnDelete();
             $table->timestamps();

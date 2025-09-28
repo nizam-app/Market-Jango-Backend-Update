@@ -13,10 +13,7 @@ return new class extends Migration
     {
         Schema::create('transports', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')
-                ->cascadeOnUpdate()
-                ->restrictOnDelete();
-            $table->foreignId('setting_id')->constrained('settings')
+            $table->foreignId('user_id')->unique()->constrained('users')
                 ->cascadeOnUpdate()
                 ->restrictOnDelete();
             $table->timestamps();
