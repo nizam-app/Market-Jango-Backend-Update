@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
 use App\Helpers\FileHelper;
+use App\Helpers\JWTToken;
+use App\Http\Controllers\Controller;
 use App\Models\Driver;
 use App\Models\User;
 use App\Models\Vendor;
@@ -30,11 +32,18 @@ class AuthController extends Controller
             $user = User::create([
                 'user_type' => $request->input('user_type'),
             ]);
+            $token = JWTToken::registerToken($user->user_type, $user->id);
+            $user->update([
+                'token' => 'Bearer ' . $token,
+            ]);
             return response()->json([
                 'status' => 'Success',
                 'message' => 'User Type set successful!',
-                'data' => $user
-            ], 201);
+                'data' => [
+                    'user' => $user,
+                    'token'=>$token
+                ]
+            ], 201)->header('token', 'Bearer ' . $token);
 
         } catch (ValidationException $e) {
             return response()->json([
@@ -51,26 +60,22 @@ class AuthController extends Controller
         }
     }
     //store title witch user create type
-    public function registerTitle(Request $request):JsonResponse
+    public function registerName(Request $request):JsonResponse
     {
         try {
             $request->validate([
-                'title' => 'required|string',
+                'name' => 'required|string',
             ]);
-            $userId = $request->header('user_id');
+            $userId = $request->header('id');
             $user = User::findOrFail($userId);
-
-
             $user->update([
-                'title' => $request->input('title'),
+                'name' => $request->input('name'),
             ]);
-
             return response()->json([
                 'status' => 'Success',
                 'message' => 'User Title set successful!',
                 'data' => $user
-            ], 201);
-
+            ], 200);
         } catch (ValidationException $e) {
             return response()->json([
                 'status' => 'Fail',
@@ -85,7 +90,6 @@ class AuthController extends Controller
             ], 500);
         }
     }
-
     //store number and send opt
     public function registerPhone(Request $request):JsonResponse
     {
@@ -93,13 +97,14 @@ class AuthController extends Controller
             $request->validate([
                 'phone' => 'required|regex:/^[0-9]+$/|min:11|max:15'
             ]);
-            $userId = $request->header('user_id');
+            $userId = $request->header('id');
             $user = User::findOrFail($userId);
             // OTP generate
             $otp = rand(10000000, 99999999);
             Log::info("Generated OTP for {$request->phone}: $otp");
+            $phone = $request->input('phone');
             $user->update([
-                'phone' => $request->input('phone'),
+                'phone' => $phone,
                 'otp' => $otp,
                 'expires_at' => Carbon::now()->addMinute() //only 1 minute valid
             ]);
@@ -110,7 +115,7 @@ class AuthController extends Controller
                     'phone' => $user->phone,
                     'otp'   => $otp
                 ]
-            ], 201);
+            ], 200)->header('phone', $phone);
         } catch (ValidationException $e) {
             return response()->json([
                 'status' => 'Fail',
@@ -133,7 +138,8 @@ class AuthController extends Controller
                 'otp' => 'required'
             ]);
             $phone = $request->header('phone');
-            $user = User::where('phone', $phone)->first();
+            $userId = $request->header('id');
+            $user = User::where('phone', $phone)->where('id', '=', $userId)->first();
             $otp = $request->input('otp');
             if (!$user) {
                 return response()->json(['status' => 'Fail', 'message' => 'User not found'], 404);
@@ -142,7 +148,7 @@ class AuthController extends Controller
             if ($user->otp != $otp) {
                 return response()->json(['status' => 'Fail', 'message' => 'Invalid OTP'], 400);
             }
-
+            //check otp valid
             if (Carbon::parse($user->expires_at)->isPast()) {
                 return response()->json(['status' => 'Fail', 'message' => 'OTP expired'], 400);
             }
@@ -369,7 +375,7 @@ class AuthController extends Controller
                 ], 401);
             }
             // set token
-            $token = $user->createToken('login_token')->plainTextToken;
+            $token = JWTToken::CreateToken($email, $user->id);
             // Everything okay
             return response()->json([
                 'status' => "Success",

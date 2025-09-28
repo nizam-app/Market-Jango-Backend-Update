@@ -1,8 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DriverController;
 use App\Http\Controllers\Api\VendorController;
-use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -10,11 +10,13 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 //Authentication for all users
-Route::post('/register-role', [AuthController::class, 'registerType']);
-Route::post('/register-title', [AuthController::class, 'registerTitle']);
-Route::post('/register-phone', [AuthController::class, 'registerPhone']);
+Route::post('/register-type', [AuthController::class, 'registerType']);
+Route::middleware('tokenVerify')->group(function () {
+    Route::post('/register-name', [AuthController::class, 'registerName']);
+    Route::post('/register-phone', [AuthController::class, 'registerPhone']);
+    Route::post('/user-verify-otp', [AuthController::class, 'verifyOtp']);
+});
 Route::post('/register-email', [AuthController::class, 'registerEmail']);
-Route::post('/register-verify-otp', [AuthController::class, 'verifyOtp']);
 Route::post('/register-password', [AuthController::class, 'registerPassword']);
 Route::post('/register-vendor', [AuthController::class, 'registerVendor']);
 Route::post('/register-driver', [AuthController::class, 'registerDriver']);
