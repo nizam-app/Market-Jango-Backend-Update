@@ -25,6 +25,8 @@ class User extends Authenticatable
         'otp',
         'token',
         'user_type',
+        'expires_at',
+        'phone_verified_at',
         'status'
     ];
 

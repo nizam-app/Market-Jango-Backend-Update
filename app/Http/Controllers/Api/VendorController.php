@@ -35,7 +35,7 @@ class VendorController extends Controller
     {
         try {
             $request->validate([
-                'title' => 'required|string'
+                'name' => 'required|string'
             ]);
             $name = $request->input('name');
             $users = User::where('role', '=', 'Vendor')->get();

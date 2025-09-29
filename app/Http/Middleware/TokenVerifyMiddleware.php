@@ -29,8 +29,9 @@ class TokenVerifyMiddleware
                 'message' => 'unauthorized'
             ], 401);
         }
-        $request->headers->set('user_type', $result['userType']);
+        $request->headers->set('user_type', $result['userType'] ?? null);
         $request->headers->set('id', $result['userId']);
+        $request->headers->set('email', $result['userEmail'] ?? null);
         return $next($request);
     }
 }

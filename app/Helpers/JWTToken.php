@@ -14,7 +14,7 @@ class JWTToken
         $payload = [
             'iss' => env('APP_NAME'),
             'iat' => time(),
-            'exp' => time() + 20*60,
+            'exp' => time() + 60*60, // test purpose 60 minutes
             'userType' => $userType,
             'userId'=>$userId
         ];
@@ -28,7 +28,7 @@ class JWTToken
             'iat' => time(),
             'exp' => time() + 60 * 60*60,
             'userEmail' => $userEmail,
-            'userid' => $id
+            'userId' => $id
         ];
         return JWT::encode($payload, $key, 'HS256');
     }
@@ -38,9 +38,9 @@ class JWTToken
         $payload = [
             'iss' => 'School Management System',
             'iat' => time(),
-            'exp' => time() + 60 * 60*60,
+            'exp' => time() + 60*60, // test purpose 60 minutes
             'userEmail' => $userEmail,
-            'userid' => $id
+            'userId' => $id
         ];
         return JWT::encode($payload, $key, 'HS256');
     }

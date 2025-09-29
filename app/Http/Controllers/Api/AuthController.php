@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Helpers\FileHelper;
 use App\Helpers\JWTToken;
 use App\Http\Controllers\Controller;
+use App\Mail\OTPSend;
 use App\Models\Driver;
+use App\Models\Image;
 use App\Models\User;
 use App\Models\Vendor;
 use Exception;
@@ -15,6 +17,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -27,7 +30,7 @@ class AuthController extends Controller
     {
         try {
             $request->validate([
-                'user_type' => 'required|in:Buyer,Vendor,Driver,Transport,Admin',
+                'user_type' => 'required|in:buyer,vendor,driver,transport,admin',
             ]);
             $user = User::create([
                 'user_type' => $request->input('user_type'),
@@ -67,7 +70,13 @@ class AuthController extends Controller
                 'name' => 'required|string',
             ]);
             $userId = $request->header('id');
-            $user = User::findOrFail($userId);
+            $user = User::where('id', $userId)->first();
+            if(!$user){
+                return response()->json([
+                    'status' => 'failed',
+                    'message' => 'User not found'
+                ], 404);
+            }
             $user->update([
                 'name' => $request->input('name'),
             ]);
@@ -98,7 +107,13 @@ class AuthController extends Controller
                 'phone' => 'required|regex:/^[0-9]+$/|min:11|max:15'
             ]);
             $userId = $request->header('id');
-            $user = User::findOrFail($userId);
+            $user = User::where('id', $userId)->first();
+            if(!$user){
+                return response()->json([
+                    'status' => 'failed',
+                    'message' => 'User not found'
+                ], 404);
+            }
             // OTP generate
             $otp = rand(10000000, 99999999);
             Log::info("Generated OTP for {$request->phone}: $otp");
@@ -106,15 +121,12 @@ class AuthController extends Controller
             $user->update([
                 'phone' => $phone,
                 'otp' => $otp,
-                'expires_at' => Carbon::now()->addMinute() //only 1 minute valid
+                'expires_at' => Carbon::now()->addMinutes(10)
             ]);
             return response()->json([
                 'status' => 'Success',
                 'message' => 'OTP sent to phone',
-                'data' => [
-                    'phone' => $user->phone,
-                    'otp'   => $otp
-                ]
+                'data' => $user
             ], 200)->header('phone', $phone);
         } catch (ValidationException $e) {
             return response()->json([
@@ -140,6 +152,12 @@ class AuthController extends Controller
             $phone = $request->header('phone');
             $userId = $request->header('id');
             $user = User::where('phone', $phone)->where('id', '=', $userId)->first();
+            if(!$user){
+                return response()->json([
+                    'status' => 'failed',
+                    'message' => 'User not found'
+                ], 404);
+            }
             $otp = $request->input('otp');
             if (!$user) {
                 return response()->json(['status' => 'Fail', 'message' => 'User not found'], 404);
@@ -160,20 +178,17 @@ class AuthController extends Controller
             return response()->json([
                 'status' => 'Success',
                 'message' => 'OTP verify successful!',
-                'data' => [
-                    'phone' => $user->phone,
-                    'otp'   => $otp
-                ]
+                'data' => $user
             ], 201);
         } catch (ValidationException $e) {
             return response()->json([
-                'status' => 'Fail',
+                'status' => 'failed',
                 'message' => 'Validation failed',
                 'errors' => $e->errors()
             ], 422);
         } catch (Exception $e) {
             return response()->json([
-                'status' => 'Fail',
+                'status' => 'failed',
                 'message' => 'Something went wrong',
                 'errors' => $e->getMessage()
             ], 500);
@@ -186,9 +201,15 @@ class AuthController extends Controller
             $request->validate([
                 'email' => 'required|email|unique:users,email'
             ]);
-            $userId = $request->header('user_id');
-            $user = User::findOrFail($userId);
             $email = $request->input('email');
+            $userId = $request->header('id');
+            $user = User::where('id', $userId)->first();
+            if(!$user){
+                return response()->json([
+                    'status' => 'failed',
+                    'message' => 'User not found'
+                ], 404);
+            }
             $user->update([
                 'email' => $email
             ]);
@@ -219,8 +240,14 @@ class AuthController extends Controller
             $request->validate([
                 'password'  => 'required|string|min:6|confirmed',
             ]);
-            $userId = $request->header('user_id');
-            $user = User::findOrFail($userId);
+            $userId = $request->header('id');
+            $user = User::where('id', $userId)->first();
+            if(!$user){
+                return response()->json([
+                    'status' => 'failed',
+                    'message' => 'User not found'
+                ], 404);
+            }
             $userType = $user->user_type;
             //create hash Password
             $password = Hash::make($request->input('password'));
@@ -260,61 +287,72 @@ class AuthController extends Controller
         }
     }
     //vendor sotre
-    public function registerVendor(Request $request):JsonResponse
+    public function registerVendor(Request $request): JsonResponse
     {
         try {
-            $userId = $request->header('user_id');
-            $user = User::findOrFail($userId);
+            $request->validate([
+                'country'        => 'required|string',
+                'business_name'  => 'required|string',
+                'business_type'  => 'required|string',
+                'address'        => 'required|string',
+                'files.*' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf,doc,docx,xls,xlsx|max:10240'
+            ]);
+            $userId = $request->header('id');
+            $user = User::where('id', $userId)->first();
             $userType = $user->user_type;
-            if ($userType === 'vendor') {
-                $request->validate([
-                    'country'  => 'required|string',
-                    'business_name'  => 'required|string',
-                    'business_type'  => 'required|string',
-                    'address'  => 'required|string',
-                    'document' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx|max:10240',
-                ]);
-                //multiple image upload
-                $documentPath = FileHelper::upload($request->file('document'), 'vendors');
-                $vendor = Vendor::create([
-                    'country'=> $request->input('country'),
-                    'business_name' => $request->input('business_name'),
-                    'business_type' => $request->input('business_type'),
-                    'address' => $request->input('address'),
-                    'document' => $documentPath
-                ]);
+            if(!$user){
                 return response()->json([
-                    'status' => 'Success',
-                    'message' => 'Vendor set successful!',
-                    'data' => $vendor,
-                ], 201);
+                    'status' => 'failed',
+                    'message' => 'User not found'
+                ], 404);
+            }
+            //vendor store
+            $vendor = Vendor::create([
+                'country'        => $request->country,
+                'business_name'  => $request->business_name,
+                'business_type'  => $request->business_type,
+                'address'        => $request->address,
+                'user_id'        => $userId,
+            ]);
+            if ($request->hasFile('files')) {
+                $files = $request->file('files');
+                // all file upload
+                $uploadedFiles = FileHelper::upload($files, $userType);
+                foreach ($uploadedFiles as $f) {
+                    Image::create([
+                        'image_path' => 'storage/' . $f['path'],
+                        'user_id'    => $vendor->id,
+                        'user_type'  => $userType,
+                        'file_type'  => $f['type'],
+                    ]);
+                }
             }
             return response()->json([
-                'status' => 'Fail',
-                'message' => 'You are not Vendor',
-            ], 401);
+                'status'  => 'success',
+                'message' => 'Vendor created successfully with image(s)!',
+                'data'    => $vendor
+            ], 201);
+
         } catch (ValidationException $e) {
             return response()->json([
-                'status' => 'Fail',
+                'status'  => 'fail',
                 'message' => 'Validation failed',
-                'errors' => $e->errors()
+                'errors'  => $e->errors()
             ], 422);
+
         } catch (Exception $e) {
             return response()->json([
-                'status' => 'Fail',
+                'status'  => 'fail',
                 'message' => 'Something went wrong',
-                'errors' => $e->getMessage()
+                'errors'  => $e->getMessage()
             ], 500);
         }
     }
+
     //driver store
     public function registerDriver(Request $request):JsonResponse
     {
         try {
-            $userId = $request->header('user_id');
-            $user = User::findOrFail($userId);
-            $userType = $user->user_type;
-            if ($userType === 'driver') {
                 $request->validate([
                     'car_brand'  => 'required|string',
                     'car_model'  => 'required|string',
@@ -322,10 +360,18 @@ class AuthController extends Controller
                     'address'  => 'required|string',
                     'price'  => 'required|string',
                     'route_id'  => 'required|string',
-                    'document' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx|max:10240',
+                    'files.*' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf,doc,docx,xls,xlsx|max:10240'
                 ]);
+                $userId = $request->header('id');
+                $user = User::where('id', $userId)->first();
+                $userType= $user->user_type;
+                if(!$user){
+                    return response()->json([
+                        'status' => 'failed',
+                        'message' => 'User not found'
+                    ], 404);
+                }
                 //multiple image upload
-                $documentPath = FileHelper::upload($request->file('document'), 'drivers');
                 $driver = Driver::create([
                     'car_brand'=> $request->input('car_brand'),
                     'car_model' => $request->input('car_model'),
@@ -333,18 +379,25 @@ class AuthController extends Controller
                     'address' => $request->input('address'),
                     'price' => $request->input('price'),
                     'route_id' => $request->input('route_id'),
-                    'document' => $documentPath
                 ]);
-                return response()->json([
-                    'status' => 'Success',
-                    'message' => 'Driver set successful!',
-                    'data' => $driver,
-                ], 201);
+            if ($request->hasFile('files')) {
+                $files = $request->file('files');
+                // all file upload
+                $uploadedFiles = FileHelper::upload($files, $userType);
+                foreach ($uploadedFiles as $f) {
+                    Image::create([
+                        'image_path' => 'storage/' . $f['path'],
+                        'user_id'    => $driver->id,
+                        'user_type'  => $userType,
+                        'file_type'  => $f['type'],
+                    ]);
+                }
             }
             return response()->json([
-                'status' => 'Fail',
-                'message' => 'You are not driver',
-            ], 401);
+                'status' => 'Success',
+                'message' => 'Driver set successful!',
+                'data' => $driver,
+            ], 201);
         } catch (ValidationException $e) {
             return response()->json([
                 'status' => 'Fail',
@@ -375,13 +428,13 @@ class AuthController extends Controller
                 ], 401);
             }
             // set token
-            $token = JWTToken::CreateToken($email, $user->id);
+            $token = JWTToken::loginToken($user->user_type, $user->id);
             // Everything okay
             return response()->json([
                 'status' => "Success",
                 'message' => 'Login successful with token check',
                 'user' => $user,
-                'token' => $token
+                'token' => 0
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -397,65 +450,115 @@ class AuthController extends Controller
             ], 500);
         }
     }
-    //forget password
-    public function forgetPassword(Request $request)
+    // send otp
+    public function sendOtp(Request $request):JsonResponse
     {
-        $request->validate([
-            'email' => 'required|email|exists:users,email',
-        ]);
+        try {
+            $request->validate([
+                'email'    => 'required'
+            ]);
+            $email= $request->input('email');
+            $user = User::where('email', '=', $email)->first();
+            if ($user == null) {
+                return response()->json([
+                    'status'  => 'Fail',
+                    'message' => 'unauthorized'
+                ], 401);
+            }
+            $otp = rand(10000000, 99999999);
+            Mail::to($email)->send(new OTPSend($otp,$user->title));
+            $user->update(['otp' => $otp]);
+            return response()->json([
+                'status' => 'Success',
+                'message' => 'Please check your mail box!'
+            ], 201);
 
-        // Random token generate
-        $token = Str::random(60);
-
-        // Token save in password_reset_tokens table
-        DB::table('password_reset_tokens')->updateOrInsert(
-            ['email' => $request->email],
-            [
-                'email' => $request->email,
-                'token' => $token,
-                'created_at' => Carbon::now(),
-            ]
-        );
-        // sms send??
-        return response()->json([
-            'status' => 'Success',
-            'message' => 'Password reset token generated',
-            'token' => $token
-        ]);
-    }
-    public function resetPassword(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email|exists:users,email',
-            'token' => 'required|string',
-            'password' => 'required|string|min:6|confirmed',
-        ]);
-
-        // DB থেকে token check
-        $resetData = DB::table('password_reset_tokens')
-            ->where('email', $request->email)
-            ->where('token', $request->token)
-            ->first();
-
-        if (!$resetData) {
+        } catch (ValidationException $e) {
             return response()->json([
                 'status' => 'Fail',
-                'message' => 'Invalid or expired token'
-            ], 401);
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => 'Fail',
+                'message' => 'Something went wrong',
+                'errors' => $e->getMessage()
+            ], 500);
         }
-
-        // Password update (hashed)
-        $user = User::where('email', $request->email)->first();
-        $user->update([
-            'password' => Hash::make($request->password),
-        ]);
-
-        // Token remove after reset
-        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Password reset successful!'
-        ]);
     }
+    //verify otp
+    public function verifyMailOtp(Request $request):JsonResponse
+    {
+        try {
+            $request->validate([
+                'otp' => 'required|min:8'
+            ]);
+            $email = $request->input('email');
+            $otp = $request->input('otp');
+            $user = User::where('email', '=', $email)->where('otp', '=', $otp)->first();
+            if ($user == null) {
+                return response()->json([
+                    'status'  => 'Fail',
+                    'message' => 'unauthorized'
+                ], 401);
+            }
+            $token = JWTToken::resetToken($email, $user->id);
+            $user->update(['otp' => '0']);
+            return response()->json([
+                'status' => 'Success',
+                'message' => 'Otp verification successful!',
+                'token' => $token
+            ], 200);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => 'Fail',
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => 'Fail',
+                'message' => 'Something went wrong',
+                'errors' => $e->getMessage()
+            ], 500);
+        }
+    }
+    //user password reset
+//    public function resetPassword(Request $request)
+//    {
+//        $request->validate([
+//            'email' => 'required|email|exists:users,email',
+//            'token' => 'required|string',
+//            'password' => 'required|string|min:6|confirmed',
+//        ]);
+//
+//        // DB থেকে token check
+//        $resetData = DB::table('password_reset_tokens')
+//            ->where('email', $request->email)
+//            ->where('token', $request->token)
+//            ->first();
+//
+//        if (!$resetData) {
+//            return response()->json([
+//                'status' => 'Fail',
+//                'message' => 'Invalid or expired token'
+//            ], 401);
+//        }
+//
+//        // Password update (hashed)
+//        $user = User::where('email', $request->email)->first();
+//        $user->update([
+//            'password' => Hash::make($request->password),
+//        ]);
+//
+//        // Token remove after reset
+//        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+//
+//        return response()->json([
+//            'status' => true,
+//            'message' => 'Password reset successful!'
+//        ]);
+//    }
 }

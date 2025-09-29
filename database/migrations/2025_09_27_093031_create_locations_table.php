@@ -11,12 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('route_lists', function (Blueprint $table) {
+        Schema::create('locations', function (Blueprint $table) {
             $table->id();
-            $table->string('stop', 50);
-            $table->foreignId('route_id')->constrained('routes')
-                ->cascadeOnUpdate()
-                ->restrictOnDelete();
+            $table->string('name', 50);
             $table->timestamps();
         });
     }
@@ -26,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('route_lists');
+        Schema::dropIfExists('locations');
     }
 };

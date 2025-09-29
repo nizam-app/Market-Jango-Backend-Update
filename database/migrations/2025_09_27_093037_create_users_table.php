@@ -20,10 +20,11 @@ return new class extends Migration
             $table->string('token')->nullable();
             $table->string('password')->nullable();
             $table->string('otp', 8)->nullable();
-            $table->enum('user_type', ['Buyer','Vendor','Driver','Transport'])->default('Buyer');
+            $table->enum('user_type', ['buyer','vendor','driver','transport','admin'])->default('buyer');
             $table->enum('language', ['English','Français','Русский','Tiếng Việt'])->default('English');
             $table->enum('status', ['Pending','Approved','Rejected'])->default('Pending');
             $table->timestamp('phone_verified_at')->nullable();
+            $table->timestamp('expires_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
