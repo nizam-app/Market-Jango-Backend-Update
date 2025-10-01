@@ -18,7 +18,7 @@ return new class extends Migration
             $table->text('description');
             $table->string('location', 200);
             $table->string('image', 200);
-            $table->foreignId('user_id')->constrained('users')
+            $table->foreignId('user_id')->unique()->constrained('users')
                 ->cascadeOnUpdate()
                 ->restrictOnDelete();
             $table->timestamps();

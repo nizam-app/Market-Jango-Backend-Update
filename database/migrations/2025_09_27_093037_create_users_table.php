@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('user_image', 200)->nullable();
             $table->string('email', 50)->nullable();
             $table->string('phone', 15)->nullable();
-            $table->string('token')->nullable();
+            $table->text('token')->nullable();
             $table->string('password')->nullable();
             $table->string('otp', 8)->nullable();
             $table->enum('user_type', ['buyer','vendor','driver','transport','admin'])->default('buyer');

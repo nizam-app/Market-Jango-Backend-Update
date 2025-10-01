@@ -35,8 +35,6 @@ class FileHelper
             ];
         }
         return $paths;
-
-
     }
 
     public static function delete($filePaths, $disk = 'public')

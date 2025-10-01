@@ -56,4 +56,8 @@ class User extends Authenticatable
             'expires_at' => 'datetime',
         ];
     }
+    public function vendor()
+    {
+        return $this->hasOne(Vendor::class);
+    }
 }

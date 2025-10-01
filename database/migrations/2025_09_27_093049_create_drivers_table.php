@@ -13,18 +13,13 @@ return new class extends Migration
     {
         Schema::create('drivers', function (Blueprint $table) {
             $table->id();
-            $table->string('brand_title', 100);
-            $table->string('brand_model', 100);
+            $table->string('car_name', 100);
+            $table->string('car_model', 100);
             $table->string('location', 255);
             $table->string('price', 255);
-            $table->integer('rating');
-            $table->json('document');
-            $table->foreignId('user_id')->constrained('users')
-                ->cascadeOnUpdate()
-                ->restrictOnDelete();
-            $table->foreignId('route_id')->unique()->constrained('routes')
-                ->cascadeOnUpdate()
-                ->restrictOnDelete();
+            $table->integer('rating')->nullable()->default(0);
+            $table->foreignId('user_id')->unique()->constrained('users')->cascadeOnUpdate()->restrictOnDelete();
+            $table->foreignId('route_id')->unique()->constrained('routes')->cascadeOnUpdate()->restrictOnDelete();
             $table->timestamps();
         });
     }

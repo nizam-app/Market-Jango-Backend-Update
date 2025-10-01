@@ -13,4 +13,12 @@ class Vendor extends Model
         'business_type',
         'user_id'
     ];
+    public function categories()
+    {
+        return $this->hasMany(Category::class, 'vendor_id', 'id');
+    }
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'vendor_id', 'id');
+    }
 }

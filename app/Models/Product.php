@@ -7,10 +7,26 @@ use Illuminate\Database\Eloquent\Model;
 class Product extends Model
 {
     protected $fillable = [
-
+        'name',
+        'description',
+        'previous_price',
+        'current_price',
+        'image',
+        'vendor_id',
+        'category_id'
     ];
-    public function cartItems()
+    public function vendor()
     {
-        return $this->hasMany(CartItem::class);
+        return $this->belongsTo(Vendor::class);
+    }
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+    public function images(){
+        return $this->hasMany(ProductImage::class);
+    }
+    public function banner(){
+        return $this->hasOne(Banner::class);
     }
 }
