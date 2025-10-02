@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('product_variants', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 20);
+            $table->string('name', 20)->unique();
             $table->foreignId('product_id')->constrained()->cascadeOnUpdate()->restrictOnDelete();
             $table->timestamps();
         });

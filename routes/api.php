@@ -7,7 +7,9 @@ use App\Http\Controllers\Api\DriverController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductVariantController;
 use App\Http\Controllers\Api\RouteController;
+use App\Http\Controllers\Api\VariantValueController;
 use App\Http\Controllers\Api\VendorController;
+use App\Http\Controllers\Api\WishListController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -62,11 +64,27 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
             Route::post('/destroy/{id}', [ProductController::class, 'destroy']);
         });
         //product Variant routes
-        Route::prefix('product/variant')->group(function () {
+        Route::prefix('product-variant')->group(function () {
             Route::get('/', [ProductVariantController::class, 'index']);
             Route::post('/create', [ProductVariantController::class, 'store']);
             Route::post('/update/{id}', [ProductVariantController::class, 'update']);
             Route::post('/destroy/{id}', [ProductVariantController::class, 'destroy']);
+        });
+        // Variant Value routes
+        Route::prefix('variant-value')->group(function () {
+            Route::get('/', [VariantValueController::class, 'index']);
+            Route::post('/create', [VariantValueController::class, 'store']);
+            Route::post('/update/{id}', [VariantValueController::class, 'update']);
+            Route::post('/destroy/{id}', [VariantValueController::class, 'destroy']);
+        });
+    });
+    //Buyer routes
+    Route::middleware('userTypeVerify:buyer')->group(function () {
+        // Variant Value routes
+        Route::prefix('wish-list')->group(function () {
+            Route::get('/', [WishListController::class, 'index']);
+            Route::post('/create-update/{product_id}', [WishListController::class, 'store']);
+            Route::post('/destroy/{product_id}', [WishListController::class, 'destroy']);
         });
     });
     //driver routes

@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('buyers', function (Blueprint $table) {
             $table->id();
             $table->enum('gender', ['Male', 'Female'])->default('Male');
-            $table->string('age', 100);
-            $table->text('description');
-            $table->string('location', 200);
-            $table->string('image', 200);
+            $table->string('age', 100)->nullable();
+            $table->text('description')->nullable();
+            $table->string('location', 200)->nullable();
+            $table->string('image', 200)->nullable();
             $table->foreignId('user_id')->unique()->constrained('users')
                 ->cascadeOnUpdate()
                 ->restrictOnDelete();

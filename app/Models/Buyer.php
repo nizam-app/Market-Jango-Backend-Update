@@ -8,9 +8,19 @@ class Buyer extends Model
 {
     protected $fillable = [
 
+        'gender',
+        'age',
+        'description',
+        'location',
+        'image',
+        'user_id',
     ];
     public function cart()
     {
-        return $this->hasOne(Cart::class);
+        return $this->hasMany(Cart::class);
+    }
+    public function wishList()
+    {
+        return $this->hasMany(Wishlist::class);
     }
 }

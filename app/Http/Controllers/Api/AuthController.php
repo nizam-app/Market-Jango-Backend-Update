@@ -7,8 +7,10 @@ use App\Helpers\JWTToken;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Mail\OTPSend;
+use App\Models\Buyer;
 use App\Models\Driver;
 use App\Models\Image;
+use App\Models\Transport;
 use App\Models\User;
 use App\Models\Vendor;
 use Exception;
@@ -161,10 +163,12 @@ class AuthController extends Controller
             $request->validate([
                 'password'  => 'required|string|min:6|confirmed',
             ]);
-
             $userId = $request->header('id');
             $user = User::where('id', $userId)->first();
-
+            $confirmMessage       = "Your Account has been successfully created";
+            $congratulationMessage= "Congratulations!";
+            $reviewMessage        = "Your Account has been under review";
+            $waitMessage          = "Wait for confirmation";
             if (!$user) {
                 return ResponseHelper::Out('failed', 'User not found', null, 404);
             }
@@ -173,12 +177,14 @@ class AuthController extends Controller
                 'password' => Hash::make($request->input('password')),
                 'token'=> null
             ]);
-            $confirmMessage       = "Your Account has been successfully created";
-            $congratulationMessage= "Congratulations!";
-            $reviewMessage        = "Your Account has been under review";
-            $waitMessage          = "Wait for confirmation";
             //update status and throw message
             if ($user->user_type === 'buyer' || $user->user_type === 'transport') {
+                Buyer::create([
+                    'user_id' => $user->id,
+                ]);
+                Transport::create([
+                    'user_id' => $user->id,
+                ]);
                 // Auto-approve
                 $user->update(['status' => 'Approved']);
                 $title    = $congratulationMessage;

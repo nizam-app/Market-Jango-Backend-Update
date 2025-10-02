@@ -19,7 +19,7 @@ class ProductController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $products = Product::with(['vendor', 'category'])->get();
+            $products = Product::with(['vendor', 'category','variants','variants.variantValues'])->get();
             return ResponseHelper::Out('success', 'All products successfully fetched', $products, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
