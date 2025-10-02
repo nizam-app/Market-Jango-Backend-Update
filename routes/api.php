@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\DriverController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\ProductVariantController;
 use App\Http\Controllers\Api\RouteController;
 use App\Http\Controllers\Api\VendorController;
 use Illuminate\Http\Request;
@@ -59,6 +60,13 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
             Route::post('/create', [ProductController::class, 'store']);
             Route::post('/update/{id}', [ProductController::class, 'update']);
             Route::post('/destroy/{id}', [ProductController::class, 'destroy']);
+        });
+        //product Variant routes
+        Route::prefix('product/variant')->group(function () {
+            Route::get('/', [ProductVariantController::class, 'index']);
+            Route::post('/create', [ProductVariantController::class, 'store']);
+            Route::post('/update/{id}', [ProductVariantController::class, 'update']);
+            Route::post('/destroy/{id}', [ProductVariantController::class, 'destroy']);
         });
     });
     //driver routes

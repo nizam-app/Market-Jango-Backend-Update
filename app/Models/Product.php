@@ -29,4 +29,8 @@ class Product extends Model
     public function banner(){
         return $this->hasOne(Banner::class);
     }
+    public function variants()
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
 }
