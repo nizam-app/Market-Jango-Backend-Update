@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\DriverController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductVariantController;
+use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\RouteController;
 use App\Http\Controllers\Api\VariantValueController;
 use App\Http\Controllers\Api\VendorController;
@@ -87,11 +88,17 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
             Route::post('/create', [CartController::class, 'store']);
             Route::post('/checkout', [CartController::class, 'checkout']);
         });
-        // Variant Value routes
+        // wish-list routes
         Route::prefix('wish-list')->group(function () {
             Route::get('/', [WishListController::class, 'index']);
-            Route::post('/create-update/{product_id}', [WishListController::class, 'store']);
-            Route::post('/destroy/{product_id}', [WishListController::class, 'destroy']);
+            Route::post('/create-update', [WishListController::class, 'store']);
+            Route::post('/destroy/{wishlist_id}', [WishListController::class, 'destroy']);
+        });
+        // review routes
+        Route::prefix('review')->group(function () {
+            Route::get('/', [ReviewController::class, 'index']);
+            Route::post('/create-update', [ReviewController::class, 'store']);
+            Route::post('/destroy/{review_id}', [ReviewController::class, 'destroy']);
         });
     });
     //driver routes
