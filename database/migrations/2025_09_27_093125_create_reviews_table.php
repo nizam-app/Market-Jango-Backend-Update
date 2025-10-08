@@ -21,7 +21,6 @@ return new class extends Migration
             $table->foreign('buyer_id')->references('id')->on('buyers')
                 ->restrictOnDelete()
                 ->restrictOnUpdate();
-
             $table->unsignedBigInteger('product_id');
             $table->foreign('product_id')->references('id')->on('products')
                 ->restrictOnDelete()

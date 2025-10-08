@@ -280,7 +280,7 @@ class AuthController extends Controller
                     'car_model' => $request->input('car_model'),
                     'location' => $request->input('location'),
                     'price' => $request->input('price'),
-                    'user_id' => $user->id,
+                    'user_id' => $userId,
                     'route_id' => $request->input('route_id'),
                 ]);
             if ($request->hasFile('files')) {
@@ -382,12 +382,11 @@ class AuthController extends Controller
 //    user password reset
     public function resetPassword(Request $request)
     {
-//        $request->validate([
-//            'password' => 'required|string|min:6|confirmed',
-//        ]);
+        $request->validate([
+            'password' => 'required|string|min:6|confirmed',
+        ]);
         $email = $request->header('email');
         $id = $request->header('id');
-//        dd($id);
         $user = User::where('email', '=', $email)->where('id','=', $id)->first();
         if (!$user) {
             if ($user == null) {

@@ -6,7 +6,21 @@ use Illuminate\Database\Eloquent\Model;
 
 class Cart extends Model
 {
-    protected $fillable = ['buyer_id', 'status'];
+    protected $fillable = [
+        'quantity',
+        'color',
+        'size',
+        'price',
+        'qty',
+        'product_id',
+        'buyer_id',
+        'vendor_id',
+        'status',
+    ];
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
     // Cart belongs to a buyer
     public function buyer()
     {

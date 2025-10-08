@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BannerController;
+use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\DriverController;
 use App\Http\Controllers\Api\ProductController;
@@ -80,6 +81,12 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     });
     //Buyer routes
     Route::middleware('userTypeVerify:buyer')->group(function () {
+        // Cart routes
+        Route::prefix('cart')->group(function () {
+            Route::get('/', [CartController::class, 'index']);
+            Route::post('/create', [CartController::class, 'store']);
+            Route::post('/checkout', [CartController::class, 'checkout']);
+        });
         // Variant Value routes
         Route::prefix('wish-list')->group(function () {
             Route::get('/', [WishListController::class, 'index']);

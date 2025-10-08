@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Helpers\FileHelper;
 use App\Models\Category;
 use App\Models\User;
+use App\Models\Vendor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -35,9 +36,8 @@ class CategoryController extends Controller
                 'status' => 'required|in:Active,Inactive'
             ]);
             $userId = $request->header('id');
-            $userEmail = $request->header('email');
-            $user = User::where('id', $userId)->where('email', $userEmail)->with('vendor')->first();
-            if(!$user){
+            $vendor = Vendor::where('user_id',$userId)->first();
+            if(!$vendor){
                 return ResponseHelper::Out('failed','Vendor not found',null, 404);
             }
             // File upload using your helper
@@ -48,7 +48,7 @@ class CategoryController extends Controller
                 'name' => $request->input('name'),
                 'description' => $request->input('description'),
                 'status' => $request->input('status'),
-                'vendor_id' => $user->vendor->id,
+                'vendor_id' => $vendor->id,
                 'image'       => $imagePath
             ]);
             return ResponseHelper::Out('success', 'Category successfully created', $category, 201);

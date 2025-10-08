@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('color',20);
             $table->string('size',20);
             $table->string('price',20);
+            $table->string('qty',20);
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->foreignId('vendor_id')->constrained()->onDelete('cascade');
             $table->foreignId('buyer_id')->constrained()->onDelete('cascade');
             $table->enum('status', ['active', 'checked_out'])->default('active');
             $table->timestamps();
