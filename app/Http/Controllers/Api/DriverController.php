@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Driver;
 use Exception;
@@ -14,18 +15,17 @@ class DriverController extends Controller
     public function index():JsonResponse
     {
         try {
-            $driver = Driver::all();
-            return response()->json([
-                'status' => 'success',
-                'data' => $driver
-            ],200);
-
+            $drivers = Driver::whereRelation('user', 'status', 'Approved')
+                ->with([
+                    'user:id,name,email,phone,status',
+                    'images:id,product_id,image_path,file_type'
+                ])
+                ->select('id','car_name','car_model','location','price','rating','route_id','user_id')
+                ->paginate(10);
+            return ResponseHelper::Out('success', 'All Driver successfully fetched', $drivers, 200);
         }catch (Exception $e) {
-            return response()->json([
-                'status' => 'Fail',
-                'message' => 'Something went wrong',
-                'errors' => $e->getMessage()
-            ], 500);
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+
         }
     }
 }

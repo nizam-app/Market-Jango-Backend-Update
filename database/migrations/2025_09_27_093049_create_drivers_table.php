@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('price', 255);
             $table->integer('rating')->nullable()->default(0);
             $table->foreignId('user_id')->unique()->constrained('users')->cascadeOnUpdate()->restrictOnDelete();
-            $table->foreignId('route_id')->unique()->constrained('routes')->cascadeOnUpdate()->restrictOnDelete();
+            $table->foreignId('route_id')->constrained('routes')->cascadeOnUpdate()->restrictOnDelete();
             $table->timestamps();
         });
     }

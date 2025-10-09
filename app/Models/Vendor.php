@@ -17,8 +17,15 @@ class Vendor extends Model
     {
         return $this->hasMany(Category::class, 'vendor_id', 'id');
     }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
     public function products()
     {
         return $this->hasMany(Product::class, 'vendor_id', 'id');
+    }
+    public function images(){
+        return $this->hasMany(Image::class,'user_id');
     }
 }

@@ -7,6 +7,7 @@ use App\Helpers\JWTToken;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Mail\OTPSend;
+use App\Models\Banner;
 use App\Models\Buyer;
 use App\Models\Driver;
 use App\Models\Image;
@@ -80,6 +81,31 @@ class AuthController extends Controller
             if(!$user){
                return ResponseHelper::Out('failed','User not found',null, 404);
             }
+            $userType = $user->user_type;
+            if ($userType === 'vendor') {
+                $vendor = Vendor::where('user_id', $userId)->first();
+                if (!$vendor) {
+                    return ResponseHelper::Out(
+                        'failed',
+                        'Please complete your store setup before setting your phone number.',
+                        null,
+                        400
+                    );
+                }
+            }
+
+            // ✅ Driver check
+            if ($userType === 'driver') {
+                $driver = Driver::where('user_id', $userId)->first();
+                if (!$driver) {
+                    return ResponseHelper::Out(
+                        'failed',
+                        'Please complete your car information registration before setting your phone number.',
+                        null,
+                        400
+                    );
+                }
+            }
             // OTP generate
             $otp = rand(10000000, 99999999);
             Log::info("Generated OTP for {$request->phone}: $otp");
@@ -146,6 +172,9 @@ class AuthController extends Controller
             if(!$user){
                return ResponseHelper::Out('failed','User not found',null, 404);
             }
+            if($user->phone_verified_at == Null){
+                return ResponseHelper::Out('failed','Please first verify your phone number',null, 200);
+            }
             $user->update([
                 'email' => $email
             ]);
@@ -178,20 +207,24 @@ class AuthController extends Controller
                 'token'=> null
             ]);
             //update status and throw message
-            if ($user->user_type === 'buyer' || $user->user_type === 'transport') {
+            if ($user->user_type === 'buyer') {
                 Buyer::create([
-                    'user_id' => $user->id,
-                ]);
-                Transport::create([
                     'user_id' => $user->id,
                 ]);
                 // Auto-approve
                 $user->update(['status' => 'Approved']);
                 $title    = $congratulationMessage;
                 $subtitle = $confirmMessage;
-            } elseif ($user->user_type === 'vendor' || $user->user_type === 'driver') {
+            } elseif ($user->user_type === 'transport'){
+                Transport::create([
+                    'user_id' => $user->id,
+                ]);
+                $title    = $congratulationMessage;
+                $subtitle = $confirmMessage;
+            }
+            elseif ($user->user_type === 'vendor' || $user->user_type === 'driver') {
                 // Under review
-                $user->update(['status' => 'Pending']); // চাইলে 'Under Review' ব্যবহার করো
+                $user->update(['status' => 'Pending']);
                 $title    = $waitMessage;
                 $subtitle = $reviewMessage;
             } else {
@@ -399,5 +432,17 @@ class AuthController extends Controller
             'token' => null
         ]);
         return ResponseHelper::Out('success', 'Password set successful!',$user,200);
+    }
+    //all user
+    public function index(): JsonResponse
+    {
+        try {
+            $banners = User::with('vendor','buyer','driver','transport')
+                ->select(['id','name','user_image','email','phone','user_type','language','status','phone_verified_at'])
+                ->paginate(20);
+            return ResponseHelper::Out('success', 'All banners successfully fetched', $banners, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
     }
 }

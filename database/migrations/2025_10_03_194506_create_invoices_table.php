@@ -21,7 +21,6 @@ return new class extends Migration
             $table->string('tran_id',50)->nullable();
             $table->string('payment_status',50)->nullable();
             $table->enum('delivery_status',['packed', 'OnTheWay','Shipped','NotDelivery'])->nullable();
-            $table->string('total',50)->nullable();
             $table->timestamps();
         });
     }

@@ -19,7 +19,21 @@ class CategoryController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $categories = Category::with('vendor')->get();
+            $categories = Category::where('status', 'Active')
+                ->with([
+                    'products' => function ($query) {
+                        $query->where('is_active', 1)
+                            ->select('id','name', 'description', 'previous_price', 'current_price', 'vendor_id', 'category_id')
+                            // 🟣 nested relation — product এর images
+                            ->with([
+                                'images:id,product_id,image_path,file_type',
+                                 'vendor:id,country,address,business_name,business_type,user_id',
+                                'vendor.user:id,name,user_image,email,phone,language',
+                            ]);
+                        }
+                    ])
+                ->select(['id', 'name', 'image',  'vendor_id', 'status'])
+            ->paginate(10);
             return ResponseHelper::Out('success', 'All categories successfully fetched', $categories, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
