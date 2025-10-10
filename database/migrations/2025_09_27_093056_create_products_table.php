@@ -19,12 +19,8 @@ return new class extends Migration
             $table->string('current_price', 50);
             $table->string('image', 200);
             $table->boolean('is_active')->default(0)->comment('0 = No, 1 = Yes');
-            $table->foreignId('vendor_id')->constrained('vendors')
-                ->cascadeOnUpdate()
-                ->restrictOnDelete();
-            $table->foreignId('category_id')->constrained('categories')
-                ->cascadeOnUpdate()
-                ->restrictOnDelete();
+            $table->foreignId('vendor_id')->constrained('vendors')->cascadeOnUpdate()->restrictOnDelete();
+            $table->foreignId('category_id')->constrained('categories')->cascadeOnUpdate()->restrictOnDelete();
             $table->timestamps();
         });
     }

@@ -28,12 +28,12 @@ Route::get('/category', [CategoryController::class, 'index']);
 Route::get('/driver', [DriverController::class, 'index']);
 Route::get('/user', [AuthController::class, 'index']);
 // Admin all routes
-Route::middleware('userTypeVerify:admin')->prefix('driver')->group(function () {
+Route::middleware('userTypeVerify:admin')->group(function () {
 });
-        Route::get('/active/vendor', [AdminController::class, 'activeVendor']);
-        Route::get('/pending/vendor', [AdminController::class, 'pendingVendor']);
-        Route::get('/suspended/vendor', [AdminController::class, 'suspendedVendor']);
-//        Route::get('/approved/vendor/{vendor_id}', [AdminController::class, 'approvedVendor']);
+    Route::get('/active/vendor', [AdminController::class, 'activeVendor']);
+    Route::get('/pending/vendor', [AdminController::class, 'pendingVendor']);
+    Route::get('/suspended/vendor', [AdminController::class, 'suspendedVendor']);
+    Route::get('/accept/vendor/{vendor_id}', [AdminController::class, 'acceptOrRejectVendor']);
 // Route routes
 Route::prefix('route')->group(function () {
     Route::get('/', [RouteController::class, 'index']);

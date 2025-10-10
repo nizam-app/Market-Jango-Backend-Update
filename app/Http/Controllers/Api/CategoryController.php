@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\FileHelper;
 use App\Models\Category;
+use App\Models\CategoryImage;
 use App\Models\User;
 use App\Models\Vendor;
 use Illuminate\Http\JsonResponse;
@@ -30,9 +31,10 @@ class CategoryController extends Controller
                                  'vendor:id,country,address,business_name,business_type,user_id',
                                 'vendor.user:id,name,user_image,email,phone,language',
                             ]);
-                        }
+                        },
+                    'categoryImages:id,category_id,image_path'
                     ])
-                ->select(['id', 'name', 'image',  'vendor_id', 'status'])
+                ->select(['id', 'name', 'status'])
             ->paginate(10);
             return ResponseHelper::Out('success', 'All categories successfully fetched', $categories, 200);
         } catch (Exception $e) {
@@ -46,7 +48,7 @@ class CategoryController extends Controller
             $request->validate([
                 'name' => 'required|string|max:50',
                 'description' => 'required|string',
-                'image' => 'required',
+                'images.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240',
                 'status' => 'required|in:Active,Inactive'
             ]);
             $userId = $request->header('id');
@@ -54,17 +56,23 @@ class CategoryController extends Controller
             if(!$vendor){
                 return ResponseHelper::Out('failed','Vendor not found',null, 404);
             }
-            // File upload using your helper
-            $uploadedFiles = FileHelper::upload($request->file('image'), 'category'); // example: single or multiple files
-            // If multiple files, take first image path
-            $imagePath = $uploadedFiles[0]['path'] ?? null;
             $category = Category::create([
                 'name' => $request->input('name'),
                 'description' => $request->input('description'),
                 'status' => $request->input('status'),
                 'vendor_id' => $vendor->id,
-                'image'       => $imagePath
             ]);
+            if ($request->hasFile('images')) {
+                $files = $request->file('images');
+                // all file upload
+                $uploadedFiles = FileHelper::upload($files, "category");
+                foreach ($uploadedFiles as $f) {
+                    CategoryImage::create([
+                        'image_path' => 'storage/' . $f['path'],
+                        'category_id'    => $category->id
+                    ]);
+                }
+            }
             return ResponseHelper::Out('success', 'Category successfully created', $category, 201);
         } catch (ValidationException $e) {
             return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
@@ -99,7 +107,6 @@ class CategoryController extends Controller
             $category->update([
                 'name' => $request->input('name'),
                 'description' => $request->input('description'),
-                'image' => $imagePath,
                 'status' => $request->input('status'),
                 'vendor_id' => $vendorId
             ]);

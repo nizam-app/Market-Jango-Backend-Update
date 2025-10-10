@@ -249,7 +249,7 @@ class AuthController extends Controller
     {
         try {
             $request->validate([
-                'country'        => 'required|string',
+                'country'        => 'required',
                 'business_name'  => 'required|string',
                 'business_type'  => 'required|in:Restaurant,Grocery,Pharmacy,Electronics,Clothing,Hardware',
                 'address'        => 'required|string',
