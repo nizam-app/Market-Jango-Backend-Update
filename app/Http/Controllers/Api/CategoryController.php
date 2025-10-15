@@ -25,7 +25,7 @@ class CategoryController extends Controller
                     'products' => function ($query) {
                         $query->where('is_active', 1)
                             ->select('id','name', 'description', 'previous_price', 'current_price', 'vendor_id', 'category_id')
-                            // 🟣 nested relation — product এর images
+                            // nested relation — product এর images
                             ->with([
                                 'images:id,product_id,image_path,file_type',
                                  'vendor:id,country,address,business_name,business_type,user_id',

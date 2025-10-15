@@ -4,24 +4,21 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Review extends Model
+class ProductAttribute extends Model
 {
     protected $fillable = [
-        'buyer_id',
+        'name',
         'product_id',
-        'description',
-        'rating',
     ];
-
-    // Relationships
-    public function buyer()
-    {
-        return $this->belongsTo(Buyer::class);
-    }
 
     public function product()
     {
         return $this->belongsTo(Product::class);
     }
+    public function variantValues()
+    {
+        return $this->hasMany(VariantValue::class);
+    }
+
 
 }

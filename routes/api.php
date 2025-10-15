@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\BuyerHomeController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\DriverController;
+use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductVariantController;
 use App\Http\Controllers\Api\ReviewController;
@@ -14,7 +15,6 @@ use App\Http\Controllers\Api\RouteController;
 use App\Http\Controllers\Api\VariantValueController;
 use App\Http\Controllers\Api\VendorController;
 use App\Http\Controllers\Api\WishListController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 //after login
@@ -29,17 +29,26 @@ Route::get('/driver', [DriverController::class, 'index']);
 Route::get('/user', [AuthController::class, 'index']);
 // Admin all routes
 Route::middleware('userTypeVerify:admin')->group(function () {
-});
     Route::get('/active/vendor', [AdminController::class, 'activeVendor']);
     Route::get('/pending/vendor', [AdminController::class, 'pendingVendor']);
     Route::get('/suspended/vendor', [AdminController::class, 'suspendedVendor']);
     Route::get('/accept/vendor/{vendor_id}', [AdminController::class, 'acceptOrRejectVendor']);
+});
 // Route routes
 Route::prefix('route')->group(function () {
     Route::get('/', [RouteController::class, 'index']);
+    Route::get('/routes/{id}', [RouteController::class, 'show']);
     Route::post('/create', [RouteController::class, 'store']);
-    Route::post('/update/{id}', [RouteController::class, 'update']);
-    Route::post('/destroy/{id}', [RouteController::class, 'destroy']);
+    Route::put('/update/{id}', [RouteController::class, 'update']);
+    Route::delete('/destroy/{id}', [RouteController::class, 'destroy']);
+});
+//locations routes
+Route::prefix('location')->group(function () {
+    Route::get('/', [LocationController::class, 'all']);
+    Route::get('/{id}', [LocationController::class, 'single']);
+    Route::post('/create', [LocationController::class, 'create']);
+    Route::put('/update/{id}', [LocationController::class, 'update']);
+    Route::delete('/destroy/{id}', [LocationController::class, 'delete']);
 });
 //banner routes
 Route::prefix('banner')->group(function () {
@@ -76,14 +85,14 @@ Route::middleware('tokenVerify')->group(function () {
             Route::post('/destroy/{id}', [ProductController::class, 'destroy']);
         });
         //product Variant routes
-        Route::prefix('product-variant')->group(function () {
+        Route::prefix('product-attribute')->group(function () {
             Route::get('/', [ProductVariantController::class, 'index']);
             Route::post('/create', [ProductVariantController::class, 'store']);
             Route::post('/update/{id}', [ProductVariantController::class, 'update']);
             Route::post('/destroy/{id}', [ProductVariantController::class, 'destroy']);
         });
         // Variant Value routes
-        Route::prefix('variant-value')->group(function () {
+        Route::prefix('attribute-value')->group(function () {
             Route::get('/', [VariantValueController::class, 'index']);
             Route::post('/create', [VariantValueController::class, 'store']);
             Route::post('/update/{id}', [VariantValueController::class, 'update']);

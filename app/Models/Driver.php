@@ -21,4 +21,5 @@ class Driver extends Model
     public function images(){
         return $this->hasMany(ProductImage::class);
     }
+
 }

@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -9,67 +8,69 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+/** @use HasFactory<\Database\Factories\UserFactory> */
+use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+/**
+* The attributes that are mass assignable.
+*
+* @var list<string>
+    */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'phone',
-        'otp',
-        'token',
-        'user_type',
-        'expires_at',
-        'phone_verified_at',
-        'status'
+    'name',
+    'email',
+    'password',
+    'phone',
+    'otp',
+    'token',
+    'user_type',
+    'expires_at',
+    'phone_verified_at',
+    'status'
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
-    protected $hidden = [
+    * The attributes that should be hidden for serialization.
+    *
+    * @var list<string>
+        */
+        protected $hidden = [
         'password',
         'remember_token',
-    ];
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected $casts = [
-
-    ];
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'expires_at' => 'datetime',
         ];
-    }
-    public function vendor()
-    {
+
+        /**
+        * Get the attributes that should be cast.
+        *
+        * @return array<string, string>
+        */
+        protected $casts = [
+
+        ];
+        protected function casts(): array
+        {
+        return [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'expires_at' => 'datetime',
+        ];
+        }
+        public function vendor()
+        {
         return $this->hasOne(Vendor::class);
-    }
-    public function buyer()
-    {
+        }
+        public function buyer()
+        {
         return $this->hasOne(Buyer::class);
-    }
-    public function driver()
-    {
+        }
+        public function driver()
+        {
         return $this->hasOne(Driver::class);
-    }
-    public function transport()
-    {
+        }
+        public function transport()
+        {
         return $this->hasOne(Transport::class);
-    }
-}
+        }
+        }
+
+

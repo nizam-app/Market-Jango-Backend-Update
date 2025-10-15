@@ -45,14 +45,15 @@ class CartController extends Controller
             }
             $userId = $request->header('id');
             $buyer = Buyer::where('user_id', $userId)->first();
-            $product = Product::find($request->product_id);
+            $productId = $request->input('product_id');
+            $product = Product::find($productId);
             if (!$product) {
                 return ResponseHelper::Out('failed', 'Product Not found', $validator->errors()->first(), 422);
             }
             $unitPrice = $product->current_price;
             $totalPrice = $unitPrice * $request->quantity;
             // Check if product already in cart
-            $existing = Cart::where('product_id', $request->product_id)
+            $existing = Cart::where('product_id', $productId)
                 ->where('buyer_id', $buyer->id)
                 ->where('status', 'active')
                 ->first();
@@ -65,13 +66,12 @@ class CartController extends Controller
 
             // Create new cart item
             $cart = Cart::create([
-                'product_id' => $request->input('product_id'),
+                'product_id' => $productId,
                 'buyer_id' => $buyer->id,
                 'quantity' => $request->input('quantity'),
                 'color' => $request->input('color'),
                 'size' => $request->input('size'),
                 'price' => $totalPrice,
-                'vendor_id' => 1,
                 'status' => 'active',
             ]);
             return ResponseHelper::Out('success', 'Cart successfully created', $cart, 201);

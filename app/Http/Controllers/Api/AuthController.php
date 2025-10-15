@@ -13,11 +13,13 @@ use App\Models\Driver;
 use App\Models\Image;
 use App\Models\Transport;
 use App\Models\User;
+use App\Models\UserImage;
 use App\Models\Vendor;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -37,9 +39,6 @@ class AuthController extends Controller
             ]);
             $token = JWTToken::registerToken($user->user_type, $user->id);
             $sendToken = 'Bearer ' . $token;
-            $user->update([
-                'token' => $sendToken
-            ]);
            return ResponseHelper::Out('success','User registered successfully',['uer'=>$user, 'token'=> $sendToken],201);
         } catch (ValidationException $e) {
            return ResponseHelper::Out('failed','Validation Failed',$e->errors(),422);
@@ -94,7 +93,7 @@ class AuthController extends Controller
                 }
             }
 
-            // ✅ Driver check
+            // Driver check
             if ($userType === 'driver') {
                 $driver = Driver::where('user_id', $userId)->first();
                 if (!$driver) {
@@ -203,8 +202,7 @@ class AuthController extends Controller
             }
             //set password
             $user->update([
-                'password' => Hash::make($request->input('password')),
-                'token'=> null
+                'password' => Hash::make($request->input('password'))
             ]);
             //update status and throw message
             if ($user->user_type === 'buyer') {
@@ -219,6 +217,7 @@ class AuthController extends Controller
                 Transport::create([
                     'user_id' => $user->id,
                 ]);
+                $user->update(['status' => 'Approved']);
                 $title    = $congratulationMessage;
                 $subtitle = $confirmMessage;
             }
@@ -247,7 +246,9 @@ class AuthController extends Controller
     //vendor sotre
     public function registerVendor(Request $request): JsonResponse
     {
+        DB::beginTransaction();
         try {
+
             $request->validate([
                 'country'        => 'required',
                 'business_name'  => 'required|string',
@@ -271,25 +272,29 @@ class AuthController extends Controller
             ]);
             if ($request->hasFile('files')) {
                 $files = $request->file('files');
-                // all file upload
+
                 $uploadedFiles = FileHelper::upload($files, $userType);
-                foreach ($uploadedFiles as $f) {
-                    Image::create([
-                        'image_path' => 'storage/' . $f['path'],
+
+                foreach ($uploadedFiles as $file) {
+                    UserImage::create([
+                        'image_path' => $file['url'],       // ✅ Local path নয়, Cloud URL
+                        'public_id'  => $file['public_id'], // ✅ ডিলিটের জন্য দরকার
                         'user_id'    => $vendor->id,
                         'user_type'  => $userType,
-                        'file_type'  => $f['type'],
+                        'file_type'  => 'image'
                     ]);
                 }
             }
+            DB::commit();
             return ResponseHelper::Out('success', 'Vendor registered successfully!', $vendor, 201);
         } catch (ValidationException $e) {
+            DB::rollBack();
             return ResponseHelper::Out('error','Validation Failed',$e->errors(),422);
         } catch (Exception $e) {
+            DB::rollBack();
             return ResponseHelper::Out('failed','Something went wrong',$e->getMessage(),500);
         }
     }
-
     //driver store
     public function registerDriver(Request $request):JsonResponse
     {
@@ -321,7 +326,7 @@ class AuthController extends Controller
                 // all file upload
                 $uploadedFiles = FileHelper::upload($files, $userType);
                 foreach ($uploadedFiles as $f) {
-                    Image::create([
+                    UserImage::create([
                         'image_path' => 'storage/' . $f['path'],
                         'user_id'    => $driver->id,
                         'user_type'  => $userType,
@@ -401,9 +406,6 @@ class AuthController extends Controller
             }
             $token = JWTToken::resetToken($email, $user->id);
             $sendToken = 'Bearer ' . $token;
-            $user->update([
-                'token' => $sendToken
-            ]);
             $user->update(['otp' => '0']);
             return ResponseHelper::Out('success', 'Otp verification successful!',['uer'=>$user, 'token'=> $sendToken],200);
         } catch (ValidationException $e) {
@@ -428,8 +430,7 @@ class AuthController extends Controller
         }
         //update password
         $user->update([
-            'password' => Hash::make($request->input('password')),
-            'token' => null
+            'password' => Hash::make($request->input('password'))
         ]);
         return ResponseHelper::Out('success', 'Password set successful!',$user,200);
     }
@@ -438,7 +439,7 @@ class AuthController extends Controller
     {
         try {
             $banners = User::with('vendor','buyer','driver','transport')
-                ->select(['id','name','user_image','email','phone','user_type','language','status','phone_verified_at'])
+                ->select(['id','name','image','email','phone','user_type','language','status','phone_verified_at'])
                 ->paginate(20);
             return ResponseHelper::Out('success', 'All banners successfully fetched', $banners, 200);
         } catch (Exception $e) {

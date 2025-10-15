@@ -12,61 +12,72 @@ use Illuminate\Validation\ValidationException;
 
 class RouteController extends Controller
 {
-    public function index():JsonResponse
+    public function index()
     {
-        try {
-            $route = Route::all();
-            return ResponseHelper::Out('success','All route successfully fetched',$route,200);
-        }catch (Exception $e) {
-           return ResponseHelper::Out('failed','Something went wrong',$e->getMessage(),500);
-        }
+        $routes = Route::with('locations')->get();
+        return response()->json(['message' => 'All routes fetched', 'data' => $routes]);
     }
-    // $route store
+
     public function store(Request $request):JsonResponse
     {
         try {
             $request->validate([
-                'name' => 'required|string'
+                'name' => 'required|string|max:255',
+                'locations' => 'required|array',
+                'locations.*.id' => 'exists:locations,id',
+                'locations.*.sequence' => 'integer'
             ]);
-            // Route Store
-            $route = Route::create([
-                'name' => $request->input('name')
-            ]);
-        return ResponseHelper::Out('success','Route successfully created',$route,201);
-        } catch (ValidationException $e) {
-        return ResponseHelper::Out('failed','Validation exception',$e->getMessage(),422);
+
+            $route = Route::create(['name' => $request->name]);
+
+            $pivot = [];
+            foreach ($request->locations as $location) {
+                $pivot[$location['id']] = ['sequence' => $location['sequence'] ?? 0];
+            }
+            $route->locations()->attach($pivot);
+            return ResponseHelper::Out('success','Route created',$route->load('locations'), 201);
+        }  catch (ValidationException $e) {
+            return ResponseHelper::Out('failed','Validation Failed',$e->errors(),422);
         } catch (Exception $e) {
-       return ResponseHelper::Out('failed','Something went wrong',$e->getMessage(),500);
+            return ResponseHelper::Out('failed','Something went wrong',$e->getMessage(),500);
         }
     }
-    // $route update
-    public function update(Request $request, $id):JsonResponse
+
+    public function show($id)
     {
-        try {
-            $route = Route::findOrFail($id);
-            $request->validate([
-                'name' => 'required|string'
-            ]);
-            // Route update
-            $route->update([
-                'name' => $request->input('name')
-            ]);
-           return ResponseHelper::Out('success','Route successfully updated',$route,200);
-        } catch (ValidationException $e) {
-         return ResponseHelper::Out('failed','Validation exception',$e->getMessage(),422);
-        } catch (Exception $e) {
-          return ResponseHelper::Out('failed','Something went wrong',$e->getMessage(),500);
-        }
+        $route = Route::with('locations')->findOrFail($id);
+        return response()->json(['message' => 'Route found', 'data' => $route]);
     }
-    // $route delete
-    public function destroy(Request $request):JsonResponse
+
+    public function update(Request $request, $id)
     {
-        try {
-            $route = Route::findOrFail($request->id);
-            $route->delete();
-           return ResponseHelper::Out('success','Route successfully deleted',null,200);
-        } catch (Exception $e) {
-           return ResponseHelper::Out('failed','Something went wrong',$e->getMessage(),500);
+        $request->validate([
+            'name' => 'nullable|string|max:255',
+            'locations' => 'nullable|array',
+            'locations.*.id' => 'exists:locations,id',
+            'locations.*.sequence' => 'integer'
+        ]);
+
+        $route = Route::findOrFail($id);
+        if ($request->name) $route->update(['name' => $request->name]);
+
+        if ($request->has('locations')) {
+            $pivot = [];
+            foreach ($request->locations as $loc) {
+                $pivot[$loc['id']] = ['sequence' => $loc['sequence'] ?? 0];
+            }
+            $route->locations()->sync($pivot);
         }
+
+        return response()->json(['message' => 'Route updated', 'data' => $route->load('locations')]);
     }
+
+    public function destroy($id)
+    {
+        $route = Route::findOrFail($id);
+        $route->locations()->detach();
+        $route->delete();
+        return response()->json(['message' => 'Route deleted']);
+    }
+
 }

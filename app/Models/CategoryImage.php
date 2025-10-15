@@ -14,4 +14,5 @@ class CategoryImage extends Model
     public function category(){
         return $this->belongsToMany(Category::class);
     }
+
 }

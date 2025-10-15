@@ -4,12 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class ProductImage extends Model
+class ProductBanner extends Model
 {
     protected $fillable = [
-        'image_path',
-        'product_id',
-        'file_type',
+        'name',
+        'description',
+        'discount',
+        'image',
+        'product_id'
     ];
     public function product(){
         return $this->belongsTo(Product::class);
