@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('location_route', function (Blueprint $table) {
             $table->id();
             $table->integer('sequence')->default(0);
-            $table->foreignId('route_id')->constrained()->cascadeOnUpdate()->restrictOnDelete();
-            $table->foreignId('location_id')->constrained()->cascadeOnUpdate()->restrictOnDelete();
+            $table->foreignId('route_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
+            $table->foreignId('location_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
         });
     }

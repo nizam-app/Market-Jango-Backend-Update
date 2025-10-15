@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('address', 50);
             $table->string('business_name', 100);
             $table->enum('business_type', ['Restaurant','Grocery','Pharmacy','Electronics','Clothing','Hardware'])->default('Restaurant');
-            $table->foreignId('user_id')->unique()->constrained('users')->cascadeOnUpdate()->restrictOnDelete();
+            $table->foreignId('user_id')->unique()->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
         });
     }

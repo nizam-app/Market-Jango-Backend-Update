@@ -16,9 +16,9 @@ return new class extends Migration
             $table->string('message', 50);
             $table->string('message_type', 50)->nullable();
             $table->boolean('is_read')->nullable()->default(false);
-            $table->foreignId('sender_id')->nullable()->constrained('users')->cascadeOnUpdate()->restrictOnDelete();
-            $table->foreignId('receiver_id')->nullable()->constrained('users')->cascadeOnUpdate()->restrictOnDelete();
-            $table->foreignId('order_id')->nullable()->constrained('orders')->cascadeOnUpdate()->restrictOnDelete();
+            $table->foreignId('sender_id')->nullable()->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();
+            $table->foreignId('receiver_id')->nullable()->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();
+            $table->foreignId('order_id')->nullable()->constrained('orders')->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
         });
     }

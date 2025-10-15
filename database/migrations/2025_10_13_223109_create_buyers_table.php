@@ -28,7 +28,7 @@ return new class extends Migration
             $table->string('ship_phone', 100)->nullable();
             $table->text('description')->nullable();
             $table->string('location', 200)->nullable();
-            $table->foreignId('user_id')->unique()->constrained()->cascadeOnUpdate()->restrictOnDelete();
+            $table->foreignId('user_id')->unique()->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
         });
     }

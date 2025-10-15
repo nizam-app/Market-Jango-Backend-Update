@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name', 50);
             $table->text('description');
             $table->enum('status', ['Active', 'Inactive'])->default('Active');
-            $table->foreignId('vendor_id')->constrained('vendors')->cascadeOnUpdate()->restrictOnDelete();
+            $table->foreignId('vendor_id')->constrained('vendors')->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
         });
     }

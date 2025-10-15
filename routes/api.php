@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\RouteController;
 use App\Http\Controllers\Api\VariantValueController;
 use App\Http\Controllers\Api\VendorController;
 use App\Http\Controllers\Api\WishListController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 //after login
@@ -26,7 +27,8 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/product/filter', [BuyerHomeController::class, 'productFilter']);
 Route::get('/category', [CategoryController::class, 'index']);
 Route::get('/driver', [DriverController::class, 'index']);
-Route::get('/user', [AuthController::class, 'index']);
+Route::get('/user', [UserController::class, 'index']);
+Route::get('/user/{id}', [UserController::class, 'show']);
 // Admin all routes
 Route::middleware('userTypeVerify:admin')->group(function () {
     Route::get('/active/vendor', [AdminController::class, 'activeVendor']);
@@ -65,6 +67,14 @@ Route::middleware('tokenVerify')->group(function () {
     Route::post('/register-email', [AuthController::class, 'registerEmail']);
     Route::post('/register-password', [AuthController::class, 'registerPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+    //product Variant routes
+    Route::prefix('product-attribute')->group(function () {
+        Route::get('/', [ProductVariantController::class, 'index']);
+        Route::post('/create', [ProductVariantController::class, 'store']);
+        Route::post('/update/{id}', [ProductVariantController::class, 'update']);
+        Route::post('/destroy/{id}', [ProductVariantController::class, 'destroy']);
+    });
+
     //vendor routes
     Route::middleware('userTypeVerify:vendor')->group(function () {
         //vendor routes
@@ -83,13 +93,6 @@ Route::middleware('tokenVerify')->group(function () {
             Route::post('/create', [ProductController::class, 'store']);
             Route::post('/update/{id}', [ProductController::class, 'update']);
             Route::post('/destroy/{id}', [ProductController::class, 'destroy']);
-        });
-        //product Variant routes
-        Route::prefix('product-attribute')->group(function () {
-            Route::get('/', [ProductVariantController::class, 'index']);
-            Route::post('/create', [ProductVariantController::class, 'store']);
-            Route::post('/update/{id}', [ProductVariantController::class, 'update']);
-            Route::post('/destroy/{id}', [ProductVariantController::class, 'destroy']);
         });
         // Variant Value routes
         Route::prefix('attribute-value')->group(function () {

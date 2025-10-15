@@ -8,16 +8,16 @@ class ProductAttribute extends Model
 {
     protected $fillable = [
         'name',
-        'product_id',
+        'vendor_id',
     ];
 
     public function product()
     {
         return $this->belongsTo(Product::class);
     }
-    public function variantValues()
+    public function attributeValues()
     {
-        return $this->hasMany(VariantValue::class);
+        return $this->hasMany(AttributeValue::class);
     }
 
 

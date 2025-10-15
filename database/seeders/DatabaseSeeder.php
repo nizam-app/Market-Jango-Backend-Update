@@ -17,6 +17,11 @@ class DatabaseSeeder extends Seeder
             LocationSeeder::class,
             RouteSeeder::class,
             UserSeeder::class,
+            CategorySeeder::class,
+            ProductAttributeSeeder::class,
+            AttributeValueSeeder::class,
+            CategorySeeder::class,
+            ProductSeeder::class,
             //LocationRouteSeeder::class,
         ]);
     }

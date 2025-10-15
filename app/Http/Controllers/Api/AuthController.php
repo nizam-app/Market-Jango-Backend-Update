@@ -7,10 +7,8 @@ use App\Helpers\JWTToken;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Mail\OTPSend;
-use App\Models\Banner;
 use App\Models\Buyer;
 use App\Models\Driver;
-use App\Models\Image;
 use App\Models\Transport;
 use App\Models\User;
 use App\Models\UserImage;
@@ -46,7 +44,7 @@ class AuthController extends Controller
             return ResponseHelper::Out('failed','Something went wrong',$e->getMessage(),500);
         }
     }
-    //store title witch user create type \$e\-\>getMessage\(\) \$e\-\>errors\(\)
+    //store title witch user create type
     public function registerName(Request $request):JsonResponse
     {
         try {
@@ -92,7 +90,6 @@ class AuthController extends Controller
                     );
                 }
             }
-
             // Driver check
             if ($userType === 'driver') {
                 $driver = Driver::where('user_id', $userId)->first();
@@ -107,7 +104,6 @@ class AuthController extends Controller
             }
             // OTP generate
             $otp = rand(10000000, 99999999);
-            Log::info("Generated OTP for {$request->phone}: $otp");
             $phone = $request->input('phone');
             $user->update([
                 'phone' => $phone,
@@ -128,9 +124,8 @@ class AuthController extends Controller
             $request->validate([
                 'otp' => 'required'
             ]);
-            $phone = $request->header('phone');
             $userId = $request->header('id');
-            $user = User::where('phone', $phone)->where('id', '=', $userId)->first();
+            $user = User::where('id', '=', $userId)->first();
             if(!$user){
                return ResponseHelper::Out('failed','User not found',null, 404);
             }
@@ -248,13 +243,13 @@ class AuthController extends Controller
     {
         DB::beginTransaction();
         try {
-
             $request->validate([
                 'country'        => 'required',
                 'business_name'  => 'required|string',
                 'business_type'  => 'required|in:Restaurant,Grocery,Pharmacy,Electronics,Clothing,Hardware',
                 'address'        => 'required|string',
-                'files.*' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf,doc,docx,xls,xlsx|max:10240'
+                'files'   => 'nullable|array',
+                'files.*' => 'nullable|file|mimes:jpg,jpeg,png,avif,webp,pdf,doc,docx,xls,xlsx|max:10240'
             ]);
             $userId = $request->header('id');
             $user = User::where('id', $userId)->first();
@@ -359,9 +354,6 @@ class AuthController extends Controller
             // set token
             $token = JWTToken::loginToken($user->email, $user->id);
             $sendToken = 'Bearer ' . $token;
-            $user->update([
-                'token' => $sendToken
-            ]);
             return ResponseHelper::Out('success', 'Login successful',['uer'=>$user, 'token'=> $sendToken], 200);
         } catch (ValidationException $e) {
             return ResponseHelper::Out('error','Validation Failed',$e->errors(),422);
@@ -433,17 +425,5 @@ class AuthController extends Controller
             'password' => Hash::make($request->input('password'))
         ]);
         return ResponseHelper::Out('success', 'Password set successful!',$user,200);
-    }
-    //all user
-    public function index(): JsonResponse
-    {
-        try {
-            $banners = User::with('vendor','buyer','driver','transport')
-                ->select(['id','name','image','email','phone','user_type','language','status','phone_verified_at'])
-                ->paginate(20);
-            return ResponseHelper::Out('success', 'All banners successfully fetched', $banners, 200);
-        } catch (Exception $e) {
-            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
-        }
     }
 }

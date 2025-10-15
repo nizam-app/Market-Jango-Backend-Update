@@ -18,8 +18,8 @@ return new class extends Migration
             $table->string('location', 200);
             $table->string('price', 200);
             $table->integer('rating')->nullable()->default(0);
-            $table->foreignId('user_id')->unique()->constrained()->cascadeOnUpdate()->restrictOnDelete();
-            $table->foreignId('route_id')->constrained()->cascadeOnUpdate()->restrictOnDelete();
+            $table->foreignId('user_id')->unique()->constrained()->cascadeOnUpdate()->cascadeOnDelete();
+            $table->foreignId('route_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
         });
     }

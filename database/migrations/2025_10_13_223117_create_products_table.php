@@ -22,9 +22,9 @@ return new class extends Migration
             $table->string('image', 200);
             $table->enum('remark', ['Top', 'New'])->default('New');
             $table->boolean('is_active')->default(0)->comment('0 = No, 1 = Yes');
-            $table->foreignId('product_attribute_id')->constrained()->cascadeOnUpdate()->restrictOnDelete();
-            $table->foreignId('vendor_id')->constrained('vendors')->cascadeOnUpdate()->restrictOnDelete();
-            $table->foreignId('category_id')->constrained('categories')->cascadeOnUpdate()->restrictOnDelete();
+            $table->foreignId('product_attribute_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
+            $table->foreignId('vendor_id')->constrained('vendors')->cascadeOnUpdate()->cascadeOnDelete();
+            $table->foreignId('category_id')->constrained('categories')->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
         });
     }
