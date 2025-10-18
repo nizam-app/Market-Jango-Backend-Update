@@ -14,7 +14,9 @@ return new class extends Migration
         Schema::create('category_images', function (Blueprint $table) {
             $table->id();
             $table->string('image_path', 200);
-            $table->foreignId('category_id')->constrained('categories')->cascadeOnUpdate()->cascadeOnDelete();
+            $table->string('public_id')->nullable();
+            $table->foreignId('category_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
+            $table->foreignId('vendor_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
         });
     }

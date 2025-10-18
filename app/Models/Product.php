@@ -27,11 +27,11 @@ class Product extends Model
         return $this->hasMany(ProductImage::class);
     }
     public function banner(){
-        return $this->hasOne(Banner::class);
+        return $this->hasOne(ProductBanner::class);
     }
     public function variants()
     {
-        return $this->hasMany(ProductVariant::class);
+        return $this->hasMany(ProductAttribute::class);
     }
     public function carts()
     {

@@ -18,7 +18,7 @@ class AdminController extends Controller
     {
         try {
             $vendors = Vendor::with([
-                'user:id,name,user_image,email,phone,language,status,phone_verified_at',
+                'user:id,name,image,email,phone,language,status,phone_verified_at',
                 'images:id,user_id,user_type,image_path,file_type',
             ])
                 ->whereHas('user', function ($query) {
@@ -39,7 +39,7 @@ class AdminController extends Controller
     {
         try {
             $vendors = Vendor::with([
-                'user:id,name,user_image,email,phone,language,status,phone_verified_at',
+                'user:id,name,email,phone,language,status,phone_verified_at',
                 'images:id,user_id,user_type,image_path,file_type',
             ])
             ->whereHas('user', function ($query) {
@@ -47,7 +47,7 @@ class AdminController extends Controller
             })
             ->select('id', 'user_id', 'country', 'address', 'business_name', 'business_type')
             ->paginate(10);
-            return ResponseHelper::Out('success', 'All approved vendor successfully fetched', $vendors, 200);
+            return ResponseHelper::Out('success', 'All pending vendor successfully fetched', $vendors, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
@@ -57,7 +57,7 @@ class AdminController extends Controller
     {
         try {
             $vendors = Vendor::with([
-                'user:id,name,user_image,email,phone,language,status,phone_verified_at',
+                'user:id,name,image,email,phone,language,status,phone_verified_at',
                 'images:id,user_id,user_type,image_path,file_type',
             ])
                 ->whereHas('user', function ($query) {
@@ -65,7 +65,7 @@ class AdminController extends Controller
                 })
                 ->select('id', 'user_id', 'country', 'address', 'business_name', 'business_type')
                 ->paginate(10);
-            return ResponseHelper::Out('success', 'All approved vendor successfully fetched', $vendors, 200);
+            return ResponseHelper::Out('success', 'All suspended vendor successfully fetched', $vendors, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
@@ -75,7 +75,7 @@ class AdminController extends Controller
     {
         try {
             $vendor = Vendor::with([
-                'user:id,name,user_image,email,phone,language,status,phone_verified_at',
+                'user:id,name,image,email,phone,language,status,phone_verified_at',
                 'images:id,user_id,user_type,image_path,file_type',
             ])
             ->where('id', $id)
@@ -88,7 +88,7 @@ class AdminController extends Controller
             $user = $vendor->user;
             //update status
             $user->update(['status' => $request->input('status')]);
-            return ResponseHelper::Out('success', 'All approved vendor successfully fetched', $vendor, 200);
+            return ResponseHelper::Out('success', 'Vendor status update successfully', $vendor, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }

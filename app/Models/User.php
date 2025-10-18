@@ -26,7 +26,8 @@ use HasFactory, Notifiable;
     'user_type',
     'expires_at',
     'phone_verified_at',
-    'status'
+    'status',
+    'public_id'
     ];
 
     /**

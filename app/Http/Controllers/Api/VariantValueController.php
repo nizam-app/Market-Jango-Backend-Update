@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
+use App\Models\AttributeValue;
+use App\Models\ProductAttribute;
 use App\Models\VariantValue;
 use App\Models\ProductVariant;
 use App\Models\User;
+use App\Models\Vendor;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
@@ -18,13 +21,12 @@ class VariantValueController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $values = VariantValue::with('productVariant')->get();
-            return ResponseHelper::Out('success', 'All variant values successfully fetched', $values, 200);
+            $attributeValue = AttributeValue::with('productAttribute')->get();
+            return ResponseHelper::Out('success', 'All variant values successfully fetched', $attributeValue, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
     // Store Variant Value
     public function store(Request $request): JsonResponse
     {
@@ -33,21 +35,15 @@ class VariantValueController extends Controller
                 'name' => 'required|string|max:20',
                 'product_variant_id' => 'required|exists:product_variants,id'
             ]);
-
             // Auth user with vendor
-            $user = User::where('id', $request->header('id'))
-                ->where('email', $request->header('email'))
-                ->with('vendor')
-                ->first();
-
-            if (!$user || !$user->vendor) {
+            $vendor = Vendor::where('user_id', $request->header('id'))->with('user')->paginate(20);
+            if (!$vendor) {
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
-
             // Check variant ownership via product → vendor
-            $variant = ProductVariant::where('id', $request->product_variant_id)
-                ->whereHas('product', function ($q) use ($user) {
-                    $q->where('vendor_id', $user->vendor->id);
+            $variant = ProductAttribute::where('id', $request->product_variant_id)
+                ->whereHas('product', function ($q) use ($vendor) {
+                    $q->where('vendor_id', $vendor->id);
                 })
                 ->first();
 

@@ -24,7 +24,6 @@ class ProductVariantController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
     // Store Product attribute
     public function store(Request $request): JsonResponse
     {
@@ -34,7 +33,7 @@ class ProductVariantController extends Controller
                 'vendor_id' => 'required|exists:vendors,id'
             ]);
             // Auth user with vendor
-            $vendor = Vendor::where('user_id', $request->header('id')) ->with('user')->first();
+            $vendor = Vendor::where('user_id', $request->header('id'))->with('user')->select(['id', 'user_id'])->first();
             if (!$vendor) {
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
@@ -58,20 +57,16 @@ class ProductVariantController extends Controller
                 'name' => 'required|string|max:20',
             ]);
 
-            // Auth user with vendor
-            $user = User::where('id', $request->header('id'))
-                ->where('email', $request->header('email'))
-                ->with('vendor')
-                ->first();
-
-            if (!$user || !$user->vendor) {
+            // vendor
+            $vendor = Vendor::where('user_id', $request->header('id'))->with('user')->first();
+            if (!$vendor) {
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
 
-            // Find variant + ownership check
-            $variant = ProductVariant::where('id', $id)
-                ->whereHas('product', function ($q) use ($user) {
-                    $q->where('vendor_id', $user->vendor->id);
+            // Find attribute check vendor
+            $variant = ProductAttribute::where('id', $id)
+                ->whereHas('product', function ($q) use ($vendor) {
+                    $q->where('vendor_id', $vendor->id);
                 })
                 ->first();
             if (!$variant) {
@@ -91,18 +86,16 @@ class ProductVariantController extends Controller
     public function destroy(Request $request, $id): JsonResponse
     {
         try {
-            // Auth user with vendor
-            $user = User::where('id', $request->header('id'))
-                ->where('email', $request->header('email'))
-                ->with('vendor')
-                ->first();
-            if (!$user || !$user->vendor) {
+            // vendor
+            $vendor = Vendor::where('user_id', $request->header('id'))->with('user')->first();
+
+            if (!$vendor) {
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
-            // Find variant + ownership check
-            $variant = ProductVariant::where('id', $id)
-                ->whereHas('product', function ($q) use ($user) {
-                    $q->where('vendor_id', $user->vendor->id);
+            // Find attribute check vendor
+            $variant = ProductAttribute::where('id', $id)
+                ->whereHas('product', function ($q) use ($vendor) {
+                    $q->where('vendor_id', $vendor->id);
                 })
                 ->first();
             if (!$variant) {

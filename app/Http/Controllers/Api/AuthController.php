@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Helpers\FileHelper;
 use App\Helpers\JWTToken;
 use App\Helpers\ResponseHelper;
+use App\Helpers\TwilioService;
 use App\Http\Controllers\Controller;
 use App\Mail\OTPSend;
 use App\Models\Buyer;
@@ -71,7 +72,7 @@ class AuthController extends Controller
     {
         try {
             $request->validate([
-                'phone' => 'required|regex:/^[0-9]+$/|min:11|max:15'
+                'phone' => 'required|max:15'
             ]);
             $userId = $request->header('id');
             $user = User::where('id', $userId)->first();
@@ -103,8 +104,10 @@ class AuthController extends Controller
                 }
             }
             // OTP generate
-            $otp = rand(10000000, 99999999);
+            $otp = rand(100000, 999999);
             $phone = $request->input('phone');
+            $sms = new TwilioService();
+            $sms->sendSms($request->phone, "Your OTP code is: $otp");
             $user->update([
                 'phone' => $phone,
                 'otp' => $otp,
@@ -122,7 +125,7 @@ class AuthController extends Controller
     {
         try {
             $request->validate([
-                'otp' => 'required'
+                'otp' => 'required|max:6'
             ]);
             $userId = $request->header('id');
             $user = User::where('id', '=', $userId)->first();
@@ -130,10 +133,6 @@ class AuthController extends Controller
                return ResponseHelper::Out('failed','User not found',null, 404);
             }
             $otp = $request->input('otp');
-            if (!$user) {
-                return response()->json(['status' => 'Fail', 'message' => 'User not found'], 404);
-            }
-
             if ($user->otp != $otp) {
                 return response()->json(['status' => 'Fail', 'message' => 'Invalid OTP'], 400);
             }
@@ -241,7 +240,6 @@ class AuthController extends Controller
     //vendor sotre
     public function registerVendor(Request $request): JsonResponse
     {
-        DB::beginTransaction();
         try {
             $request->validate([
                 'country'        => 'required',
@@ -251,43 +249,55 @@ class AuthController extends Controller
                 'files'   => 'nullable|array',
                 'files.*' => 'nullable|file|mimes:jpg,jpeg,png,avif,webp,pdf,doc,docx,xls,xlsx|max:10240'
             ]);
-            $userId = $request->header('id');
-            $user = User::where('id', $userId)->first();
-            $userType = $user->user_type;
-            if(!$user){
-               return ResponseHelper::Out('failed','User not found',null, 404);
-            }
-            //vendor store
-            $vendor = Vendor::create([
-                'country'        => $request->input('country'),
-                'business_name'  => $request->input('business_name'),
-                'business_type'  => $request->input('business_type'),
-                'address'        => $request->input('address'),
-                'user_id'        => $userId,
-            ]);
-            if ($request->hasFile('files')) {
-                $files = $request->file('files');
 
-                $uploadedFiles = FileHelper::upload($files, $userType);
+            $userId = $request->header('id');
+            $user = User::find($userId);
+
+            if (!$user) {
+                return ResponseHelper::Out('failed', 'User not found', null, 404);
+            }
+
+            // Vendor create or update
+            $vendor = Vendor::updateOrCreate(
+                ['user_id' => $userId],
+                [
+                    'country'        => $request->input('country'),
+                    'business_name'  => $request->input('business_name'),
+                    'business_type'  => $request->input('business_type'),
+                    'address'        => $request->input('address'),
+                ]
+            );
+            if ($request->hasFile('files')) {
+                $oldImages = UserImage::where('user_type', 'vendor')->where('user_id', $vendor->id)->get();
+                if ($oldImages->count() > 0) {
+                    foreach ($oldImages as $old) {
+                        if (!empty($old->public_id)) {
+                            FileHelper::delete($old->public_id);
+                        }
+                        $old->delete();
+                    }
+                }
+
+                $files = $request->file('files');
+                $uploadedFiles = FileHelper::upload($files, $user->user_type);
 
                 foreach ($uploadedFiles as $file) {
                     UserImage::create([
-                        'image_path' => $file['url'],       // ✅ Local path নয়, Cloud URL
-                        'public_id'  => $file['public_id'], // ✅ ডিলিটের জন্য দরকার
+                        'image_path' => $file['url'],
+                        'public_id'  => $file['public_id'],
                         'user_id'    => $vendor->id,
-                        'user_type'  => $userType,
+                        'user_type'  => $user->user_type,
                         'file_type'  => 'image'
                     ]);
                 }
             }
-            DB::commit();
             return ResponseHelper::Out('success', 'Vendor registered successfully!', $vendor, 201);
+
         } catch (ValidationException $e) {
-            DB::rollBack();
-            return ResponseHelper::Out('error','Validation Failed',$e->errors(),422);
+            return ResponseHelper::Out('error', 'Validation Failed', $e->errors(), 422);
+
         } catch (Exception $e) {
-            DB::rollBack();
-            return ResponseHelper::Out('failed','Something went wrong',$e->getMessage(),500);
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
     //driver store
@@ -307,8 +317,9 @@ class AuthController extends Controller
                 if(!$user){
                     return ResponseHelper::Out('failed','User not found',null, 404);
                 }
-                //multiple image upload
-                $driver = Driver::create([
+                $driver = Driver::updateOrCreate(
+                    ['user_id' => $userId],
+                    [
                     'car_name'=> $request->input('car_name'),
                     'car_model' => $request->input('car_model'),
                     'location' => $request->input('location'),
@@ -317,15 +328,25 @@ class AuthController extends Controller
                     'route_id' => $request->input('route_id'),
                 ]);
             if ($request->hasFile('files')) {
+                $oldImages = UserImage::where('user_type', 'driver')->where('user_id', $driver->id)->get();
+                if ($oldImages->count() > 0) {
+                    foreach ($oldImages as $old) {
+                        if (!empty($old->public_id)) {
+                            FileHelper::delete($old->public_id);
+                        }
+                        $old->delete();
+                    }
+                }
                 $files = $request->file('files');
                 // all file upload
                 $uploadedFiles = FileHelper::upload($files, $userType);
-                foreach ($uploadedFiles as $f) {
+                foreach ($uploadedFiles as $file) {
                     UserImage::create([
-                        'image_path' => 'storage/' . $f['path'],
+                        'image_path' => $file['url'],
+                        'public_id'  => $file['public_id'],
                         'user_id'    => $driver->id,
                         'user_type'  => $userType,
-                        'file_type'  => $f['type'],
+                        'file_type'  => 'image'
                     ]);
                 }
             }
@@ -373,9 +394,9 @@ class AuthController extends Controller
             if ($user == null) {
                 return ResponseHelper::Out('failed','unauthorized',null,401);
             }
-            $otp = rand(10000000, 99999999);
+            $otp = rand(100000, 999999);
             Mail::to($email)->send(new OTPSend($otp,$user->title));
-            $user->update(['otp' => $otp]);
+            $user->update(['otp' => $otp,'expires_at' => Carbon::now()->addMinutes(10)]);
             return ResponseHelper::Out('success', 'OTP sent to your registered mail',$otp,200);
         } catch (ValidationException $e) {
             return ResponseHelper::Out('error','Validation Failed',$e->errors(),422);
@@ -388,7 +409,7 @@ class AuthController extends Controller
     {
         try {
             $request->validate([
-                'otp' => 'required|min:8'
+                'otp' => 'required|min:6'
             ]);
             $email = $request->input('email');
             $otp = $request->input('otp');
@@ -406,9 +427,11 @@ class AuthController extends Controller
             return ResponseHelper::Out('failed','Something went wrong',$e->getMessage(),500);
         }
     }
-//    user password reset
+    //user password reset
     public function resetPassword(Request $request)
     {
+        try {
+
         $request->validate([
             'password' => 'required|string|min:6|confirmed',
         ]);
@@ -425,5 +448,10 @@ class AuthController extends Controller
             'password' => Hash::make($request->input('password'))
         ]);
         return ResponseHelper::Out('success', 'Password set successful!',$user,200);
+        }  catch (ValidationException $e) {
+            return ResponseHelper::Out('error','Validation Failed',$e->errors(),422);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed','Something went wrong',$e->getMessage(),500);
+        }
     }
 }

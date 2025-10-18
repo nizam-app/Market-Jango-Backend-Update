@@ -9,12 +9,10 @@ class Location extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name','route_id'];
 
-    public function routes()
+    public function route()
     {
-        return $this->belongsToMany(Route::class, 'location_route', 'location_id', 'route_id')
-            ->withPivot('sequence')
-            ->orderBy('pivot_sequence');
+        return $this->belongsTo(Route::class);
     }
 }

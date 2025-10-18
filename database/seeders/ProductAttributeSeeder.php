@@ -17,10 +17,11 @@ class ProductAttributeSeeder extends Seeder
             'Capacity', 'Voltage', 'Power', 'Speed', 'Memory', 'Storage',
             'Resolution', 'Warranty', 'Brand', 'Model', 'Type', 'Shape', 'Pattern'
         ];
-
+        $vendorIds = DB::table('vendors')->pluck('id')->toArray();
         foreach ($attributes as $attribute) {
             DB::table('product_attributes')->insert([
                 'name' => $attribute,
+                'vendor_id' => $faker->randomElement($vendorIds),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

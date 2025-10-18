@@ -13,12 +13,15 @@ return new class extends Migration
     {
         Schema::create('chats', function (Blueprint $table) {
             $table->id();
-            $table->string('message', 50);
-            $table->string('message_type', 50)->nullable();
-            $table->boolean('is_read')->nullable()->default(false);
-            $table->foreignId('sender_id')->nullable()->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();
-            $table->foreignId('receiver_id')->nullable()->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();
-            $table->foreignId('order_id')->nullable()->constrained('orders')->cascadeOnUpdate()->cascadeOnDelete();
+            $table->unsignedBigInteger('sender_id');
+            $table->unsignedBigInteger('receiver_id');
+            $table->string('sender_role');
+            $table->string('receiver_role');
+            $table->enum('type', ['text', 'image', 'video', 'file', 'audio', 'emoji', 'reply'])->default('text');
+            $table->longText('message')->nullable();
+            $table->string('media_url')->nullable();
+            $table->boolean('is_read')->default(false);
+            $table->unsignedBigInteger('reply_to')->nullable();
             $table->timestamps();
         });
     }

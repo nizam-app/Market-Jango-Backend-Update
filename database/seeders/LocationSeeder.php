@@ -13,7 +13,7 @@ class LocationSeeder extends Seeder
      */
     public function run(): void
     {
-        Location::query()->delete();
+
         Location::insert([
             ['name'=>'Dhaka'],
             ['name'=>'Narsingdi'],

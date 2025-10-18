@@ -26,7 +26,7 @@ class Vendor extends Model
         return $this->hasMany(Product::class, 'vendor_id', 'id');
     }
     public function images(){
-        return $this->hasMany(Image::class,'user_id');
+        return $this->hasMany(UserImage::class,'user_id');
     }
 
 }

@@ -6,6 +6,7 @@ use App\Helpers\FileHelper;
 use App\Http\Controllers\Controller;
 use App\Models\ProductImage;
 use App\Models\User;
+use App\Models\Vendor;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
@@ -91,15 +92,15 @@ class ProductController extends Controller
             //  Get user
             $userId = $request->header('id');
             $userEmail = $request->header('email');
-            $user = User::where('id', $userId)
-                ->where('email', $userEmail)
-                ->with('vendor')
+            // Vendor fetch
+            $vendor = Vendor::where('user_id', $request->header('id'))
+                ->select(['id', 'user_id'])
                 ->first();
-            if (!$user) {
-                return ResponseHelper::Out('failed','Vendor not found',null, 404);
+            if (!$vendor) {
+                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
             // Get product
-            $product = Product::where('id',$id)->where('vendor_id', $user->vendor->id)->first();
+            $product = Product::where('id',$id)->where('vendor_id', $vendor->id)->first();
             if (!$product) {
                 return response()->json(['error' => 'Product not found'], 404);
             }
@@ -122,7 +123,7 @@ class ProductController extends Controller
                 'previous_price' => $request->input('previous_price', $product->previous_price),
                 'current_price' => $request->input('current_price', $product->current_price),
                 'image' => $imagePath,
-                'vendor_id' => $user->vendor->id, // keep vendor consistent
+                'vendor_id' => $vendor->id, // keep vendor consistent
                 'category_id' => $request->input('category_id', $product->category_id),
             ]);
             // Handle additional files

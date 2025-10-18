@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 use App\Helpers\FileHelper;
 use App\Models\Banner;
+use App\Models\ProductBanner;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ class BannerController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $banners = Banner::with('product')->get();
+            $banners = ProductBanner::with('product')->get();
             return ResponseHelper::Out('success', 'All banners successfully fetched', $banners, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);

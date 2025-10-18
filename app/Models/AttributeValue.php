@@ -11,7 +11,7 @@ class AttributeValue extends Model
         'product_variant_id',
     ];
 
-    public function productVariant()
+    public function productAttribute()
     {
         return $this->belongsTo(ProductAttribute::class);
     }

@@ -25,11 +25,10 @@ class CategoryController extends Controller
                     'products' => function ($query) {
                         $query->where('is_active', 1)
                             ->select('id','name', 'description', 'previous_price', 'current_price', 'vendor_id', 'category_id')
-                            // nested relation — product এর images
                             ->with([
                                 'images:id,product_id,image_path,file_type',
-                                 'vendor:id,country,address,business_name,business_type,user_id',
-                                'vendor.user:id,name,user_image,email,phone,language',
+                                'vendor:id,country,address,business_name,business_type,user_id',
+                                'vendor.user:id,name,image,email,phone,language',
                             ]);
                         },
                     'categoryImages:id,category_id,image_path'
@@ -66,9 +65,11 @@ class CategoryController extends Controller
                 $files = $request->file('images');
                 // all file upload
                 $uploadedFiles = FileHelper::upload($files, "category");
-                foreach ($uploadedFiles as $f) {
+                foreach ($uploadedFiles as $file) {
                     CategoryImage::create([
-                        'image_path' => 'storage/' . $f['path'],
+                        'image_path' => $file['url'],
+                        'public_id'  => $file['public_id'],
+                        'vendor_id'    => $vendor->id,
                         'category_id'    => $category->id
                     ]);
                 }
@@ -87,11 +88,12 @@ class CategoryController extends Controller
             $request->validate([
                 'name' => 'required|string|max:50',
                 'description' => 'required|string',
-                'status' => 'required|in:Active,Inactive'
+                'status' => 'required|in:Active,Inactive',
+                'images.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240'
             ]);
-            $user = User::where('id', $request->header('id'))->where('email', $request->header('email'))->with('vendor')->first();
-            $vendorId = $user->vendor->id;
-            if (!$user || !$user->vendor) {
+            $vendor = Vendor::where('user_id',$request->header('id'))->with('user:id,name,email,image')->select('id','address','user_id')->first();
+            $vendorId = $vendor->id;
+            if (!$vendor) {
                 return response()->json(['error' => 'Vendor not found'], 404);
             }
             // Step 2: Get category and check ownership
@@ -99,17 +101,33 @@ class CategoryController extends Controller
             if (!$category) {
                 return response()->json(['error' => 'Category not found'], 404);
             }
-            // Step 3: Handle file update
-            $newFiles = $request->file('image'); // new image(s)
-            $oldFiles = $category->image ? [['path' => $category->image]] : null;
-            $uploadedFiles = FileHelper::update($newFiles, $oldFiles, 'vendor'); // using your helper
-            $imagePath = $uploadedFiles[0]['path'] ?? $category->image; // fallback to old if no new file
             $category->update([
                 'name' => $request->input('name'),
                 'description' => $request->input('description'),
                 'status' => $request->input('status'),
                 'vendor_id' => $vendorId
             ]);
+            if ($request->hasFile('images')) {
+                $oldImages =CategoryImage::where('category_id', $id)->where('vendor_id', $vendorId)->get();
+                if ($oldImages->count() > 0) {
+                    foreach ($oldImages as $old) {
+                        if (!empty($old->public_id)) {
+                            FileHelper::delete($old->public_id);
+                        }
+                        $old->delete();
+                    }
+                }
+                $files = $request->file('images');
+                // all file upload
+                $uploadedFiles = FileHelper::upload($files, "category");
+                foreach ($uploadedFiles as $file) {
+                    CategoryImage::create([
+                        'image_path' => $file['url'],
+                        'vendor_id'    => $vendorId,
+                        'category_id'    => $id
+                    ]);
+                }
+            }
             return ResponseHelper::Out('success', 'Category successfully updated', $category, 200);
         } catch (ValidationException $e) {
             return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);

@@ -50,25 +50,22 @@ class FileHelper
         return $paths;
     }
 
-    public static function delete($fileInfos)
+    public static function delete($publicId)
     {
-        if (!$fileInfos) return false;
+        $cloudinary = new Cloudinary([
+            'cloud' => [
+                'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
+                'api_key'    => env('CLOUDINARY_API_KEY'),
+                'api_secret' => env('CLOUDINARY_API_SECRET'),
+            ],
+        ]);
 
-        foreach ((array)$fileInfos as $file) {
-            if (isset($file['public_id'])) {
-                Cloudinary::destroy($file['public_id']);
-            }
+        try {
+            $cloudinary->uploadApi()->destroy($publicId);
+            return true;
+        } catch (\Exception $e) {
+            return false;
         }
-
-        return true;
     }
 
-    public static function update($newFiles, $oldFiles, $userType = 'user')
-    {
-        if ($newFiles) {
-            self::delete($oldFiles);
-            return self::upload($newFiles, $userType);
-        }
-        return $oldFiles;
-    }
 }
