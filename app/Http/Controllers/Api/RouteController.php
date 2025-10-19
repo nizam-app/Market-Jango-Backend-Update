@@ -37,10 +37,10 @@ class RouteController extends Controller
             return ResponseHelper::Out('failed','Something went wrong',$e->getMessage(),500);
         }
     }
-    public function show($id)
+    public function show(Request $request): JsonResponse
     {
         try{
-        $route = Route::where('id', $id)->with(['locations:id,name,route_id'])
+        $route = Route::where('id', $request->input('id'))->with(['locations:id,name,route_id'])
             ->select(['id', 'name'])
             ->first();
         if(!$route){

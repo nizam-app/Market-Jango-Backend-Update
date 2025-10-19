@@ -41,10 +41,10 @@ class LocationController extends Controller
             return ResponseHelper::Out('failed','Something went wrong',$e->getMessage(),500);
         }
     }
-    public function show($id)
+    public function show(Request $request)
     {
         try{
-            $location = Location::where('id', $id)->with(['route:id,name'])
+            $location = Location::where('id', $request->input('id'))->with(['route:id,name'])
                 ->select(['id', 'name','route_id'])
                 ->first();
             if(!$location){

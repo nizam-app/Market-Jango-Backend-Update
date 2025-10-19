@@ -8,7 +8,8 @@ class AttributeValue extends Model
 {
     protected $fillable = [
         'name',
-        'product_variant_id',
+        'product_attribute_id',
+        'vendor_id'
     ];
 
     public function productAttribute()

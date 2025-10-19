@@ -46,7 +46,7 @@ Route::get('/accept/vendor/{vendor_id}', [AdminController::class, 'acceptOrRejec
 // Route routes
 Route::prefix('route')->group(function () {
     Route::get('/', [RouteController::class, 'index']);
-    Route::get('/{id}', [RouteController::class, 'show']);
+    Route::get('/show', [RouteController::class, 'show']);
     Route::post('/create', [RouteController::class, 'store']);
     Route::post('/update/{id}', [RouteController::class, 'update']);
     Route::post('/destroy/{id}', [RouteController::class, 'destroy']);
@@ -54,7 +54,7 @@ Route::prefix('route')->group(function () {
 //locations routes
 Route::prefix('location')->group(function () {
     Route::get('/', [LocationController::class, 'index']);
-    Route::get('/{id}', [LocationController::class, 'show']);
+    Route::get('/show', [LocationController::class, 'show']);
     Route::post('/create', [LocationController::class, 'store']);
     Route::post('/update/{id}', [LocationController::class, 'update']);
     Route::post('/destroy/{id}', [LocationController::class, 'destroy']);
@@ -74,13 +74,7 @@ Route::middleware('tokenVerify')->group(function () {
     Route::post('/register-email', [AuthController::class, 'registerEmail']);
     Route::post('/register-password', [AuthController::class, 'registerPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
-    //product Variant routes
-    Route::prefix('product-attribute')->group(function () {
-        Route::get('/', [ProductVariantController::class, 'index']);
-        Route::post('/create', [ProductVariantController::class, 'store']);
-        Route::post('/update/{id}', [ProductVariantController::class, 'update']);
-        Route::post('/destroy/{id}', [ProductVariantController::class, 'destroy']);
-    });
+
     //vendor routes
     Route::middleware('userTypeVerify:vendor')->group(function () {
         Route::middleware('statusVerify')->group(function () {
@@ -104,12 +98,13 @@ Route::middleware('tokenVerify')->group(function () {
                 Route::post('/update/{id}', [CategoryController::class, 'update']);
                 Route::post('/destroy/{id}', [CategoryController::class, 'destroy']);
             });
-            //product routes
-            Route::prefix('product')->group(function () {
-                Route::get('/', [ProductController::class, 'index']);
-                Route::post('/create', [ProductController::class, 'store']);
-                Route::post('/update/{id}', [ProductController::class, 'update']);
-                Route::post('/destroy/{id}', [ProductController::class, 'destroy']);
+            //product Variant routes
+            Route::prefix('product-attribute')->group(function () {
+                Route::get('/', [ProductVariantController::class, 'index']);
+                Route::get('/show', [ProductVariantController::class, 'show']);
+                Route::post('/create', [ProductVariantController::class, 'store']);
+                Route::post('/update/{id}', [ProductVariantController::class, 'update']);
+                Route::post('/destroy/{id}', [ProductVariantController::class, 'destroy']);
             });
             // Variant Value routes
             Route::prefix('attribute-value')->group(function () {
@@ -117,6 +112,13 @@ Route::middleware('tokenVerify')->group(function () {
                 Route::post('/create', [VariantValueController::class, 'store']);
                 Route::post('/update/{id}', [VariantValueController::class, 'update']);
                 Route::post('/destroy/{id}', [VariantValueController::class, 'destroy']);
+            });
+            //product routes
+            Route::prefix('product')->group(function () {
+                Route::get('/', [ProductController::class, 'index']);
+                Route::post('/create', [ProductController::class, 'store']);
+                Route::post('/update/{id}', [ProductController::class, 'update']);
+                Route::post('/destroy/{id}', [ProductController::class, 'destroy']);
             });
         });
     });

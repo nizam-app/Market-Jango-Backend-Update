@@ -84,7 +84,7 @@ class VendorHomePageController extends Controller
                 ->orderByRaw("(LENGTH(name) - LENGTH(REPLACE(name, ?, ''))) DESC", [$query])
                 ->paginate(10);
 
-            // 2️⃣ If no products found by name, search by description
+            // If no products found by name, search by description
             if ($products->isEmpty()) {
                 $products = Product::where('vendor_id', $vendor->id)
                     ->where('description', 'LIKE', "%{$query}%")
@@ -103,6 +103,7 @@ class VendorHomePageController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+    //product by vendor
     public function vendorProduct(Request $request): JsonResponse
     {
         try {

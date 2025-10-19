@@ -6,8 +6,6 @@ use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Models\AttributeValue;
 use App\Models\ProductAttribute;
-use App\Models\VariantValue;
-use App\Models\ProductVariant;
 use App\Models\User;
 use App\Models\Vendor;
 use Illuminate\Http\Request;
@@ -18,10 +16,14 @@ use Exception;
 class VariantValueController extends Controller
 {
     // Get All Variant Values
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         try {
-            $attributeValue = AttributeValue::with('productAttribute')->get();
+            $vendor = Vendor::where('user_id', $request->header('id'))->select(['id'])->first();
+            if (!$vendor) {
+                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+            }
+            $attributeValue = AttributeValue::where('vendor_id', $vendor->id)->with(['productAttribute:id,name'])->select('id', 'name','product_attribute_id' )->get();
             return ResponseHelper::Out('success', 'All variant values successfully fetched', $attributeValue, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
@@ -33,27 +35,17 @@ class VariantValueController extends Controller
         try {
             $request->validate([
                 'name' => 'required|string|max:20',
-                'product_variant_id' => 'required|exists:product_variants,id'
+                'product_attribute_id' => 'required'
             ]);
             // Auth user with vendor
-            $vendor = Vendor::where('user_id', $request->header('id'))->with('user')->paginate(20);
+            $vendor = Vendor::where('user_id', $request->header('id'))->select(['id'])->first();
             if (!$vendor) {
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
-            // Check variant ownership via product → vendor
-            $variant = ProductAttribute::where('id', $request->product_variant_id)
-                ->whereHas('product', function ($q) use ($vendor) {
-                    $q->where('vendor_id', $vendor->id);
-                })
-                ->first();
-
-            if (!$variant) {
-                return ResponseHelper::Out('failed', 'Product variant not found or not owned by vendor', null, 404);
-            }
-
-            $value = VariantValue::create([
+            $value = AttributeValue::create([
                 'name' => $request->input('name'),
-                'product_variant_id' => $variant->id,
+                'product_attribute_id' => $request->input('product_attribute_id'),
+                'vendor_id' => $vendor->id
             ]);
             return ResponseHelper::Out('success', 'Variant value successfully created', $value, 201);
         } catch (ValidationException $e) {
@@ -62,7 +54,6 @@ class VariantValueController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
     // Update Variant Value
     public function update(Request $request, $id): JsonResponse
     {
@@ -70,32 +61,21 @@ class VariantValueController extends Controller
             $request->validate([
                 'name' => 'required|string|max:20',
             ]);
-
-            // Auth user with vendor
-            $user = User::where('id', $request->header('id'))
-                ->where('email', $request->header('email'))
-                ->with('vendor')
-                ->first();
-
-            if (!$user || !$user->vendor) {
+            // authentication vendor
+            $vendor = Vendor::where('user_id', $request->header('id'))->select(['id'])->first();
+            if (!$vendor) {
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
-
             // Find variant value with ownership check
-            $value = VariantValue::where('id', $id)
-                ->whereHas('productVariant.product', function ($q) use ($user) {
-                    $q->where('vendor_id', $user->vendor->id);
-                })
+            $value = AttributeValue::where('id', $id)
+                ->where('vendor_id', $vendor->id)
                 ->first();
-
             if (!$value) {
                 return ResponseHelper::Out('failed', 'Variant value not found or not owned by vendor', null, 404);
             }
-
             $value->update([
                 'name' => $request->input('name'),
             ]);
-
             return ResponseHelper::Out('success', 'Variant value successfully updated', $value, 200);
         } catch (ValidationException $e) {
             return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
@@ -109,21 +89,16 @@ class VariantValueController extends Controller
     {
         try {
             // Auth user with vendor
-            $user = User::where('id', $request->header('id'))
-                ->where('email', $request->header('email'))
-                ->with('vendor')
-                ->first();
-            if (!$user || !$user->vendor) {
+            $vendor = Vendor::where('user_id', $request->header('id'))->select(['id'])->first();
+            if (!$vendor) {
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
             // Find variant value with ownership check
-            $value = VariantValue::where('id', $id)
-                ->whereHas('productVariant.product', function ($q) use ($user) {
-                    $q->where('vendor_id', $user->vendor->id);
-                })
+            $value = AttributeValue::where('id', $id)
+                ->where('vendor_id', $vendor->id)
                 ->first();
             if (!$value) {
-                return ResponseHelper::Out('failed', 'Variant value not found or not owned by vendor', null, 404);
+                return ResponseHelper::Out('failed', 'Variant value not found', null, 404);
             }
             $value->delete();
             return ResponseHelper::Out('success', 'Variant value successfully deleted', null, 200);

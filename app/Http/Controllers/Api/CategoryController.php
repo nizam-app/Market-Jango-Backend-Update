@@ -123,6 +123,7 @@ class CategoryController extends Controller
                 foreach ($uploadedFiles as $file) {
                     CategoryImage::create([
                         'image_path' => $file['url'],
+                        'public_id'  => $file['public_id'],
                         'vendor_id'    => $vendorId,
                         'category_id'    => $id
                     ]);
@@ -139,13 +140,20 @@ class CategoryController extends Controller
     public function destroy(Request $request, $id): JsonResponse
     {
         try {
-            $user = User::where('id', $request->header('id'))->where('email', $request->header('email'))->with('vendor')->first();
-            if (!$user || !$user->vendor) {
+            $vendor = Vendor::where('user_id', $request->header('id'))->first();
+            if (!$vendor) {
                 return response()->json(['error' => 'Vendor not found'], 404);
             }
-            $category = Category::where('id', $id)->where('vendor_id', $user->vendor->id)->first();
-            if ($category->image) {
-                FileHelper::delete($category->image); // your delete helper
+            $vendorId = $vendor->id;
+            $category = Category::where('id', $id)->where('vendor_id', $vendorId)->first();
+            $oldImages =CategoryImage::where('category_id', $id)->where('vendor_id', $vendorId)->get();
+            if ($oldImages->count() > 0) {
+                foreach ($oldImages as $old) {
+                    if (!empty($old->public_id)) {
+                        FileHelper::delete($old->public_id);
+                    }
+                    $old->delete();
+                }
             }
             $category->delete();
             return ResponseHelper::Out('success', 'Category successfully deleted', null, 200);
