@@ -26,6 +26,9 @@ return new class extends Migration
             $table->enum('status', ['Pending','Approved','Rejected'])->default('Pending');
             $table->timestamp('expires_at')->nullable();
             $table->rememberToken();
+            $table->index('user_type');
+            $table->index('language');
+            $table->index('status');
             $table->timestamps();
         });
         Schema::create('sessions', function (Blueprint $table) {

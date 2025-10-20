@@ -15,11 +15,10 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('sender_id');
             $table->unsignedBigInteger('receiver_id');
-            $table->string('sender_role');
-            $table->string('receiver_role');
             $table->enum('type', ['text', 'image', 'video', 'file', 'audio', 'emoji', 'reply'])->default('text');
             $table->longText('message')->nullable();
-            $table->string('media_url')->nullable();
+            $table->string('image_path', 200);
+            $table->string('public_id')->nullable();
             $table->boolean('is_read')->default(false);
             $table->unsignedBigInteger('reply_to')->nullable();
             $table->timestamps();

@@ -15,9 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('name', 50);
             $table->text('description');
-            $table->string('previous_price', 50);
-            $table->string('current_price', 50);
-            $table->string('location', 200);
+            $table->string('buy_price', 50);
+            $table->string('sell_price', 50);
             $table->integer('star')->default(0);
             $table->string('image', 200);
             $table->enum('remark', ['Top', 'New'])->default('New');
@@ -26,6 +25,10 @@ return new class extends Migration
             $table->foreignId('vendor_id')->constrained('vendors')->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('category_id')->constrained('categories')->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
+            //index
+            $table->index('is_active');
+            $table->index('remark');
+
         });
     }
 
