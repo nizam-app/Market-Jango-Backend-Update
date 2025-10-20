@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\BuyerHomeController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ChatController;
+use App\Http\Controllers\Api\DeliveryChargeController;
 use App\Http\Controllers\Api\DriverController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\ProductController;
@@ -40,6 +41,7 @@ Route::get('/active/vendor', [AdminController::class, 'activeVendor']);
 Route::get('/pending/vendor', [AdminController::class, 'pendingVendor']);
 Route::get('/suspended/vendor', [AdminController::class, 'suspendedVendor']);
 Route::get('/accept/vendor/{vendor_id}', [AdminController::class, 'acceptOrRejectVendor']);
+Route::get('/business-type', [AuthController::class, 'businessType']);
 //Route::middleware('userTypeVerify:admin')->group(function () {
 //
 //});
@@ -105,6 +107,14 @@ Route::middleware('tokenVerify')->group(function () {
                 Route::post('/create', [ProductVariantController::class, 'store']);
                 Route::post('/update/{id}', [ProductVariantController::class, 'update']);
                 Route::post('/destroy/{id}', [ProductVariantController::class, 'destroy']);
+            });
+            //product Variant routes
+            Route::prefix('delivery-charge')->group(function () {
+                Route::get('/', [DeliveryChargeController::class, 'index']);
+                Route::get('/show', [DeliveryChargeController::class, 'show']);
+                Route::post('/create', [DeliveryChargeController::class, 'store']);
+                Route::post('/update/{id}', [DeliveryChargeController::class, 'update']);
+                Route::post('/destroy/{id}', [DeliveryChargeController::class, 'destroy']);
             });
             // Variant Value routes
             Route::prefix('attribute-value')->group(function () {

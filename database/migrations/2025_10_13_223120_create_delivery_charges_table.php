@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('delivery_charges', function (Blueprint $table) {
             $table->id();
+            $table->string('delivery_charge', 50);
+            $table->string('quantity', 50)->default(0);
+            $table->foreignId('vendor_id')->constrained('vendors')->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
         });
     }

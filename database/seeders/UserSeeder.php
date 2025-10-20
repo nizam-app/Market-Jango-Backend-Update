@@ -20,7 +20,7 @@ class UserSeeder extends Seeder
         $faker = Faker::create();
         $userTypes = ['buyer', 'vendor', 'driver', 'transport'];
         foreach ($userTypes as $type) {
-            for ($i = 1; $i <= 20; $i++) {
+            for ($i = 1; $i <= 5; $i++) {
                 // Status set according to user type
                 $status = in_array($type, ['buyer', 'transport']) ? 'Approved' : 'Pending';
 

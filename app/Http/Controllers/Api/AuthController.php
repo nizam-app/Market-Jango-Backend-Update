@@ -26,6 +26,24 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    //get vendor type
+    public function businessType(Request $request): JsonResponse
+    {
+        try {
+
+            $deliveryCharges = [
+                'Restaurant',
+                'Grocery',
+                'Pharmacy',
+                'Electronics',
+                'Clothing',
+                'Hardware',
+            ];
+            return ResponseHelper::Out('success', 'All delivery charge successfully fetched', $deliveryCharges, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
     //store user type
     public function registerType(Request $request):JsonResponse
     {
