@@ -16,7 +16,7 @@ class Chat extends Model
         'receiver_role',
         'type',
         'message',
-        'media_url',
+        'image_path',
         'is_read',
         'reply_to'
     ];

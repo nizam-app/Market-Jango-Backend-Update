@@ -26,7 +26,9 @@ class AdminController extends Controller
                 })
                 ->select('id', 'user_id', 'country', 'address', 'business_name', 'business_type')
                 ->paginate(10);
-
+            if($vendors->isEmpty()){
+                return ResponseHelper::Out('success', 'No approved vendor found', $vendors, 200);
+            }
             return ResponseHelper::Out('success', 'All approved vendor successfully fetched', $vendors, 200);
 
         } catch (Exception $e) {
@@ -47,6 +49,9 @@ class AdminController extends Controller
             })
             ->select('id', 'user_id', 'country', 'address', 'business_name', 'business_type')
             ->paginate(10);
+            if($vendors->isEmpty()){
+                return ResponseHelper::Out('success', 'No pending vendor found', $vendors, 200);
+            }
             return ResponseHelper::Out('success', 'All pending vendor successfully fetched', $vendors, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
@@ -65,6 +70,9 @@ class AdminController extends Controller
                 })
                 ->select('id', 'user_id', 'country', 'address', 'business_name', 'business_type')
                 ->paginate(10);
+            if($vendors->isEmpty()){
+                return ResponseHelper::Out('success', 'No suspended vendor found', $vendors, 200);
+            }
             return ResponseHelper::Out('success', 'All suspended vendor successfully fetched', $vendors, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);

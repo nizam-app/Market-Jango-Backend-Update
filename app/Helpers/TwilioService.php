@@ -17,9 +17,13 @@ class TwilioService
 
     public function sendSms($to, $message)
     {
-        return $this->client->messages->create($to, [
-            'from' => $this->from,
-            'body' => $message
-        ]);
+        try {
+            return $this->client->messages->create($to, [
+                'from' => $this->from,
+                'body' => $message
+            ]);
+        } catch (\Exception $e) {
+            throw new \Exception("SMS sending failed: ".$e->getMessage());
+        }
     }
 }

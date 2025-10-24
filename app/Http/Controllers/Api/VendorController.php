@@ -42,11 +42,11 @@ class VendorController extends Controller
             if (!$vendor) {
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
-            $categories = Category::where('vendor_id', $vendor->id)
+            $categories = Category::where('vendor_id', $vendor->id)->where('status', 'Active')
                 ->with([
                     'products' => function ($query) {
                         $query->where('is_active', 1)
-                            ->select('id','name', 'description', 'previous_price', 'current_price', 'category_id')
+                            ->select('id','name', 'description', 'sell_price', 'regular_price', 'category_id')
                             ->with([
                                 'images:id,product_id,image_path,file_type',
                             ]);

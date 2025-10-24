@@ -90,7 +90,7 @@ class AuthController extends Controller
     {
         try {
             $request->validate([
-                'phone' => 'required|max:15'
+                'phone' => 'required|string|max:15|regex:/^\+[1-9]\d{1,14}$/'
             ]);
             $userId = $request->header('id');
             $user = User::where('id', $userId)->first();

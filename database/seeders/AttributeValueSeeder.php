@@ -14,6 +14,7 @@ class AttributeValueSeeder extends Seeder
 
         // get product attributes
         $attributes = DB::table('product_attributes')->pluck('id', 'name');
+        $vendorIds = DB::table('vendors')->pluck('id')->toArray();
 
         foreach ($attributes as $name => $id) {
             // every attribute for 5 random values store
@@ -21,6 +22,7 @@ class AttributeValueSeeder extends Seeder
                 DB::table('attribute_values')->insert([
                     'name' => $faker->unique()->word,
                     'product_attribute_id' => $id,
+                    'vendor_id' => $faker->randomElement($vendorIds),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);

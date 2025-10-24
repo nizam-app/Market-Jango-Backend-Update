@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Helpers\ResponseHelper;
 use App\Models\Buyer;
 use App\Models\Cart;
+use App\Models\DeliveryCharge;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,60 +21,88 @@ class CartController extends Controller
     {
         try {
             // get login buyer
-            $buyer = Buyer::where('user_id',$request->header('id'))->first();
+            $buyerId = Buyer::where('user_id',$request->header('id'))->select('id')->first();
+            if (!$buyerId) {
+                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+            }
             // get cart data by login buyer
-            $carts = Cart::where('buyer_id', $buyer->id)->where('status', 'active')->with(['product', 'product.vendor', 'buyer'])->get();
+            $carts = Cart::where('buyer_id', $buyerId->id)
+                ->where('status', 'active')
+                ->with(['product', 'vendor', 'buyer'])
+                ->select('quantity', 'color', 'size', 'price', 'product_id', 'buyer_id', 'vendor_id','status')
+                ->get();
             return ResponseHelper::Out('success', 'All carts successfully fetched', $carts, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-    // Store Cart
+    //store cart
     public function store(Request $request): JsonResponse
     {
         try {
             // Validation
             $validator = Validator::make($request->all(), [
-                'product_id' => 'required|exists:products,id',
-                'buyer_id' => 'nullable|exists:users,id',
+                'product_id' => 'nullable|exists:products,id',
                 'color' => 'required|string|max:20',
                 'size' => 'required|string|max:20',
-                'price' => 'nullable|string|max:20',
             ]);
             if ($validator->fails()) {
                 return ResponseHelper::Out('failed', 'Validation exception', $validator->errors()->first(), 422);
             }
             $userId = $request->header('id');
-            $buyer = Buyer::where('user_id', $userId)->first();
+            $buyer = Buyer::where('user_id', $userId)->select('id')->first();
+            if (!$buyer) {
+                return ResponseHelper::Out('failed', 'Buyer Not found', null, 404);
+            }
             $productId = $request->input('product_id');
-            $product = Product::find($productId);
+            $product = Product::where('id', $productId)->first();
             if (!$product) {
-                return ResponseHelper::Out('failed', 'Product Not found', $validator->errors()->first(), 422);
+                return ResponseHelper::Out('failed', 'Product Not found', null, 422);
             }
-            $unitPrice = $product->current_price;
-            $totalPrice = $unitPrice * $request->quantity;
-            // Check if product already in cart
-            $existing = Cart::where('product_id', $productId)
-                ->where('buyer_id', $buyer->id)
-                ->where('status', 'active')
+            $vendorId = $product->vendor_id;
+            $productQty = $request->input('quantity');
+            $deliveryCharge = DeliveryCharge::where('vendor_id', $vendorId)
+                ->where('quantity', '<=', $productQty)
+                ->orderBy('quantity', 'desc')
                 ->first();
-            if ($existing) {
-                $existing->quantity += $request->quantity;
-                $existing->price = $unitPrice * $existing->quantity;
-                $existing->save();
-                return ResponseHelper::Out('success', 'Cart updated successfully', $existing, 200);
-            }
-
+            $deliveryChargeAmount = $deliveryCharge ? $deliveryCharge->delivery_charge : 0;
+            $unitPrice = $product->buy_price;
+            $totalPrice = $unitPrice * $productQty;
             // Create new cart item
-            $cart = Cart::create([
-                'product_id' => $productId,
-                'buyer_id' => $buyer->id,
-                'quantity' => $request->input('quantity'),
-                'color' => $request->input('color'),
-                'size' => $request->input('size'),
-                'price' => $totalPrice,
-                'status' => 'active',
-            ]);
+            $cart = Cart::where('product_id', $productId)
+                ->where('buyer_id', $buyer->id)
+                ->first();
+
+            if ($cart) {
+                // Total quantity after update
+                $newTotalQty = $cart->quantity + $productQty;
+
+                // Recalculate delivery charge based on total quantity
+                $deliveryCharge = DeliveryCharge::where('vendor_id', $vendorId)
+                    ->where('quantity', '<=', $newTotalQty)
+                    ->orderBy('quantity', 'desc')
+                    ->first();
+
+                $deliveryChargeAmount = $deliveryCharge ? $deliveryCharge->delivery_charge : 0;
+
+                // Update existing
+                $cart->quantity = $newTotalQty;
+                $cart->price = (float)$product->buy_price * $cart->quantity;
+                $cart->delivery_charge = $deliveryChargeAmount;
+                $cart->save();
+            } else {
+                $cart = Cart::create([
+                    'product_id' => $productId,
+                    'vendor_id' => $vendorId,
+                    'buyer_id' => $buyer->id,
+                    'quantity' => $productQty,
+                    'color' => $request->input('color'),
+                    'size' => $request->input('size'),
+                    'price' => $totalPrice,
+                    'delivery_charge' => $deliveryChargeAmount,
+                    'status' => 'active',
+                ]);
+            }
             return ResponseHelper::Out('success', 'Cart successfully created', $cart, 201);
         } catch (ValidationException $e) {
             return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);

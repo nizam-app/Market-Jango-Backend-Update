@@ -15,13 +15,15 @@ return new class extends Migration
             $table->id();
             $table->string('name', 50);
             $table->text('description');
-            $table->string('buy_price', 50);
-            $table->string('sell_price', 50);
+            $table->decimal('regular_price', 10, 2);
+            $table->decimal('sell_price', 10, 2);
+            $table->integer('discount')->default(0);
             $table->integer('star')->default(0);
             $table->string('image', 200);
+            $table->json('color');
+            $table->json('size');
             $table->enum('remark', ['Top', 'New'])->default('New');
             $table->boolean('is_active')->default(0)->comment('0 = No, 1 = Yes');
-            $table->foreignId('product_attribute_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('vendor_id')->constrained('vendors')->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('category_id')->constrained('categories')->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();

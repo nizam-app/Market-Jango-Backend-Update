@@ -16,7 +16,8 @@ return new class extends Migration
             $table->integer('quantity')->default(1);
             $table->string('color',20);
             $table->string('size',20);
-            $table->string('price',20);
+            $table->decimal('price',10,2);
+            $table->decimal('delivery_charge',10, 2);
             $table->foreignId('product_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('vendor_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('buyer_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();

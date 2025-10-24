@@ -13,7 +13,7 @@
         "cloudinary-labs/cloudinary-laravel": "^3.0",
         "firebase/php-jwt": "^6.11",
         "laravel/framework": "^12.0",
-        "laravel/reverb": "^1.6",
+        "laravel/reverb": "^1.0",
         "laravel/sanctum": "^4.0",
         "laravel/telescope": "^5.14",
         "laravel/tinker": "^2.10.1",

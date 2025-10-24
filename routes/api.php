@@ -22,20 +22,19 @@ use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 //after login
+Route::post('/register-type', [AuthController::class, 'registerType']);
 Route::post('/forget-password', [AuthController::class, 'forgetPassword']);
 Route::post('/verify-mail-otp', [AuthController::class, 'verifyMailOtp']);
-Route::post('/register-type', [AuthController::class, 'registerType']);
 Route::post('/login', [AuthController::class, 'login']);
-//Home Buyer all routes
-Route::get('/product/filter', [BuyerHomeController::class, 'productFilter']);
-Route::get('/category', [CategoryController::class, 'index']);
 
+//Home Buyer all routes
+Route::get('/product/filter', [BuyerHomeController::class, 'productFilter']); // not complete
+Route::get('/category', [CategoryController::class, 'index']);
 Route::get('/driver', [DriverController::class, 'index']);
 Route::get('/user', [UserController::class, 'index']);
-Route::get('/user/{id}', [UserController::class, 'show']);
+Route::get('/user/show', [UserController::class, 'show']);
 
-Route::post('/chat/send', [ChatController::class, 'sendMessage']);
-Route::post('/chat/history', [ChatController::class, 'getMessages']);
+
 // Admin all routes
 Route::get('/active/vendor', [AdminController::class, 'activeVendor']);
 Route::get('/pending/vendor', [AdminController::class, 'pendingVendor']);
@@ -61,7 +60,7 @@ Route::prefix('location')->group(function () {
     Route::post('/update/{id}', [LocationController::class, 'update']);
     Route::post('/destroy/{id}', [LocationController::class, 'destroy']);
 });
-//banner routes
+//banner routes // not complete
 Route::prefix('banner')->group(function () {
     Route::get('/', [BannerController::class, 'index']);
     Route::post('/create', [BannerController::class, 'store']);
@@ -71,25 +70,32 @@ Route::prefix('banner')->group(function () {
 //Authentication for all users
 Route::middleware('tokenVerify')->group(function () {
     Route::post('/register-name', [AuthController::class, 'registerName']);
-    Route::post('/register-phone', [AuthController::class, 'registerPhone']);
+    Route::post('/register-phone', [AuthController::class, 'registerPhone']); // not complete
     Route::post('/user-verify-otp', [AuthController::class, 'verifyOtp']);
     Route::post('/register-email', [AuthController::class, 'registerEmail']);
     Route::post('/register-password', [AuthController::class, 'registerPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
+    //user vendor routes
+    Route::prefix('chat')->group(function () {
+    Route::get('/user', [ChatController::class, 'userGetByType']); // not complete
+    Route::post('/send/{id}', [ChatController::class, 'sendMessage']); // not complete
+    Route::post('/history', [ChatController::class, 'getMessages']); // not complete
+    });
     //vendor routes
     Route::middleware('userTypeVerify:vendor')->group(function () {
+
+                Route::post('/vendor/register', [AuthController::class, 'registerVendor']);
         Route::middleware('statusVerify')->group(function () {
             //vendor routes
             Route::prefix('vendor')->group(function () {
-                Route::post('/register', [AuthController::class, 'registerVendor']);
                 Route::get('/search-by-vendor', [VendorHomePageController::class, 'productSearchByVendor']);
                 Route::get('/product', [VendorHomePageController::class, 'vendorProduct']);
                 Route::get('/show', [VendorHomePageController::class, 'show']);
                 Route::get('/category', [VendorController::class, 'category']);
                 Route::get('/attribute', [VendorController::class, 'attribute']);
             });
-            //category routes
+            //user vendor routes
             Route::prefix('user')->group(function () {
                 Route::post('/update', [VendorHomePageController::class, 'update']);
             });
@@ -100,29 +106,30 @@ Route::middleware('tokenVerify')->group(function () {
                 Route::post('/update/{id}', [CategoryController::class, 'update']);
                 Route::post('/destroy/{id}', [CategoryController::class, 'destroy']);
             });
-            //product Variant routes
+            //product attribute routes
             Route::prefix('product-attribute')->group(function () {
-                Route::get('/', [ProductVariantController::class, 'index']);
-                Route::get('/show', [ProductVariantController::class, 'show']);
+                Route::get('/vendor', [ProductVariantController::class, 'allAttributes']);
+                Route::get('/vendor/show', [ProductVariantController::class, 'show']);
                 Route::post('/create', [ProductVariantController::class, 'store']);
                 Route::post('/update/{id}', [ProductVariantController::class, 'update']);
                 Route::post('/destroy/{id}', [ProductVariantController::class, 'destroy']);
             });
+            // Variant Value routes
+            Route::prefix('attribute-value')->group(function () {
+                Route::get('/vendor', [VariantValueController::class, 'allAttributeValues']);
+                Route::post('/create', [VariantValueController::class, 'store']);
+                Route::post('/update/{id}', [VariantValueController::class, 'update']);
+                Route::post('/destroy/{id}', [VariantValueController::class, 'destroy']);
+            });
             //product Variant routes
             Route::prefix('delivery-charge')->group(function () {
-                Route::get('/', [DeliveryChargeController::class, 'index']);
+                Route::get('/vendor', [DeliveryChargeController::class, 'allDeliveryCharges']);
                 Route::get('/show', [DeliveryChargeController::class, 'show']);
                 Route::post('/create', [DeliveryChargeController::class, 'store']);
                 Route::post('/update/{id}', [DeliveryChargeController::class, 'update']);
                 Route::post('/destroy/{id}', [DeliveryChargeController::class, 'destroy']);
             });
-            // Variant Value routes
-            Route::prefix('attribute-value')->group(function () {
-                Route::get('/', [VariantValueController::class, 'index']);
-                Route::post('/create', [VariantValueController::class, 'store']);
-                Route::post('/update/{id}', [VariantValueController::class, 'update']);
-                Route::post('/destroy/{id}', [VariantValueController::class, 'destroy']);
-            });
+
             //product routes
             Route::prefix('product')->group(function () {
                 Route::get('/', [ProductController::class, 'index']);

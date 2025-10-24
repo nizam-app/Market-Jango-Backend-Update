@@ -25,7 +25,7 @@ class VendorHomePageController extends Controller
             if (!$vendor) {
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
-            return ResponseHelper::Out('success', 'All categories successfully fetched', $vendor, 200);
+            return ResponseHelper::Out('success', 'All user successfully fetched', $vendor, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
@@ -63,42 +63,61 @@ class VendorHomePageController extends Controller
     public function productSearchByVendor(Request $request): JsonResponse
     {
         try {
-            // Vendor fetch
             $vendor = Vendor::where('user_id', $request->header('id'))
-                ->select(['id', 'user_id'])
+                ->select('id', 'user_id')
                 ->first();
-
             if (!$vendor) {
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
-            //Validate search query
             $request->validate([
-                'query' => 'required|string'
+                'query' => 'required|string|min:1'
             ]);
-            $query = $request->input('query');
-            // First: Search by name
+            $query = trim($request->input('query'));
             $products = Product::where('vendor_id', $vendor->id)
-                ->where('name', 'LIKE', "%{$query}%")
-                ->with(['category:id,name,description','images:id,image_path,product_id'])
-                ->select(['id','name','description','previous_price','current_price','image','vendor_id','category_id'])
-                ->orderByRaw("(LENGTH(name) - LENGTH(REPLACE(name, ?, ''))) DESC", [$query])
+                ->where(function ($q) use ($query) {
+                    $q->where('name', 'LIKE', "%{$query}%")
+                        ->orWhere('description', 'LIKE', "%{$query}%");
+                })
+                ->with([
+                    'category:id,name,description',
+                    'images:id,image_path,product_id'
+                ])
+                ->select([
+                    'id',
+                    'name',
+                    'description',
+                    'regular_price',
+                    'sell_price',
+                    'image',
+                    'vendor_id',
+                    'category_id'
+                ])
+                // ✅ Smart relevance order
+                ->orderByRaw("
+                CASE
+                    WHEN name = ? THEN 1
+                    WHEN name LIKE ? THEN 2
+                    WHEN name LIKE ? THEN 3
+                    WHEN description LIKE ? THEN 4
+                    ELSE 5
+                END, id ASC
+            ", [
+                    $query,
+                    "{$query}%",
+                    "%{$query}%",
+                    "%{$query}%"
+                ])
+                ->limit(20) // limit results for faster response
                 ->paginate(10);
 
-            // If no products found by name, search by description
-            if ($products->isEmpty()) {
-                $products = Product::where('vendor_id', $vendor->id)
-                    ->where('description', 'LIKE', "%{$query}%")
-                    ->with(['category:id,name,description','images:id,image_path,product_id'])
-                    ->select(['id','name','description','previous_price','current_price','image','vendor_id','category_id'])
-                    ->orderByRaw("(LENGTH(description) - LENGTH(REPLACE(description, ?, ''))) DESC", [$query])
-                    ->paginate(10);
-            }
-            //Check if any product found
+            // ✅ Fallback if no result
             if ($products->isEmpty()) {
                 return ResponseHelper::Out('failed', 'No products found', null, 404);
             }
-            // Return products
+
+            // ✅ Return response
             return ResponseHelper::Out('success', 'Products found', $products, 200);
+
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
@@ -114,14 +133,10 @@ class VendorHomePageController extends Controller
             if (!$vendor) {
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
-            //Validate search query
-            $request->validate([
-                'query' => 'required|string'
-            ]);
             // First: Search by name
             $products = Product::where('vendor_id', $vendor->id)
                 ->with(['category:id,name,description','images:id,image_path,product_id'])
-                ->select(['id','name','description','previous_price','current_price','image','vendor_id','category_id'])
+                ->select(['id','name','description','regular_price','sell_price','image','vendor_id','category_id'])
                 ->paginate(10);
             return ResponseHelper::Out('success', 'Products found', ['all'=> $products->count(), 'products'=>$products], 200);
         } catch (Exception $e) {

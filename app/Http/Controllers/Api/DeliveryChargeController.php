@@ -14,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 class DeliveryChargeController extends Controller
 {
     // Get All Delivery Charges
-    public function index(Request $request): JsonResponse
+    public function allDeliveryCharges(Request $request): JsonResponse
     {
         try {
             $vendor = Vendor::where('user_id', $request->header('id'))->select(['id'])->first();
@@ -22,8 +22,8 @@ class DeliveryChargeController extends Controller
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
             $deliveryCharges = DeliveryCharge::where('vendor_id',$vendor->id)->select('id','delivery_charge','vendor_id','quantity')->get();
-            if ($deliveryCharges == null ) {
-                return ResponseHelper::Out('success', 'delivery charge not found', null, 404);
+            if ($deliveryCharges->isEmpty()) {
+                return ResponseHelper::Out('success', 'delivery charge not found', null, 200);
             }
             return ResponseHelper::Out('success', 'All delivery charge successfully fetched', $deliveryCharges, 200);
         } catch (Exception $e) {

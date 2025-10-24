@@ -20,18 +20,17 @@ class CategoryController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $categories = Category::where('status', 'Active')
-                ->with([
+            $categories = Category::with([
                     'products' => function ($query) {
                         $query->where('is_active', 1)
-                            ->select('id','name', 'description', 'previous_price', 'current_price', 'vendor_id', 'category_id')
+                            ->select('id','name', 'description', 'sell_price', 'buy_price','discount','image','color', 'size', 'vendor_id','remark', 'category_id')
                             ->with([
                                 'images:id,product_id,image_path,file_type',
                                 'vendor:id,country,address,business_name,business_type,user_id',
                                 'vendor.user:id,name,image,email,phone,language',
                             ]);
                         },
-                    'categoryImages:id,category_id,image_path'
+                    'categoryImages:id,category_id,image_path,public_id'
                     ])
                 ->select(['id', 'name', 'status'])
             ->paginate(10);

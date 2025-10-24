@@ -15,13 +15,15 @@ class DriverController extends Controller
     public function index():JsonResponse
     {
         try {
-            $drivers = Driver::whereRelation('user', 'status', 'Approved')
-                ->with([
+            $drivers = Driver::with([
                     'user:id,name,email,phone,status',
-                    'images:id,product_id,image_path,file_type'
+                    'images:id,user_id,user_type,image_path,file_type,public_id'
                 ])
                 ->select('id','car_name','car_model','location','price','rating','route_id','user_id')
                 ->paginate(10);
+            if($drivers->isEmpty()){
+                return ResponseHelper::Out('success', 'Driver not found', null, 200);
+            }
             return ResponseHelper::Out('success', 'All Driver successfully fetched', $drivers, 200);
         }catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);

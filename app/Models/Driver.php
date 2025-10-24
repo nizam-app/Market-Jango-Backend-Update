@@ -18,8 +18,9 @@ class Driver extends Model
     public function user(){
         return $this->belongsTo(User::class);
     }
-    public function images(){
-        return $this->hasMany(ProductImage::class);
+    public function images()
+    {
+        return $this->hasMany(UserImage::class, 'user_id', 'id');
     }
 
 }

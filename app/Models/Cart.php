@@ -11,26 +11,22 @@ class Cart extends Model
         'color',
         'size',
         'price',
-        'qty',
         'product_id',
         'buyer_id',
         'vendor_id',
+        'delivery_charge',
         'status',
     ];
     public function product()
     {
         return $this->belongsTo(Product::class);
     }
-    // Cart belongs to a buyer
     public function buyer()
     {
         return $this->belongsTo(Buyer::class);
     }
-
-    // Cart has many items
-    public function items()
+    public function vendor()
     {
-        return $this->hasMany(CartItem::class);
+        return $this->belongsTo(Vendor::class);
     }
-
 }

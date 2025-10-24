@@ -14,21 +14,24 @@ class UserController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $banners = User::with('vendor','buyer','driver','transport')
+            $users = User::with('vendor','buyer','driver','transport')
                 ->select(['id','name','image','email','phone','user_type','language','status','phone_verified_at'])
                 ->paginate(20);
-            return ResponseHelper::Out('success', 'All banners successfully fetched', $banners, 200);
+            if($users->isEmpty()){
+                return ResponseHelper::Out('success', 'User not found', null, 200);
+            }
+            return ResponseHelper::Out('success', 'All banners successfully fetched', $users, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-    public function show($id): JsonResponse
+    public function show(Request $request): JsonResponse
     {
         try {
-            $user = User::with('vendor', 'buyer', 'driver', 'transport')
+            $user = User::where('id', $request->input('id'))
+                ->with('vendor', 'buyer', 'driver', 'transport')
                 ->select(['id', 'name', 'image', 'email', 'phone', 'user_type', 'language', 'status', 'phone_verified_at'])
-                ->find($id);
-
+                ->first();
             if (!$user) {
                 return ResponseHelper::Out('failed', 'User not found', null, 404);
             }

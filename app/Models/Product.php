@@ -9,11 +9,17 @@ class Product extends Model
     protected $fillable = [
         'name',
         'description',
-        'previous_price',
-        'current_price',
+        'regular_price',
+        'sell_price',
         'image',
+        'color',
+        'size',
         'vendor_id',
         'category_id'
+    ];
+    protected $casts = [
+        'color' => 'array',
+        'size' => 'array'
     ];
     public function vendor()
     {

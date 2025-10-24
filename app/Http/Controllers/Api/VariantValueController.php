@@ -16,7 +16,7 @@ use Exception;
 class VariantValueController extends Controller
 {
     // Get All Variant Values
-    public function index(Request $request): JsonResponse
+    public function allAttributeValues(Request $request): JsonResponse
     {
         try {
             $vendor = Vendor::where('user_id', $request->header('id'))->select(['id'])->first();
