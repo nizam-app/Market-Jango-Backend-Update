@@ -138,6 +138,9 @@ class VendorHomePageController extends Controller
                 ->with(['category:id,name,description','images:id,image_path,product_id'])
                 ->select(['id','name','description','regular_price','sell_price','image','vendor_id','category_id'])
                 ->paginate(10);
+            if ($products->isEmpty()) {
+                return ResponseHelper::Out('success', 'You have no products', [], 200);
+            }
             return ResponseHelper::Out('success', 'Products found', ['all'=> $products->count(), 'products'=>$products], 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);

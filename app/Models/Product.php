@@ -11,6 +11,7 @@ class Product extends Model
         'description',
         'regular_price',
         'sell_price',
+        'public_id',
         'image',
         'color',
         'size',

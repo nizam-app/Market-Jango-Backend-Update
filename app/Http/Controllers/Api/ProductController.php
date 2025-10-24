@@ -52,11 +52,10 @@ class ProductController extends Controller
                 'description' => 'required|string',
                 'regular_price' => 'required|string|max:50',
                 'sell_price' => 'required|string|max:50',
-                'image*' => 'required',
+                'image*' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
                 'size' => 'required',
                 'color' => 'required',
-                'category_id' => 'nullable|exists:categories,id',
-                'is_active' => 'nullable',
+                'category_id' => 'nullable|exists:categories,id'
             ]);
             $userId = $request->header('id');
             $userEmail = $request->header('email');
@@ -75,7 +74,6 @@ class ProductController extends Controller
                 'sell_price' => $request->input('sell_price'),
                 'color' => json_encode($request->input('color')),
                 'size' => json_encode($request->input('size')),
-                'is_active' => $request->input('is_active'),
                 'image' => $imagePath['url'],
                 'public_id' => $imagePath['public_id'],
                 'vendor_id' => $user->vendor->id,
@@ -90,7 +88,6 @@ class ProductController extends Controller
                         'image_path' => $file['url'],
                         'public_id'  => $file['public_id'],
                         'product_id'  => $product->id,
-                        'file_type'  => $file['type'],
                     ]);
                 }
             }
@@ -134,12 +131,13 @@ class ProductController extends Controller
             // Handle main image update
             if ($request->hasFile('image')) {
                 // Delete old main image
-                if ($product->image) {
-                    FileHelper::delete($product->image);
+                if ($product->public_id) {
+                    FileHelper::delete($product->public_id);
                 }
-                // Upload new main image
-                $uploadedFiles = FileHelper::upload($request->file('image'), 'product');
-                $imagePath = $uploadedFiles[0]['path'] ?? $product->image;
+                // File upload using your helper
+                $uploadedFiles = FileHelper::upload($request->file('image'), 'product'); // example: single or multiple files
+                // If multiple files, take first image path
+                $imagePath = $uploadedFiles[0]?? null;
             } else {
                 $imagePath = $product->image;
             }
@@ -151,15 +149,23 @@ class ProductController extends Controller
                 'sell_price' => $request->input('sell_price', $product->sell_price),
                 'color' => isset($request->color) ? json_encode($request->color) : $product->color,
                 'size' => isset($request->size) ? json_encode($request->size) : $product->size,
-                'is_active' => $request->input('is_active', $product->is_active),
+                'image' => $imagePath['url'],
+                'public_id' => $imagePath['public_id'],
                 'category_id' => $request->input('category_id', $product->category_id),
             ]);
             // Handle additional files
             if ($request->hasFile('files')) {
+                $oldImages =ProductImage::where('product_id', $id)->get();
+                if ($oldImages->count() > 0) {
+                    foreach ($oldImages as $old) {
+                        if (!empty($old->public_id)) {
+                            FileHelper::delete($old->public_id);
+                        }
+                        $old->delete();
+                    }
+                }
                 $files = $request->file('files');
-                // Optional: delete old ProductImages if needed
-                 $product->images()->each(fn($img) => FileHelper::delete($img->image_path));
-                 $product->images()->delete();
+
                 $uploadedImages = FileHelper::upload($files, 'productImage');
                 foreach ($uploadedImages as $file) {
                     ProductImage::create([
@@ -188,6 +194,18 @@ class ProductController extends Controller
             $product = Product::where('id',$id)->where('vendor_id', $user->vendor->id)->first();
             if ($product->image) {
                 FileHelper::delete($product->image); // your delete helper
+            }
+            if ($product->public_id) {
+                FileHelper::delete($product->public_id);
+            }
+            $oldImages =ProductImage::where('product_id', $id)->get();
+            if ($oldImages->count() > 0) {
+                foreach ($oldImages as $old) {
+                    if (!empty($old->public_id)) {
+                        FileHelper::delete($old->public_id);
+                    }
+                    $old->delete();
+                }
             }
             $product->delete();
             return ResponseHelper::Out('success', 'Product successfully deleted', null, 200);

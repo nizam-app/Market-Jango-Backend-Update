@@ -76,7 +76,9 @@ Route::middleware('tokenVerify')->group(function () {
     Route::post('/register-password', [AuthController::class, 'registerPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
-    //user vendor routes
+    //chat
+    //
+    // routes
     Route::prefix('chat')->group(function () {
     Route::get('/user', [ChatController::class, 'userGetByType']); // not complete
     Route::post('/send/{id}', [ChatController::class, 'sendMessage']); // not complete

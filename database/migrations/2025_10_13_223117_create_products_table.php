@@ -15,9 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('name', 50);
             $table->text('description');
-            $table->decimal('regular_price', 10, 2);
-            $table->decimal('sell_price', 10, 2);
+            $table->decimal('regular_price', 10, 2)->default(0.00);
+            $table->decimal('sell_price', 10, 2)->default(0.00);
             $table->integer('discount')->default(0);
+            $table->string('public_id')->nullable();
             $table->integer('star')->default(0);
             $table->string('image', 200);
             $table->json('color');
