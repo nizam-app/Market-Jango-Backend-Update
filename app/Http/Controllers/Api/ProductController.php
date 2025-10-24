@@ -52,7 +52,7 @@ class ProductController extends Controller
                 'description' => 'required|string',
                 'regular_price' => 'required|string|max:50',
                 'sell_price' => 'required|string|max:50',
-                'image*' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'image*' => 'required|mimes:jpeg,png,jpg,gif,webp|max:2048',
                 'size' => 'required',
                 'color' => 'required',
                 'category_id' => 'nullable|exists:categories,id'
@@ -126,7 +126,7 @@ class ProductController extends Controller
             // Get product
             $product = Product::where('id',$id)->where('vendor_id', $vendor->id)->first();
             if (!$product) {
-                return response()->json(['error' => 'Product not found'], 404);
+                return ResponseHelper::Out('failed', 'product not found', null, 404);
             }
             // Handle main image update
             if ($request->hasFile('image')) {
@@ -138,6 +138,9 @@ class ProductController extends Controller
                 $uploadedFiles = FileHelper::upload($request->file('image'), 'product'); // example: single or multiple files
                 // If multiple files, take first image path
                 $imagePath = $uploadedFiles[0]?? null;
+                $product->image = $imagePath['url'];
+                $product->public_id = $imagePath['public_id'];
+                $product->save();
             } else {
                 $imagePath = $product->image;
             }
@@ -149,8 +152,6 @@ class ProductController extends Controller
                 'sell_price' => $request->input('sell_price', $product->sell_price),
                 'color' => isset($request->color) ? json_encode($request->color) : $product->color,
                 'size' => isset($request->size) ? json_encode($request->size) : $product->size,
-                'image' => $imagePath['url'],
-                'public_id' => $imagePath['public_id'],
                 'category_id' => $request->input('category_id', $product->category_id),
             ]);
             // Handle additional files
@@ -189,7 +190,7 @@ class ProductController extends Controller
         try {
             $user = User::where('id', $request->header('id'))->where('email', $request->header('email'))->with('vendor')->first();
             if (!$user || !$user->vendor) {
-                return response()->json(['error' => 'Vendor not found'], 404);
+                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
             $product = Product::where('id',$id)->where('vendor_id', $user->vendor->id)->first();
             if ($product->image) {

@@ -41,6 +41,10 @@ Route::get('/pending/vendor', [AdminController::class, 'pendingVendor']);
 Route::get('/suspended/vendor', [AdminController::class, 'suspendedVendor']);
 Route::get('/accept/vendor/{vendor_id}', [AdminController::class, 'acceptOrRejectVendor']);
 Route::get('/business-type', [AuthController::class, 'businessType']);
+Route::get('/vendor-request-count', [AdminController::class, 'vendorRequestCount']);
+Route::get('/vendor-count', [AdminController::class, 'vendorCount']);
+Route::get('/driver-request-count', [AdminController::class, 'driverRequestCount']);
+Route::get('/driver-count', [AdminController::class, 'driverCount']);
 //Route::middleware('userTypeVerify:admin')->group(function () {
 //
 //});
