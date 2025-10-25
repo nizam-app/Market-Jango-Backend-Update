@@ -124,8 +124,8 @@ class AuthController extends Controller
             // OTP generate
             $otp = rand(100000, 999999);
             $phone = $request->input('phone');
-            $sms = new TwilioService();
-            $sms->sendSms($request->phone, "Your OTP code is: $otp");
+//            $sms = new TwilioService();
+//            $sms->sendSms($request->phone, "Your OTP code is: $otp");
             $user->update([
                 'phone' => $phone,
                 'otp' => $otp,

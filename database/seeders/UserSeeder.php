@@ -34,7 +34,7 @@ class UserSeeder extends Seeder
                     'password' => Hash::make('password'),
                     'language' => $faker->randomElement(['English','Français','Русский','Tiếng Việt']),
                     'image' => $faker->imageUrl(200, 200, 'people'),
-                    'status' => $status,
+                    'status' => 'Approved',
                     'expires_at' => null,
                     'remember_token' => null,
                     'created_at' => now(),

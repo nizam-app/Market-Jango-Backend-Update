@@ -22,7 +22,7 @@ class AttributeValueSeeder extends Seeder
                 DB::table('attribute_values')->insert([
                     'name' => $faker->unique()->word,
                     'product_attribute_id' => $id,
-                    'vendor_id' => $faker->randomElement($vendorIds),
+                    'vendor_id' => 1,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);

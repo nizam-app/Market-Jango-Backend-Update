@@ -39,12 +39,17 @@ Route::get('/user/show', [UserController::class, 'show']);
 Route::get('/active/vendor', [AdminController::class, 'activeVendor']);
 Route::get('/pending/vendor', [AdminController::class, 'pendingVendor']);
 Route::get('/suspended/vendor', [AdminController::class, 'suspendedVendor']);
-Route::get('/accept/vendor/{vendor_id}', [AdminController::class, 'acceptOrRejectVendor']);
+Route::get('/accept-reject/vendor/{vendor_id}', [AdminController::class, 'acceptOrRejectVendor']);
 Route::get('/business-type', [AuthController::class, 'businessType']);
 Route::get('/vendor-request-count', [AdminController::class, 'vendorRequestCount']);
 Route::get('/vendor-count', [AdminController::class, 'vendorCount']);
 Route::get('/driver-request-count', [AdminController::class, 'driverRequestCount']);
 Route::get('/driver-count', [AdminController::class, 'driverCount']);
+Route::get('/request-product', [AdminController::class, 'requestProduct']);
+Route::get('/request-product-details/{id}', [AdminController::class, 'requestProductDetails']);
+Route::get('/request-driver', [AdminController::class, 'requestDriver']);
+Route::get('/approved-driver', [AdminController::class, 'approvedDriver']);
+Route::get('/suspended-driver', [AdminController::class, 'suspendedDriver']);
 //Route::middleware('userTypeVerify:admin')->group(function () {
 //
 //});
@@ -99,6 +104,7 @@ Route::middleware('tokenVerify')->group(function () {
                 Route::get('/product', [VendorHomePageController::class, 'vendorProduct']);
                 Route::get('/show', [VendorHomePageController::class, 'show']);
                 Route::get('/category', [VendorController::class, 'category']);
+                Route::get('/category/{id}', [VendorController::class, 'categoryByProduct']);
                 Route::get('/attribute', [VendorController::class, 'attribute']);
             });
             //user vendor routes

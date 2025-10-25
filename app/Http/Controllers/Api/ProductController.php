@@ -64,7 +64,7 @@ class ProductController extends Controller
                 return ResponseHelper::Out('failed','Vendor not found',null, 404);
             }
             // File upload using your helper
-            $uploadedFiles = FileHelper::upload($request->file('image'), 'product'); // example: single or multiple files
+            $uploadedFiles = FileHelper::upload($request->file('image'), 'product');
             // If multiple files, take first image path
             $imagePath = $uploadedFiles[0]?? null;
             $product = Product::create([

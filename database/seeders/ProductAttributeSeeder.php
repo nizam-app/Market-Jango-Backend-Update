@@ -21,7 +21,7 @@ class ProductAttributeSeeder extends Seeder
         foreach ($attributes as $attribute) {
             DB::table('product_attributes')->insert([
                 'name' => $attribute,
-                'vendor_id' => $faker->randomElement($vendorIds),
+                'vendor_id' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

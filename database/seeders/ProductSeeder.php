@@ -15,7 +15,7 @@ class ProductSeeder extends Seeder
         $categoryIds = DB::table('categories')->pluck('id')->toArray();
         $colors = ['red', 'green', 'blue', 'yellow', 'black', 'white'];
         $sizes  = ['S', 'M', 'L', 'XL', 'XXL'];
-        for ($i = 1; $i <= 50; $i++) {
+        for ($i = 1; $i <= 100; $i++) {
             DB::table('products')->insert([
                 'name' => $faker->unique()->word,
                 'description' => $faker->sentence,
@@ -26,7 +26,7 @@ class ProductSeeder extends Seeder
                 'remark' => $faker->randomElement(['Top', 'New']),
                 'color' => json_encode($faker->randomElements($colors, rand(1, 3))),
                 'size' => json_encode($faker->randomElements($sizes, rand(1, 3))),
-                'vendor_id' => $faker->randomElement([1,2]),
+                'vendor_id' => 1,
                 'category_id' => $faker->randomElement([1,2]),
                 'created_at' => now(),
                 'updated_at' => now(),

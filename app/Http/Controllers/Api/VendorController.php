@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Product;
 use App\Models\ProductAttribute;
 use App\Models\User;
 use App\Models\Vendor;
@@ -42,15 +43,33 @@ class VendorController extends Controller
             if (!$vendor) {
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
-            $categories = Category::where('vendor_id', $vendor->id)->where('status', 'Active')
+            $categories = Category::where('vendor_id', $vendor->id)
                 ->with([
-                    'products' => function ($query) {
-                        $query->where('is_active', 1)
-                            ->select('id','name', 'description', 'sell_price', 'regular_price', 'category_id')
-                            ->with([
-                                'images:id,product_id,image_path,file_type',
-                            ]);
-                    },
+                    'products:id,name,description,sell_price,regular_price,category_id',
+                    'products.images:id,product_id,image_path,public_id',
+                    'categoryImages:id,category_id,image_path',
+                    'vendor:id,country,address,business_name,business_type,user_id',
+                    'vendor.user:id,name,image,email,phone,language',
+
+                ])
+                ->select(['id', 'name', 'status','vendor_id'])
+                ->paginate(10);
+            return ResponseHelper::Out('success', 'All categories successfully fetched', $categories, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    public function categoryByProduct(Request $request, $id): JsonResponse
+    {
+        try {
+            $vendor = Vendor::where('user_id',  $request->header('id'))->select(['id', 'user_id'])->first();
+            if (!$vendor) {
+                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+            }
+            $categories = Product::where('vendor_id', $vendor->id)
+                ->with([
+                    'products:id,name,description,sell_price,regular_price,category_id',
+                    'products.images:id,product_id,image_path,public_id',
                     'categoryImages:id,category_id,image_path',
                     'vendor:id,country,address,business_name,business_type,user_id',
                     'vendor.user:id,name,image,email,phone,language',

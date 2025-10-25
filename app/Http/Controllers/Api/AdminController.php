@@ -174,5 +174,104 @@ class AdminController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
+    // request product
+    public function requestProduct(): JsonResponse
+    {
+        try {
+            $products = Product::where('is_active', 0)
+                ->with([
+                'category:id,name',
+                'vendor:id,user_id,address',
+                'vendor.user:id,name',
+            ])
+            ->select(['id','name','vendor_id', 'created_at', 'is_active'])
+            ->paginate(10);
+            if($products->isEmpty()){
+                return ResponseHelper::Out('success', 'No pending product found', $products, 200);
+            }
+            return ResponseHelper::Out('success', 'All pending product successfully fetched', $products, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    // request product details
+    public function requestProductDetails(Request $request, $id): JsonResponse
+    {
+        try {
+            $products = Product::where('id', $id)
+                ->with([
+                'category:id,name',
+                'vendor:id,user_id,created_at',
+                'vendor.user:id,name,image,public_id',
+            ])
+            ->select(['id','name','description','regular_price','sell_price','image', 'public_id','vendor_id', 'color', 'size', 'created_at', 'category_id', 'is_active'])
+            ->first();
+            if(!$products){
+                return ResponseHelper::Out('success', 'No pending product found', $products, 200);
+            }
+            return ResponseHelper::Out('success', 'All pending product successfully fetched', $products, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    // request driver
+    public function requestDriver(): JsonResponse
+    {
+        try {
+            $driver = Driver::with([
+                'user:id,name'
+            ])
+                ->whereHas('user', function ($query) {
+                    $query->where('status', 'Pending');
+                })
+                ->select('id', 'user_id','created_at','location', 'car_name','car_model')
+                ->paginate(10);
+            if($driver->isEmpty()){
+                return ResponseHelper::Out('success', 'No pending driver found', $driver, 200);
+            }
+            return ResponseHelper::Out('success', 'All pending driver successfully fetched', $driver, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    // approved driver
+    public function approvedDriver(): JsonResponse
+    {
+        try {
+            $driver = Driver::with([
+                'user:id,name'
+            ])
+                ->whereHas('user', function ($query) {
+                    $query->where('status', 'Approved');
+                })
+                ->select('id', 'user_id','created_at','location', 'car_name','car_model')
+                ->paginate(10);
+            if($driver->isEmpty()){
+                return ResponseHelper::Out('success', 'No active driver found', $driver, 200);
+            }
+            return ResponseHelper::Out('success', 'All active driver successfully fetched', $driver, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    // suspended driver
+    public function suspendedDriver(): JsonResponse
+    {
+        try {
+            $driver = Driver::with([
+                'user:id,name'
+            ])
+                ->whereHas('user', function ($query) {
+                    $query->where('status', 'Rejected');
+                })
+                ->select('id', 'user_id','created_at','location', 'car_name','car_model')
+                ->paginate(10);
+            if($driver->isEmpty()){
+                return ResponseHelper::Out('success', 'No suspended driver found', $driver, 200);
+            }
+            return ResponseHelper::Out('success', 'All suspended driver successfully fetched', $driver, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
 }

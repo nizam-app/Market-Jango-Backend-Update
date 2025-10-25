@@ -18,6 +18,9 @@ class LocationController extends Controller
             $locations = Location::with(['route:id,name'])
                 ->select(['id','name','route_id'])
                 ->get();
+            if ($locations->isEmpty()) {
+                return ResponseHelper::Out('success', 'You have no location', [], 200);
+            }
             return ResponseHelper::Out('success', 'All locations successfully fetched', $locations, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);

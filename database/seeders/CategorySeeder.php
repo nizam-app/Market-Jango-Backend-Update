@@ -21,7 +21,7 @@ class CategorySeeder extends Seeder
                 'name' => $faker->unique()->word,
                 'description' => $faker->sentence,
                 'status' => $faker->randomElement(['Active', 'Inactive']),
-                'vendor_id' => $faker->randomElement($vendorIds),
+                'vendor_id' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 use App\Helpers\FileHelper;
-use App\Models\Banner;
 use App\Models\ProductBanner;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
@@ -17,7 +16,10 @@ class BannerController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $banners = ProductBanner::with('product')->get();
+            $banners = ProductBanner::with('product')->paginate(10);
+            if ($banners->isEmpty()) {
+                return ResponseHelper::Out('success', 'You have no banner', [], 200);
+            }
             return ResponseHelper::Out('success', 'All banners successfully fetched', $banners, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
@@ -32,17 +34,18 @@ class BannerController extends Controller
                 'description' => 'required|string',
                 'discount' => 'required|string|max:50',
                 'image' => 'required',
-                'product_id' => 'required|unique:banners,product_id|exists:products,id'
+                'product_id' => 'required|unique:product_banners,product_id|exists:products,id'
             ]);
             // File upload using your helper
-            $uploadedFiles = FileHelper::upload($request->file('image'), 'banner'); // example: single or multiple files
+            $uploadedFiles = FileHelper::upload($request->file('image'), 'banner');
             // If multiple files, take first image path
-            $imagePath = $uploadedFiles[0]['path'] ?? null;
-            $banner = Banner::create([
+            $imagePath = $uploadedFiles[0] ?? null;
+            $banner = ProductBanner::create([
                 'name' => $request->input('name'),
                 'description' => $request->input('description'),
                 'discount' => $request->input('discount'),
-                'image' => $imagePath,
+                'image' => $imagePath['url'],
+                'public_id' => $imagePath['public_id'],
                 'product_id' => $request->input('product_id'),
             ]);
             return ResponseHelper::Out('success', 'Banner successfully created', $banner, 201);
@@ -56,7 +59,7 @@ class BannerController extends Controller
     public function update(Request $request, $id): JsonResponse
     {
         try {
-            $banner = Banner::findOrFail($id);
+            $banner = ProductBanner::findOrFail($id);
             $request->validate([
                 'name' => 'required|string|max:50',
                 'description' => 'required|string',
@@ -65,12 +68,16 @@ class BannerController extends Controller
             // Handle main image update
             if ($request->hasFile('image')) {
                 // Delete old main image
-                if ($banner->image) {
-                    FileHelper::delete($banner->image);
+                if ($banner->public_id) {
+                    FileHelper::delete($banner->public_id);
                 }
-                // Upload new main image
-                $uploadedFiles = FileHelper::upload($request->file('image'), 'product');
-                $imagePath = $uploadedFiles[0]['path'] ?? $banner->image;
+                // File upload using your helper
+                $uploadedFiles = FileHelper::upload($request->file('image'), 'banner'); // example: single or multiple files
+                // If multiple files, take first image path
+                $imagePath = $uploadedFiles[0]?? null;
+                $banner->image = $imagePath['url'];
+                $banner->public_id = $imagePath['public_id'];
+                $banner->save();
             } else {
                 $imagePath = $banner->image;
             }
@@ -78,7 +85,6 @@ class BannerController extends Controller
                 'name' => $request->input('name'),
                 'description' => $request->input('description'),
                 'discount' => $request->input('discount'),
-                'image' => $imagePath,
                 'product_id' => $request->input('product_id'),
             ]);
             return ResponseHelper::Out('success', 'Banner successfully updated', $banner, 200);
@@ -89,12 +95,13 @@ class BannerController extends Controller
         }
     }
     // Delete Banner
-    public function destroy(Request $request): JsonResponse
+    public function destroy(Request $request, $id): JsonResponse
     {
         try {
-            $banner = Banner::findOrFail($request->id);
-            if ($banner->image) {
-                FileHelper::delete($banner->image); // your delete helper
+            $banner = ProductBanner::findOrFail($id);
+            // Delete old main image
+            if ($banner->public_id) {
+                FileHelper::delete($banner->public_id);
             }
             $banner->delete();
             return ResponseHelper::Out('success', 'Banner successfully deleted', null, 200);
