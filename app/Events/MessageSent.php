@@ -1,37 +1,52 @@
 <?php
-
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
-use Illuminate\Broadcasting\InteractsWithSockets;
+use App\Models\Chat;
 use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
-class MessageSent
+class MessageSent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    /**
-     * Create a new event instance.
-     */
-    public $chat;
-    public $receiverId;
-    public function __construct($chat, $receiverId)
+    public Chat $message;
+
+    public function __construct(Chat $message)
     {
-        $this->chat = $chat;
-        $this->receiverId = $receiverId;
+        $this->message = $message;
+        Log::info('MessageSent event created', [
+            'message_id' => $message->id,
+            'sender_id'  => $message->sender_id,
+            'receiver_id'=> $message->receiver_id,
+        ]);
     }
 
-    public function broadcastOn()
+    // Broadcast to the receiver's private channel
+    public function broadcastOn(): PresenceChannel
     {
-        return new Channel('chat.' . $this->chat->receiver_id);
+        return new PresenceChannel('chat.' . $this->message->receiver_id);
     }
 
-    public function broadcastWith()
+    public function broadcastWith(): array
     {
-        return ['chat' => $this->chat];
+        return [
+            'id' => $this->message->id,
+            'sender_id' => $this->message->sender_id,
+            'receiver_id' => $this->message->receiver_id,
+            'type' => $this->message->type,
+            'message' => $this->message->message,
+            'image_path' => $this->message->image_path,
+            'reply_to' => $this->message->reply_to,
+            'created_at' => $this->message->created_at->toDateTimeString(),
+        ];
+    }
+
+    public function broadcastAs(): string
+    {
+        return 'message.sent';
     }
 }

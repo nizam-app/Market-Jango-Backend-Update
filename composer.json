@@ -18,6 +18,7 @@
         "laravel/telescope": "^5.14",
         "laravel/tinker": "^2.10.1",
         "phiki/phiki": "^2.0",
+        "rap2hpoutre/laravel-log-viewer": "^2.5",
         "twilio/sdk": "^8.8"
     },
     "require-dev": {

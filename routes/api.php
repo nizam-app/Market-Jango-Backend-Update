@@ -91,7 +91,8 @@ Route::middleware('tokenVerify')->group(function () {
     //
     // routes
     Route::prefix('chat')->group(function () {
-    Route::get('/user', [ChatController::class, 'userGetByType']); // not complete
+    Route::get('/user', [ChatController::class, 'userGetByType']);
+    Route::get('/user/search', [ChatController::class, 'userSearch']);
     Route::post('/send/{id}', [ChatController::class, 'sendMessage']); // not complete
     Route::post('/history', [ChatController::class, 'getMessages']); // not complete
     });

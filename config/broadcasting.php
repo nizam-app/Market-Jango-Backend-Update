@@ -8,7 +8,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | This option controls the default broadcaster that will be used by the
-    | framework when an event needs to be broadcast. We set it to Reverb.
+    | framework when an event needs to be broadcast. We use Reverb here.
     |
     */
 
@@ -19,8 +19,8 @@ return [
     | Broadcast Connections
     |--------------------------------------------------------------------------
     |
-    | Here you may define all of the broadcast connections that will be used
-    | to broadcast events to other systems or over WebSockets.
+    | Define all the broadcast connections that will be used to broadcast
+    | events over WebSockets or other systems.
     |
     */
 
@@ -35,22 +35,24 @@ return [
                 'host' => env('REVERB_HOST', 'localhost'),
                 'port' => env('REVERB_PORT', 8080),
                 'scheme' => env('REVERB_SCHEME', 'http'),
+                // Automatically set useTLS based on scheme
                 'useTLS' => env('REVERB_SCHEME', 'http') === 'https',
             ],
             'client_options' => [
-                // Optional Guzzle client options if needed
+                // Optional: Guzzle options, e.g. timeout, verify SSL
+                // 'timeout' => 5,
+                // 'verify' => false,
             ],
         ],
 
-        // Optional other drivers
+        // Optional logging driver (good for debugging)
         'log' => [
             'driver' => 'log',
         ],
 
+        // Null driver (no broadcasting)
         'null' => [
             'driver' => 'null',
         ],
-
     ],
-
 ];

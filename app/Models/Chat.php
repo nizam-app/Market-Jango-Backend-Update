@@ -12,12 +12,21 @@ class Chat extends Model
     protected $fillable = [
         'sender_id',
         'receiver_id',
-        'sender_role',
-        'receiver_role',
-        'type',
         'message',
-        'image_path',
-        'is_read',
-        'reply_to'
+        'image',
+        'public_id',
+        'is_read'
     ];
+    // Optional: sender and receiver relationships
+    public function sender() {
+        return $this->belongsTo(User::class, 'sender_id');
+    }
+
+    public function receiver() {
+        return $this->belongsTo(User::class, 'receiver_id');
+    }
+
+    public function replyTo() {
+        return $this->belongsTo(Chat::class, 'reply_to');
+    }
 }
