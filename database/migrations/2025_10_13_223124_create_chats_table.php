@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('chats', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('sender_id');
-            $table->unsignedBigInteger('receiver_id');
+            $table->foreignId('sender_id')->unique()->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();
+            $table->foreignId('receiver_id')->unique()->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();
             $table->enum('type', ['text', 'image', 'video', 'file', 'audio', 'emoji', 'reply'])->default('text');
             $table->longText('message')->nullable();
             $table->string('image_path', 200);

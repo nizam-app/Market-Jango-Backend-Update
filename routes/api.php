@@ -50,6 +50,8 @@ Route::get('/request-product-details/{id}', [AdminController::class, 'requestPro
 Route::get('/request-driver', [AdminController::class, 'requestDriver']);
 Route::get('/approved-driver', [AdminController::class, 'approvedDriver']);
 Route::get('/suspended-driver', [AdminController::class, 'suspendedDriver']);
+Route::get('/drivers/search', [VendorHomePageController::class, 'driverSearch']);
+
 //Route::middleware('userTypeVerify:admin')->group(function () {
 //
 //});
@@ -96,14 +98,16 @@ Route::middleware('tokenVerify')->group(function () {
     //vendor routes
     Route::middleware('userTypeVerify:vendor')->group(function () {
 
-                Route::post('/vendor/register', [AuthController::class, 'registerVendor']);
+        Route::post('/vendor/register', [AuthController::class, 'registerVendor']);
         Route::middleware('statusVerify')->group(function () {
             //vendor routes
             Route::prefix('vendor')->group(function () {
                 Route::get('/search-by-vendor', [VendorHomePageController::class, 'productSearchByVendor']);
                 Route::get('/product', [VendorHomePageController::class, 'vendorProduct']);
                 Route::get('/show', [VendorHomePageController::class, 'show']);
+                Route::get('/category/product/{id}', [VendorController::class, 'vendorCategoryWiseProduct']);
                 Route::get('/category', [VendorController::class, 'category']);
+
                 Route::get('/category/{id}', [VendorController::class, 'categoryByProduct']);
                 Route::get('/attribute', [VendorController::class, 'attribute']);
             });

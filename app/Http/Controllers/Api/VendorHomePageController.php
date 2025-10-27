@@ -6,6 +6,7 @@ use App\Helpers\FileHelper;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Driver;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Vendor;
@@ -13,6 +14,7 @@ use Dotenv\Validator;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class VendorHomePageController extends Controller
 {
@@ -92,7 +94,6 @@ class VendorHomePageController extends Controller
                     'vendor_id',
                     'category_id'
                 ])
-                // ✅ Smart relevance order
                 ->orderByRaw("
                 CASE
                     WHEN name = ? THEN 1
@@ -110,12 +111,9 @@ class VendorHomePageController extends Controller
                 ->limit(20) // limit results for faster response
                 ->paginate(10);
 
-            // ✅ Fallback if no result
             if ($products->isEmpty()) {
-                return ResponseHelper::Out('failed', 'No products found', null, 404);
+                return ResponseHelper::Out('success', 'No products found', null, 200);
             }
-
-            // ✅ Return response
             return ResponseHelper::Out('success', 'Products found', $products, 200);
 
         } catch (Exception $e) {
@@ -146,4 +144,31 @@ class VendorHomePageController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+    //driver search
+    public function driverSearch(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'query' => 'required|string|max:100'
+            ]);
+            $query = $request->input('query');
+
+            $drivers = User::where('user_type', 'driver')->where('name', 'like', "%{$query}%")
+            ->with(['driver:id,']);
+
+            if ($drivers->isEmpty()) {
+                return ResponseHelper::Out('success', 'No driver found', [], 200);
+            }
+            return ResponseHelper::Out('success', 'Driver data fetched successfully', $drivers, 200);
+
+        } catch (ValidationException $e) {
+            return ResponseHelper::Out('failed', 'Validation error', $e->errors(), 422);
+
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+
+
+
 }

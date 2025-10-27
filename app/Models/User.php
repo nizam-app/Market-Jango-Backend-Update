@@ -72,6 +72,17 @@ use HasFactory, Notifiable;
         {
         return $this->hasOne(Transport::class);
         }
+    // Notifications sent by this user
+    public function sentNotifications()
+    {
+        return $this->hasMany(Notification::class, 'sender_id');
+    }
+
+// Notifications received by this user
+    public function receivedNotifications()
+    {
+        return $this->hasMany(Notification::class, 'receiver_id');
+    }
         }
 
 
