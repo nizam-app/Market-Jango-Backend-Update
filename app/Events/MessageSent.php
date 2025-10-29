@@ -20,6 +20,8 @@ class MessageSent implements ShouldBroadcast
         $this->message = $message;
         Log::info('MessageSent event created', [
             'message_id' => $message->id,
+            'message'  => $message->message,
+            'image'  => $message->public_id?? null,
             'sender_id'  => $message->sender_id,
             'receiver_id'=> $message->receiver_id,
         ]);

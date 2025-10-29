@@ -309,6 +309,9 @@ class AuthController extends Controller
                     ]);
                 }
             }
+
+
+
             return ResponseHelper::Out('success', 'Vendor registered successfully!', $vendor, 201);
 
         } catch (ValidationException $e) {

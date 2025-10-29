@@ -29,8 +29,11 @@ class CartController extends Controller
             $carts = Cart::where('buyer_id', $buyerId->id)
                 ->where('status', 'active')
                 ->with(['product', 'vendor', 'buyer'])
-                ->select('quantity', 'color', 'size', 'price', 'product_id', 'buyer_id', 'vendor_id','status')
+                ->select('quantity', 'delivery_charge', 'color', 'size', 'price', 'product_id', 'buyer_id', 'vendor_id','status')
                 ->get();
+            if($carts->isEmpty()){
+                return ResponseHelper::Out('success', 'Cart not found', null, 200);
+            }
             return ResponseHelper::Out('success', 'All carts successfully fetched', $carts, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
@@ -66,7 +69,7 @@ class CartController extends Controller
                 ->orderBy('quantity', 'desc')
                 ->first();
             $deliveryChargeAmount = $deliveryCharge ? $deliveryCharge->delivery_charge : 0;
-            $unitPrice = $product->buy_price;
+            $unitPrice = $product->regular_price;
             $totalPrice = $unitPrice * $productQty;
             // Create new cart item
             $cart = Cart::where('product_id', $productId)
@@ -87,7 +90,7 @@ class CartController extends Controller
 
                 // Update existing
                 $cart->quantity = $newTotalQty;
-                $cart->price = (float)$product->buy_price * $cart->quantity;
+                $cart->price = (float)$product->regular_price * $cart->quantity;
                 $cart->delivery_charge = $deliveryChargeAmount;
                 $cart->save();
             } else {

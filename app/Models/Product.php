@@ -20,7 +20,7 @@ class Product extends Model
     ];
     protected $casts = [
         'color' => 'array',
-        'size' => 'array'
+        'size' => 'array',
     ];
     public function vendor()
     {

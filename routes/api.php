@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\DeliveryChargeController;
 use App\Http\Controllers\Api\DriverController;
 use App\Http\Controllers\Api\LocationController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductVariantController;
 use App\Http\Controllers\Api\ReviewController;
@@ -87,14 +88,16 @@ Route::middleware('tokenVerify')->group(function () {
     Route::post('/register-password', [AuthController::class, 'registerPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
-    //chat
-    //
-    // routes
+    //chat routes
     Route::prefix('chat')->group(function () {
-    Route::get('/user', [ChatController::class, 'userGetByType']);
-    Route::get('/user/search', [ChatController::class, 'userSearch']);
-    Route::post('/send/{id}', [ChatController::class, 'sendMessage']); // not complete
-    Route::post('/history', [ChatController::class, 'getMessages']); // not complete
+        Route::get('/user', [ChatController::class, 'userGetByType']);
+        Route::get('/user/search', [ChatController::class, 'userSearch']);
+        Route::post('/send/{id}', [ChatController::class, 'sendMessage']); // not complete
+        Route::get('/history/{id}', [ChatController::class, 'getMessages']); // not complete
+    });
+    // notifications routes
+    Route::prefix('notification')->group(function () {
+        Route::get('/', [NotificationController::class, 'myNotifications']);
     });
     //vendor routes
     Route::middleware('userTypeVerify:vendor')->group(function () {
@@ -105,6 +108,7 @@ Route::middleware('tokenVerify')->group(function () {
             Route::prefix('vendor')->group(function () {
                 Route::get('/search-by-vendor', [VendorHomePageController::class, 'productSearchByVendor']);
                 Route::get('/product', [VendorHomePageController::class, 'vendorProduct']);
+                Route::post('/image/destroy/{id}', [ProductController::class, 'vendorProductImageDestroy']);
                 Route::get('/show', [VendorHomePageController::class, 'show']);
                 Route::get('/category/product/{id}', [VendorController::class, 'vendorCategoryWiseProduct']);
                 Route::get('/category', [VendorController::class, 'category']);

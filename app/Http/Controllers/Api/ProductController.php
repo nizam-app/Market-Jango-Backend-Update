@@ -53,8 +53,10 @@ class ProductController extends Controller
                 'regular_price' => 'required|string|max:50',
                 'sell_price' => 'required|string|max:50',
                 'image*' => 'required|mimes:jpeg,png,jpg,gif,webp|max:2048',
-                'size' => 'required',
-                'color' => 'required',
+                'color' => 'required|array',
+                'color.*' => 'string',
+                'size' => 'required|array',
+                'size.*' => 'string',
                 'category_id' => 'nullable|exists:categories,id'
             ]);
             $userId = $request->header('id');
@@ -72,8 +74,8 @@ class ProductController extends Controller
                 'description' => $request->input('description'),
                 'regular_price' => $request->input('regular_price'),
                 'sell_price' => $request->input('sell_price'),
-                'color' => json_encode($request->input('color')),
-                'size' => json_encode($request->input('size')),
+                'color' => $request->input('color'),
+                'size' => $request->input('size'),
                 'image' => $imagePath['url'],
                 'public_id' => $imagePath['public_id'],
                 'vendor_id' => $user->vendor->id,
@@ -117,7 +119,7 @@ class ProductController extends Controller
             //  Get user
             $userId = $request->header('id');
             // Vendor fetch
-            $vendor = Vendor::where('user_id', $request->header('id'))
+            $vendor = Vendor::where('user_id',$userId)
                 ->select(['id', 'user_id'])
                 ->first();
             if (!$vendor) {
@@ -150,30 +152,19 @@ class ProductController extends Controller
                 'description' => $request->input('description', $product->description),
                 'regular_price' => $request->input('regular_price', $product->regular_price),
                 'sell_price' => $request->input('sell_price', $product->sell_price),
-                'color' => isset($request->color) ? json_encode($request->color) : $product->color,
-                'size' => isset($request->size) ? json_encode($request->size) : $product->size,
+                'color' => isset($request->color) ? $request->input('color') : $product->color,
+                'size' => isset($request->size) ? $request->input('size') : $product->size,
                 'category_id' => $request->input('category_id', $product->category_id),
             ]);
             // Handle additional files
             if ($request->hasFile('files')) {
-                $oldImages =ProductImage::where('product_id', $id)->get();
-                if ($oldImages->count() > 0) {
-                    foreach ($oldImages as $old) {
-                        if (!empty($old->public_id)) {
-                            FileHelper::delete($old->public_id);
-                        }
-                        $old->delete();
-                    }
-                }
                 $files = $request->file('files');
-
                 $uploadedImages = FileHelper::upload($files, 'productImage');
                 foreach ($uploadedImages as $file) {
                     ProductImage::create([
                         'image_path' => $file['url'],
                         'public_id'  => $file['public_id'],
-                        'product_id'  => $product->id,
-                        'file_type'  => $file['type'],
+                        'product_id'  => $product->id
                     ]);
                 }
             }
@@ -210,6 +201,23 @@ class ProductController extends Controller
             }
             $product->delete();
             return ResponseHelper::Out('success', 'Product successfully deleted', null, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    public function vendorProductImageDestroy(Request $request, $id): JsonResponse
+    {
+        try {
+            $user = User::where('id', $request->header('id'))->where('email', $request->header('email'))->with('vendor')->first();
+            if (!$user || !$user->vendor) {
+                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+            }
+            $imagesToDelete = ProductImage::where('id', $id)->first();
+            if($imagesToDelete){
+                FileHelper::delete($imagesToDelete->public_id);
+                $imagesToDelete->delete();
+            }
+            return ResponseHelper::Out('success', 'Product image successfully deleted', null, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }

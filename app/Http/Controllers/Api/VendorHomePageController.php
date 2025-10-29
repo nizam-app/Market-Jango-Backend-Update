@@ -36,27 +36,42 @@ class VendorHomePageController extends Controller
     public function update(Request $request): JsonResponse
     {
         try {
-            $vendor = User::where('id', $request->header('id'))->select(['id', 'name', 'image','public_id'])->first();
-            if (!$vendor) {
+            $user = User::where('id', $request->header('id'))
+                ->with(['buyer:id,age,gender,address,description,state,country', 'driver:id,price',])
+                ->select(['id', 'name', 'image','public_id','user_type','email','phone','phone_verified_at','language','status'])
+                ->first();
+            if (!$user) {
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
-            $uploadedFile = null;
-            if ($request->hasFile('image')) {
-                $request->validate([
-                    'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
-                ]);
-                // Delete old image if exists
-                if (!empty($vendor->public_id)) {
-                    FileHelper::delete($vendor->public_id);
-                }
-                //Upload new image
-                $file = $request->file('image');
-                $uploadedFile = FileHelper::upload($file, $vendor->user_type);
-                $vendor->image = $uploadedFile[0]['url'];
-                $vendor->public_id =  $uploadedFile[0]['public_id'];
-                $vendor->save();
+            $userType = $user->user_type;
+            switch ($user) {
+                case 'vendor':
+                    $uploadedFile = null;
+                    if ($request->hasFile('image')) {
+                        $request->validate([
+                            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
+                        ]);
+                        // Delete old image if exists
+                        if (!empty($user->public_id)) {
+                            FileHelper::delete($user->public_id);
+                        }
+                        //Upload new image
+                        $file = $request->file('image');
+                        $uploadedFile = FileHelper::upload($file, $userType);
+                        $user->image = $uploadedFile[0]['url'];
+                        $user->public_id =  $uploadedFile[0]['public_id'];
+                        $user->save();
+                    }
+                    $user->update([
+                        "name"=> $request->input('name', $user->name),
+                    ]);
+                    break;
+                    case 'driver':
+                        $name = "test";
+                        break;
             }
-            return ResponseHelper::Out('success', 'update image successfully', $vendor, 200);
+
+            return ResponseHelper::Out('success', 'user update successfully', $user, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }

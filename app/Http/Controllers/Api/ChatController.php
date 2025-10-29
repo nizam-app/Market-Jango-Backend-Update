@@ -175,7 +175,9 @@ class ChatController extends Controller
             })
             ->orderBy('created_at')
             ->get();
-
+        if ($messages->isEmpty()) {
+            return ResponseHelper::Out('success', 'You have no message', [], 200);
+        }
         return ResponseHelper::Out('success', 'Messages fetched', $messages, 200);
     }
 }

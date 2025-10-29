@@ -20,7 +20,7 @@ class UserController extends Controller
             if($users->isEmpty()){
                 return ResponseHelper::Out('success', 'User not found', null, 200);
             }
-            return ResponseHelper::Out('success', 'All banners successfully fetched', $users, 200);
+            return ResponseHelper::Out('success', 'All users successfully fetched', $users, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
