@@ -18,11 +18,18 @@ class NotificationController extends Controller
             'receiver_id' => 'required|exists:users,id',
             'message' => 'required|string',
         ]);
+        $userId = $request->header('id');
+        $userEmail = $request->header('email');
+        $user = User::where('id', $userId)->where('email', $userEmail)->with('vendor')->first();
+        if(!$user){
+            return ResponseHelper::Out('failed','Vendor not found',null, 404);
+        }
 
         $notification = Notification::create([
             'sender_id' => auth()->id(),
             'receiver_id' => $request->receiver_id,
             'message' => $request->message,
+            'name' => $request->name,
         ]);
 
         event(new NotificationSent($notification));

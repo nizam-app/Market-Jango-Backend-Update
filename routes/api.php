@@ -34,7 +34,7 @@ Route::get('/category', [CategoryController::class, 'index']);
 Route::get('/driver', [DriverController::class, 'index']);
 Route::get('/user', [UserController::class, 'index']);
 Route::get('/user/show', [UserController::class, 'show']);
-
+Route::get('/product', [ProductController::class, 'index']);
 
 // Admin all routes
 Route::get('/active/vendor', [AdminController::class, 'activeVendor']);
@@ -52,6 +52,9 @@ Route::get('/request-driver', [AdminController::class, 'requestDriver']);
 Route::get('/approved-driver', [AdminController::class, 'approvedDriver']);
 Route::get('/suspended-driver', [AdminController::class, 'suspendedDriver']);
 Route::get('/drivers/search', [VendorHomePageController::class, 'driverSearch']);
+
+
+
 
 //Route::middleware('userTypeVerify:admin')->group(function () {
 //
@@ -153,7 +156,6 @@ Route::middleware('tokenVerify')->group(function () {
 
             //product routes
             Route::prefix('product')->group(function () {
-                Route::get('/', [ProductController::class, 'index']);
                 Route::post('/create', [ProductController::class, 'store']);
                 Route::post('/update/{id}', [ProductController::class, 'update']);
                 Route::post('/destroy/{id}', [ProductController::class, 'destroy']);
@@ -162,12 +164,14 @@ Route::middleware('tokenVerify')->group(function () {
     });
     //Buyer routes
     Route::middleware('userTypeVerify:buyer')->group(function () {
+        Route::get('/search/product', [BuyerHomeController::class, 'productSearchByBuyer']);
         // Cart routes
         Route::prefix('cart')->group(function () {
             Route::get('/', [CartController::class, 'index']);
             Route::post('/create', [CartController::class, 'store']);
             Route::post('/checkout', [CartController::class, 'checkout']);
         });
+
         // wish-list routes
         Route::prefix('wish-list')->group(function () {
             Route::get('/', [WishListController::class, 'index']);

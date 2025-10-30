@@ -21,21 +21,14 @@ class ProductController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $vendorId = $request->header('id');
-
-            if (!$vendorId) {
-                return ResponseHelper::Out('failed', 'Vendor ID missing in request header', null, 400);
-            }
-
-            $products = Product::with(['vendor', 'category', 'variants', 'variants.variantValues'])
-                ->where('vendor_id', $vendorId)
+            //Get All Product But New Product First
+            $products = Product::with(['category:id,name,description','images:id,image_path,product_id'])
+                ->select(['id','name','description','regular_price','sell_price','image','vendor_id','category_id', 'color', 'size'])
                 ->latest()
-                ->get();
-
+                ->paginate(20);
             if ($products->isEmpty()) {
                 return ResponseHelper::Out('success', 'You have no products', [], 200);
             }
-
             return ResponseHelper::Out('success', 'All products successfully fetched', $products, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
@@ -106,15 +99,14 @@ class ProductController extends Controller
     {
         try {
             $request->validate([
-                'name' => 'sometimes|string|max:50',
-                'description' => 'sometimes|string',
-                'regular_price' => 'sometimes|string|max:50',
-                'sell_price' => 'sometimes|string|max:50',
+                'name' => 'nullable|string|max:50',
+                'description' => 'nullable|string',
+                'regular_price' => 'nullable|string',
+                'sell_price' => 'nullable|string',
                 'image' => 'nullable',
                 'size' => 'nullable',
                 'color' => 'nullable',
-                'category_id' => 'nullable|exists:categories,id',
-                'is_active' => 'nullable',
+                'category_id' => 'nullable|exists:categories,id'
             ]);
             //  Get user
             $userId = $request->header('id');
@@ -137,7 +129,7 @@ class ProductController extends Controller
                     FileHelper::delete($product->public_id);
                 }
                 // File upload using your helper
-                $uploadedFiles = FileHelper::upload($request->file('image'), 'product'); // example: single or multiple files
+                $uploadedFiles = FileHelper::upload($request->file('image'), 'product');
                 // If multiple files, take first image path
                 $imagePath = $uploadedFiles[0]?? null;
                 $product->image = $imagePath['url'];

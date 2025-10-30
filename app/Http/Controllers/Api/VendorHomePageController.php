@@ -146,10 +146,11 @@ class VendorHomePageController extends Controller
             if (!$vendor) {
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
-            // First: Search by name
+            // vendor product
             $products = Product::where('vendor_id', $vendor->id)
                 ->with(['category:id,name,description','images:id,image_path,product_id'])
                 ->select(['id','name','description','regular_price','sell_price','image','vendor_id','category_id', 'color', 'size'])
+                ->latest()
                 ->paginate(10);
             if ($products->isEmpty()) {
                 return ResponseHelper::Out('success', 'You have no products', [], 200);
