@@ -35,16 +35,7 @@ Route::post('/login', [AuthController::class, 'login']);
 //
 //});
 
-// Invoice and payment
-Route::get("/InvoiceCreate", [InvoiceController::class, 'InvoiceCreate'])->middleware([TokenAuthenticate::class]);
-Route::get("/InvoiceList", [InvoiceController::class, 'InvoiceList'])->middleware([TokenAuthenticate::class]);
-Route::get("/InvoiceProductList/{invoice_id}", [InvoiceController::class, 'InvoiceProductList'])->middleware([TokenAuthenticate::class]);
 
-// Payment callback routes
-Route::post("/PaymentSuccess", [InvoiceController::class, 'PaymentSuccess']);
-Route::post("/PaymentCancel", [InvoiceController::class, 'PaymentCancel']);
-Route::post("/PaymentFail", [InvoiceController::class, 'PaymentFail']);
-Route::post("/PaymentIPN", [InvoiceController::class, 'PaymentIPN']);
 
 //Authentication for all users
 Route::middleware('tokenVerify')->group(function () {
@@ -54,6 +45,20 @@ Route::middleware('tokenVerify')->group(function () {
     Route::post('/register-email', [AuthController::class, 'registerEmail']);
     Route::post('/register-password', [AuthController::class, 'registerPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+
+    // Invoice and payment
+    Route::get("/InvoiceCreate", [InvoiceController::class, 'InvoiceCreate']);
+    Route::get("/InvoiceList", [InvoiceController::class, 'InvoiceList']);
+    Route::get("/InvoiceProductList/{invoice_id}", [InvoiceController::class, 'InvoiceProductList']);
+
+// Payment callback routes
+    Route::post("/PaymentSuccess", [InvoiceController::class, 'PaymentSuccess']);
+    Route::post("/PaymentCancel", [InvoiceController::class, 'PaymentCancel']);
+    Route::post("/PaymentFail", [InvoiceController::class, 'PaymentFail']);
+    Route::post("/PaymentIPN", [InvoiceController::class, 'PaymentIPN']);
+
+
+
 
     //Home Buyer all routes
     Route::get('/product/filter', [BuyerHomeController::class, 'productFilter']); // not complete
