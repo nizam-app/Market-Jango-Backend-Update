@@ -2,73 +2,111 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\PaymentSystem;
+use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
+use App\Models\Buyer;
+use App\Models\Cart;
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
 class PaymentController extends Controller
 {
-// Initiate Flutterwave Payment
-    public static function InitiatePayment($Profile, $payable, $tran_id, $user_email, $currency = 'USD'): array
+    public function InvoiceCreate(Request $request)
     {
+        DB::beginTransaction();
         try {
-            $flutterwave = [
-                'secret_key' => env('FLUTTERWAVE_SECRET_KEY'),
-                'redirect_url' => env('FLUTTERWAVE_REDIRECT_URL')
-            ];
+            $user_id = $request->header('id');
+            $user_email = $request->header('email');
 
-            $response = Http::withToken($flutterwave['secret_key'])
-                ->post('https://api.flutterwave.com/v3/payments', [
-                    "tx_ref" => $tran_id,
-                    "amount" => $payable,
-                    "currency" => $currency,
-                    "redirect_url" => $flutterwave['redirect_url'] . "?tran_id=$tran_id",
-                    "customer" => [
-                        "email" => $user_email,
-                        "name" => $Profile->cus_name,
-                        "phone_number" => $Profile->cus_phone
-                    ],
-                    "customizations" => [
-                        "title" => "Apple Shop Product",
-                        "description" => "Payment for Apple Shop Order $tran_id",
-                        "logo" => env('APP_URL') . "/logo.png"
-                    ]
+            $tran_id = uniqid();
+            $delivery_status = 'Pending';
+            $payment_status = 'Pending';
+
+            $Profile = Buyer::where('user_id', '=', $user_id)->first();
+
+            $cus_details = "Name:$Profile->cus_name,Address:$Profile->cus_add,City:$Profile->cus_city,Phone:$Profile->cus_phone";
+            $ship_details = "Name:$Profile->ship_name,Address:$Profile->ship_add,City:$Profile->ship_city,Phone:$Profile->cus_phone";
+
+            $total = 0;
+            $cartList = Cart::where('user_id', '=', $user_id)->get();
+            foreach ($cartList as $cartItem) {
+                $total += $cartItem->price;
+            }
+
+            $vat = ($total * 3) / 100;
+            $payable = $total + $vat;
+
+            $invoice = Invoice::create([
+                'total' => $total,
+                'vat' => $vat,
+                'payable' => $payable,
+                'cus_details' => $cus_details,
+                'ship_details' => $ship_details,
+                'tran_id' => $tran_id,
+                'delivery_status' => $delivery_status,
+                'payment_status' => $payment_status,
+                'user_id' => $user_id,
+            ]);
+
+            $invoiceID = $invoice->id;
+
+            foreach ($cartList as $EachProduct) {
+                InvoiceItem::create([
+                    'invoice_id' => $invoiceID,
+                    'product_id' => $EachProduct['product_id'],
+                    'user_id' => $user_id,
+                    'qty' => $EachProduct['qty'],
+                    'sale_price' => $EachProduct['price'],
                 ]);
+            }
 
-            return $response->json();
+            $paymentMethod = PaymentSystem::InitiatePayment($Profile, $payable, $tran_id, $user_email);
+
+            DB::commit();
+
+            return ResponseHelper::Out('success','payment created' ,[
+                'paymentMethod' => $paymentMethod,
+                'payable' => $payable,
+                'vat' => $vat,
+                'total' => $total,
+            ], 200);
+
         } catch (Exception $e) {
-            return ['error' => $e->getMessage()];
+            DB::rollBack();
+            return ResponseHelper::Out('fail', $e->getMessage(), '',200);
         }
     }
 
-    // Payment Success
-    public static function InitiateSuccess($tran_id): int
+    public function PaymentSuccess(Request $request)
     {
-        Invoice::where(['tran_id' => $tran_id, 'val_id' => 0])
-            ->update(['payment_status' => 'Success']);
-        return 1;
+        PaymentSystem::InitiateSuccess($request->query('tran_id'));
+        return redirect('/profile');
     }
 
-    // Payment Fail
-    public static function InitiateFail($tran_id): int
+    public function PaymentCancel(Request $request)
     {
-        Invoice::where(['tran_id' => $tran_id, 'val_id' => 0])
-            ->update(['payment_status' => 'Fail']);
-        return 1;
+       PaymentSystem::InitiateCancel($request->query('tran_id'));
+        return redirect('/profile');
     }
 
-    // Payment Cancel
-    public static function InitiateCancel($tran_id): int
+    public function PaymentFail(Request $request)
     {
-        Invoice::where(['tran_id' => $tran_id, 'val_id' => 0])
-            ->update(['payment_status' => 'Cancel']);
-        return 1;
+        PaymentSystem::InitiateFail($request->query('tran_id'));
+        return redirect('/profile');
     }
 
-    // IPN/Webhook
-    public static function InitiateIPN($tran_id, $status, $val_id): int
+    public function PaymentIPN(Request $request)
     {
-        Invoice::where(['tran_id' => $tran_id, 'val_id' => 0])
-            ->update(['payment_status' => $status, 'val_id' => $val_id]);
-        return 1;
+        return PaymentSystem::InitiateIPN(
+            $request->input('tran_id'),
+            $request->input('status'),
+            $request->input('tx_ref')
+        );
     }
+
 }

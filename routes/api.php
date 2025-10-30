@@ -9,8 +9,10 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\DeliveryChargeController;
 use App\Http\Controllers\Api\DriverController;
+use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductVariantController;
 use App\Http\Controllers\Api\ReviewController;
@@ -28,60 +30,22 @@ Route::post('/forget-password', [AuthController::class, 'forgetPassword']);
 Route::post('/verify-mail-otp', [AuthController::class, 'verifyMailOtp']);
 Route::post('/login', [AuthController::class, 'login']);
 
-//Home Buyer all routes
-Route::get('/product/filter', [BuyerHomeController::class, 'productFilter']); // not complete
-Route::get('/category', [CategoryController::class, 'index']);
-Route::get('/driver', [DriverController::class, 'index']);
-Route::get('/user', [UserController::class, 'index']);
-Route::get('/user/show', [UserController::class, 'show']);
-Route::get('/product', [ProductController::class, 'index']);
-
-// Admin all routes
-Route::get('/active/vendor', [AdminController::class, 'activeVendor']);
-Route::get('/pending/vendor', [AdminController::class, 'pendingVendor']);
-Route::get('/suspended/vendor', [AdminController::class, 'suspendedVendor']);
-Route::get('/accept-reject/vendor/{vendor_id}', [AdminController::class, 'acceptOrRejectVendor']);
-Route::get('/business-type', [AuthController::class, 'businessType']);
-Route::get('/vendor-request-count', [AdminController::class, 'vendorRequestCount']);
-Route::get('/vendor-count', [AdminController::class, 'vendorCount']);
-Route::get('/driver-request-count', [AdminController::class, 'driverRequestCount']);
-Route::get('/driver-count', [AdminController::class, 'driverCount']);
-Route::get('/request-product', [AdminController::class, 'requestProduct']);
-Route::get('/request-product-details/{id}', [AdminController::class, 'requestProductDetails']);
-Route::get('/request-driver', [AdminController::class, 'requestDriver']);
-Route::get('/approved-driver', [AdminController::class, 'approvedDriver']);
-Route::get('/suspended-driver', [AdminController::class, 'suspendedDriver']);
-Route::get('/drivers/search', [VendorHomePageController::class, 'driverSearch']);
-
-
-
 
 //Route::middleware('userTypeVerify:admin')->group(function () {
 //
 //});
-// Route routes
-Route::prefix('route')->group(function () {
-    Route::get('/', [RouteController::class, 'index']);
-    Route::get('/show', [RouteController::class, 'show']);
-    Route::post('/create', [RouteController::class, 'store']);
-    Route::post('/update/{id}', [RouteController::class, 'update']);
-    Route::post('/destroy/{id}', [RouteController::class, 'destroy']);
-});
-//locations routes
-Route::prefix('location')->group(function () {
-    Route::get('/', [LocationController::class, 'index']);
-    Route::get('/show', [LocationController::class, 'show']);
-    Route::post('/create', [LocationController::class, 'store']);
-    Route::post('/update/{id}', [LocationController::class, 'update']);
-    Route::post('/destroy/{id}', [LocationController::class, 'destroy']);
-});
-//banner routes // not complete
-Route::prefix('banner')->group(function () {
-    Route::get('/', [BannerController::class, 'index']);
-    Route::post('/create', [BannerController::class, 'store']);
-    Route::post('/update/{id}', [BannerController::class, 'update']);
-    Route::post('/destroy/{id}', [BannerController::class, 'destroy']);
-});
+
+// Invoice and payment
+Route::get("/InvoiceCreate", [InvoiceController::class, 'InvoiceCreate'])->middleware([TokenAuthenticate::class]);
+Route::get("/InvoiceList", [InvoiceController::class, 'InvoiceList'])->middleware([TokenAuthenticate::class]);
+Route::get("/InvoiceProductList/{invoice_id}", [InvoiceController::class, 'InvoiceProductList'])->middleware([TokenAuthenticate::class]);
+
+// Payment callback routes
+Route::post("/PaymentSuccess", [InvoiceController::class, 'PaymentSuccess']);
+Route::post("/PaymentCancel", [InvoiceController::class, 'PaymentCancel']);
+Route::post("/PaymentFail", [InvoiceController::class, 'PaymentFail']);
+Route::post("/PaymentIPN", [InvoiceController::class, 'PaymentIPN']);
+
 //Authentication for all users
 Route::middleware('tokenVerify')->group(function () {
     Route::post('/register-name', [AuthController::class, 'registerName']);
@@ -90,6 +54,55 @@ Route::middleware('tokenVerify')->group(function () {
     Route::post('/register-email', [AuthController::class, 'registerEmail']);
     Route::post('/register-password', [AuthController::class, 'registerPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+
+    //Home Buyer all routes
+    Route::get('/product/filter', [BuyerHomeController::class, 'productFilter']); // not complete
+    Route::get('/category', [CategoryController::class, 'index']);
+    Route::get('/driver', [DriverController::class, 'index']);
+    Route::get('/user', [UserController::class, 'index']);
+    Route::get('/user/show', [UserController::class, 'show']);
+    Route::get('/product', [ProductController::class, 'index']);
+
+    // Admin all routes
+    Route::get('/active/vendor', [AdminController::class, 'activeVendor']);
+    Route::get('/pending/vendor', [AdminController::class, 'pendingVendor']);
+    Route::get('/suspended/vendor', [AdminController::class, 'suspendedVendor']);
+    Route::get('/accept-reject/vendor/{vendor_id}', [AdminController::class, 'acceptOrRejectVendor']);
+    Route::get('/business-type', [AuthController::class, 'businessType']);
+    Route::get('/vendor-request-count', [AdminController::class, 'vendorRequestCount']);
+    Route::get('/vendor-count', [AdminController::class, 'vendorCount']);
+    Route::get('/driver-request-count', [AdminController::class, 'driverRequestCount']);
+    Route::get('/driver-count', [AdminController::class, 'driverCount']);
+    Route::get('/request-product', [AdminController::class, 'requestProduct']);
+    Route::get('/request-product-details/{id}', [AdminController::class, 'requestProductDetails']);
+    Route::get('/request-driver', [AdminController::class, 'requestDriver']);
+    Route::get('/approved-driver', [AdminController::class, 'approvedDriver']);
+    Route::get('/suspended-driver', [AdminController::class, 'suspendedDriver']);
+    Route::get('/drivers/search', [VendorHomePageController::class, 'driverSearch']);
+
+// Route routes
+    Route::prefix('route')->group(function () {
+        Route::get('/', [RouteController::class, 'index']);
+        Route::get('/show', [RouteController::class, 'show']);
+        Route::post('/create', [RouteController::class, 'store']);
+        Route::post('/update/{id}', [RouteController::class, 'update']);
+        Route::post('/destroy/{id}', [RouteController::class, 'destroy']);
+    });
+    //locations routes
+    Route::prefix('location')->group(function () {
+        Route::get('/', [LocationController::class, 'index']);
+        Route::get('/show', [LocationController::class, 'show']);
+        Route::post('/create', [LocationController::class, 'store']);
+        Route::post('/update/{id}', [LocationController::class, 'update']);
+        Route::post('/destroy/{id}', [LocationController::class, 'destroy']);
+    });
+    //banner routes // not complete
+    Route::prefix('banner')->group(function () {
+        Route::get('/', [BannerController::class, 'index']);
+        Route::post('/create', [BannerController::class, 'store']);
+        Route::post('/update/{id}', [BannerController::class, 'update']);
+        Route::post('/destroy/{id}', [BannerController::class, 'destroy']);
+    });
 
     //chat routes
     Route::prefix('chat')->group(function () {
@@ -101,6 +114,7 @@ Route::middleware('tokenVerify')->group(function () {
     // notifications routes
     Route::prefix('notification')->group(function () {
         Route::get('/', [NotificationController::class, 'myNotifications']);
+        Route::get('/read/{id}', [NotificationController::class, 'markAsRead']);
     });
     //vendor routes
     Route::middleware('userTypeVerify:vendor')->group(function () {

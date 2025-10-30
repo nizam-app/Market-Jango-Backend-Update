@@ -2,7 +2,7 @@
 namespace App\Events;
 
 use App\Models\Chat;
-use Illuminate\Broadcasting\PresenceChannel;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -13,7 +13,7 @@ class MessageSent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public Chat $message;
+    public $message;
 
     public function __construct(Chat $message)
     {
@@ -28,24 +28,24 @@ class MessageSent implements ShouldBroadcast
     }
 
     // Broadcast to the receiver's private channel
-    public function broadcastOn(): PresenceChannel
+    public function broadcastOn()
     {
-        return new PresenceChannel('chat.' . $this->message->receiver_id);
+        return new Channel('chat.' . $this->message->receiver_id);
     }
 
-    public function broadcastWith(): array
-    {
-        return [
-            'id' => $this->message->id,
-            'sender_id' => $this->message->sender_id,
-            'receiver_id' => $this->message->receiver_id,
-            'type' => $this->message->type,
-            'message' => $this->message->message,
-            'image_path' => $this->message->image_path,
-            'reply_to' => $this->message->reply_to,
-            'created_at' => $this->message->created_at->toDateTimeString(),
-        ];
-    }
+//    public function broadcastWith(): array
+//    {
+//        return [
+//            'id' => $this->message->id,
+//            'sender_id' => $this->message->sender_id,
+//            'receiver_id' => $this->message->receiver_id,
+//            'type' => $this->message->type,
+//            'message' => $this->message->message,
+//            'image_path' => $this->message->image_path,
+//            'reply_to' => $this->message->reply_to,
+//            'created_at' => $this->message->created_at->toDateTimeString(),
+//        ];
+//    }
 
     public function broadcastAs(): string
     {

@@ -10,14 +10,15 @@ use Illuminate\Validation\ValidationException;
 
 class NotificationHelper
 {
-    public static function sendNotification($senderId, $receiverId=null, $message=null):JsonResponse
+    public static function sendNotification($senderId, $receiverId=null, $message=null, $name=null):JsonResponse
     {
         try {
 
             $notification = Notification::create([
-                'sender_id'  => $senderId,
+                'sender_id' => $senderId,
                 'receiver_id'=> $receiverId,
-                'message'    => $message?? null,
+                'message' => $message,
+                'name'=> $name
             ]);
             // Broadcast real-time
             broadcast(new NotificationSent($notification))->toOthers();

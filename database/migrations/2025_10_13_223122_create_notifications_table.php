@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
             $table->text('message')->nullable();
+            $table->string('name',50)->nullable();
             $table->boolean('is_read')->default(false);
             $table->foreignId('sender_id')->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('receiver_id')->nullable()->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();

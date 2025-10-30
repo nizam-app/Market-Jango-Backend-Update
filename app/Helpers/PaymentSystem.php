@@ -8,67 +8,76 @@ use Illuminate\Support\Facades\Http;
 
 class PaymentSystem
 {
-    static function  InitiatePayment($Profile,$payable,$tran_id,$user_email): array
+    static function InitiatePayment($Profile, $payable, $tran_id, $user_email): array
     {
-        try{
-            $ssl = "";
-            $response = Http::asForm()->post($ssl->init_url,[
-                "store_id"=>$ssl->store_id,
-                "store_passwd"=>$ssl->store_passwd,
-                "total_amount"=>$payable,
-                "currency"=>$ssl->currency,
-                "tran_id"=>$tran_id,
-                "success_url"=>"$ssl->success_url?tran_id=$tran_id",
-                "fail_url"=>"$ssl->fail_url?tran_id=$tran_id",
-                "cancel_url"=>"$ssl->cancel_url?tran_id=$tran_id",
-                "ipn_url"=>$ssl->ipn_url,
-                "cus_name"=>$Profile->cus_name,
-                "cus_email"=>$user_email,
-                "cus_add1"=>$Profile->cus_add,
-                "cus_add2"=>$Profile->cus_add,
-                "cus_city"=>$Profile->cus_city,
-                "cus_state"=>$Profile->cus_city,
-                "cus_postcode"=>"1200",
-                "cus_country"=>$Profile->cus_country,
-                "cus_phone"=>$Profile->cus_phone,
-                "cus_fax"=>$Profile->cus_phone,
-                "shipping_method"=>"YES",
-                "ship_name"=>$Profile->ship_name,
-                "ship_add1"=>$Profile->ship_add,
-                "ship_add2"=>$Profile->ship_add,
-                "ship_city"=>$Profile->ship_city,
-                "ship_state"=>$Profile->ship_city,
-                "ship_country"=>$Profile->ship_country ,
-                "ship_postcode"=>"12000",
-                "product_name"=>"Apple Shop Product",
-                "product_category"=>"Apple Shop Category",
-                "product_profile"=>"Apple Shop Profile",
-                "product_amount"=>$payable,
-            ]);
-            return $response->json('desc');
+        try {
+            $flutter = PaymentSystem::first();
+
+            $data = [
+                "tx_ref" => $tran_id,
+                "amount" => $payable,
+                "currency" => $flutter->currency ?? "USD",
+                "redirect_url" => "$flutter->success_url?tran_id=$tran_id",
+                "customer" => [
+                    "email" => $user_email,
+                    "phonenumber" => $Profile->cus_phone,
+                    "name" => $Profile->cus_name,
+                ],
+                "customizations" => [
+                    "title" => "Market Jango Invoice Payment",
+                    "description" => "Payment for Invoice #$tran_id",
+                    "logo" => $flutter->logo ?? null
+                ],
+            ];
+
+            $response = Http::withToken($flutter->secret_key)
+                ->post($flutter->init_url, $data);
+
+            if ($response->successful()) {
+                $res = $response->json();
+                return [
+                    "payment_url" => $res['data']['link'] ?? null,
+                    "status" => "success",
+                ];
+            } else {
+                return [
+                    "status" => "failed",
+                    "message" => $response->body(),
+                ];
+            }
+        } catch (Exception $e) {
+            return [
+                "status" => "error",
+                "message" => $e->getMessage(),
+            ];
         }
-        catch (Exception $e){
-            return $ssl;
-        }
-
     }
 
-    static function InitiateSuccess($tran_id):int{
-        Invoice::where(['tran_id'=>$tran_id,'val_id'=>0])->update(['payment_status'=>'Success']);
+    static function InitiateSuccess($tran_id): int
+    {
+        Invoice::where(['tran_id' => $tran_id, 'val_id' => 0])
+            ->update(['payment_status' => 'Success']);
         return 1;
     }
 
-    static function InitiateFail($tran_id):int{
-        Invoice::where(['tran_id'=>$tran_id,'val_id'=>0])->update(['payment_status'=>'Fail']);
-        return 1;
-    }
-    static function InitiateCancel($tran_id):int{
-        Invoice::where(['tran_id'=>$tran_id,'val_id'=>0])->update(['payment_status'=>'Cancel']);
+    static function InitiateFail($tran_id): int
+    {
+        Invoice::where(['tran_id' => $tran_id, 'val_id' => 0])
+            ->update(['payment_status' => 'Fail']);
         return 1;
     }
 
-    static function InitiateIPN($tran_id,$status,$val_id):int{
-        Invoice::where(['tran_id'=>$tran_id,'val_id'=>0])->update(['payment_status'=>$status,'val_id'=>$val_id]);
+    static function InitiateCancel($tran_id): int
+    {
+        Invoice::where(['tran_id' => $tran_id, 'val_id' => 0])
+            ->update(['payment_status' => 'Cancel']);
+        return 1;
+    }
+
+    static function InitiateIPN($tran_id, $status, $val_id): int
+    {
+        Invoice::where(['tran_id' => $tran_id, 'val_id' => 0])
+            ->update(['payment_status' => $status, 'val_id' => $val_id]);
         return 1;
     }
 }

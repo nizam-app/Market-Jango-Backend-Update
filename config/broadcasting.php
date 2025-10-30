@@ -12,7 +12,7 @@ return [
     |
     */
 
-    'default' => env('BROADCAST_CONNECTION', 'reverb'),
+    'default' => env('BROADCAST_CONNECTION', 'pusher'),
 
     /*
     |--------------------------------------------------------------------------
@@ -24,35 +24,17 @@ return [
     |
     */
 
+
     'connections' => [
-
-        'reverb' => [
-            'driver' => 'reverb',
-            'app_id' => env('REVERB_APP_ID', '301724'),
-            'key' => env('REVERB_APP_KEY', 'ab7fs1iqb0w0yuu0u5x7'),
-            'secret' => env('REVERB_APP_SECRET', 'qfi4egzm5qrozf5kqcxz'),
+        'pusher' => [
+            'driver' => 'pusher',
+            'key' => env('PUSHER_APP_KEY'),
+            'secret' => env('PUSHER_APP_SECRET'),
+            'app_id' => env('PUSHER_APP_ID'),
             'options' => [
-                'host' => env('REVERB_HOST', 'localhost'),
-                'port' => env('REVERB_PORT', 8080),
-                'scheme' => env('REVERB_SCHEME', 'http'),
-                // Automatically set useTLS based on scheme
-                'useTLS' => env('REVERB_SCHEME', 'http') === 'https',
+                'cluster' => env('PUSHER_APP_CLUSTER', 'mt1'),
+                'useTLS' => true,
             ],
-            'client_options' => [
-                // Optional: Guzzle options, e.g. timeout, verify SSL
-                // 'timeout' => 5,
-                // 'verify' => false,
-            ],
-        ],
-
-        // Optional logging driver (good for debugging)
-        'log' => [
-            'driver' => 'log',
-        ],
-
-        // Null driver (no broadcasting)
-        'null' => [
-            'driver' => 'null',
         ],
     ],
 ];

@@ -7,35 +7,13 @@ use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Notification;
 use App\Models\User;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
-    public function sendNotification(Request $request)
-    {
-        $request->validate([
-            'receiver_id' => 'required|exists:users,id',
-            'message' => 'required|string',
-        ]);
-        $userId = $request->header('id');
-        $userEmail = $request->header('email');
-        $user = User::where('id', $userId)->where('email', $userEmail)->with('vendor')->first();
-        if(!$user){
-            return ResponseHelper::Out('failed','Vendor not found',null, 404);
-        }
-
-        $notification = Notification::create([
-            'sender_id' => auth()->id(),
-            'receiver_id' => $request->receiver_id,
-            'message' => $request->message,
-            'name' => $request->name,
-        ]);
-
-        event(new NotificationSent($notification));
-
-        return response()->json(['status' => 'Notification sent!', 'notification' => $notification]);
-    }
+    //get notification
     public function myNotifications(Request $request): JsonResponse
     {
         try {
@@ -49,6 +27,7 @@ class NotificationController extends Controller
             }
             $notifications = Notification::where('receiver_id', $user->id)
                 ->with('sender:id,name,email')
+                ->select('id', 'name','message','is_read', 'sender_id', 'receiver_id', 'created_at')
                 ->latest()
                 ->get();
             if ($notifications->isEmpty()) {
@@ -59,4 +38,23 @@ class NotificationController extends Controller
             return ResponseHelper::Out('failed', $e->getMessage(), null, 500);
         }
     }
+    //read notification
+    public function markAsRead(Request $request, $id): JsonResponse
+    {
+        try {
+            $userId = $request->header('id');
+            $notification = Notification::where('id', $id)
+                ->where('receiver_id', $userId)
+                ->first();
+            if (!$notification) {
+                return ResponseHelper::Out('failed', 'Notification not found', null, 404);
+            }
+            // update notification
+            $notification->update(['is_read' => true]);
+            return ResponseHelper::Out('success', 'Notification marked as read', $notification, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+
 }
