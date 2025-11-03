@@ -77,46 +77,131 @@ class ChatController extends Controller
         }
     }
     //Get user by type
-    public function userGetByType(Request $request): JsonResponse
+//    public function userGetByType(Request $request): JsonResponse
+//    {
+//        try {
+//            $user = User::where('id', $request->header('id'))->select('id', 'user_type')->first();
+//            if (!$user) {
+//                return ResponseHelper::Out('failed', 'User not found', null, 404);
+//            }
+//            $usersQuery = null;
+//            switch ($user->user_type) {
+//                case 'buyer':
+//                    $usersQuery = User::where('user_type', 'vendor')->where('status', 'Approved');
+//                    break;
+//                case 'vendor':
+//                    $usersQuery = User::where('user_type', 'buyer');
+//                    break;
+//                case 'transport':
+//                    $usersQuery = User::where('user_type', 'driver')->where('status', 'Approved');
+//                    break;
+//                case 'driver':
+//                    $usersQuery = User::where('user_type', 'transport');
+//                    break;
+//                case 'admin':
+//                    $usersQuery = User::query();
+//                    break;
+//                default:
+//                    return ResponseHelper::Out('failed', 'Invalid user type', null, 400);
+//            }
+//            $users = $usersQuery->paginate(30);
+//            return ResponseHelper::Out('success', 'All user successfully fetched', $users, 200);
+//        } catch (Exception $e) {
+//            return ResponseHelper::Out('failed', 'Something went wrong', null, 500);
+//        }
+//    }
+
+    //get chat list
+//    public function userInbox(Request $request): JsonResponse
+//    {
+//        try {
+//            //  Get user
+//            $userId = $request->header('id');
+//            $user = User::where('id', $userId)
+//                ->select(['id'])
+//                ->first();
+//            if (!$user) {
+//                return ResponseHelper::Out('failed', 'user not found', null, 404);
+//            }
+//            $messages = Chat::where('receiver_id', $user->id)
+//                ->with('sender')
+//                ->select('id', 'image','public_id','message','is_read', 'sender_id', 'receiver_id', 'created_at')
+//                ->latest()
+//                ->get();
+//            if ($messages->isEmpty()) {
+//                return ResponseHelper::Out('success', 'You have no message', null, 200);
+//            }
+//            return ResponseHelper::Out('success', 'message retrieved successfully', $messages, 200);
+//        } catch (\Exception $e) {
+//            return ResponseHelper::Out('failed', $e->getMessage(), null, 500);
+//        }
+//    }
+
+    public function userInbox(Request $request): JsonResponse
     {
         try {
-            $user = User::where('id', $request->header('id'))->select('id', 'user_type')->first();
+            // Get logged-in user ID from header
+            $userId = $request->header('id');
+
+            // Check if user exists
+            $user = User::select('id')->find($userId);
             if (!$user) {
                 return ResponseHelper::Out('failed', 'User not found', null, 404);
             }
-            $usersQuery = null;
-            switch ($user->user_type) {
-                case 'buyer':
-                    $usersQuery = User::where('user_type', 'vendor')->where('status', 'Approved');
-                    break;
-                case 'vendor':
-                    $usersQuery = User::where('user_type', 'buyer');
-                    break;
-                case 'transport':
-                    $usersQuery = User::where('user_type', 'driver')->where('status', 'Approved');
-                    break;
-                case 'driver':
-                    $usersQuery = User::where('user_type', 'transport');
-                    break;
-                case 'admin':
-                    $usersQuery = User::query();
-                    break;
-                default:
-                    return ResponseHelper::Out('failed', 'Invalid user type', null, 400);
+
+            // Fetch all chats where user is sender or receiver
+            $messages = Chat::where(function ($query) use ($user) {
+                $query->where('receiver_id', $user->id)
+                    ->orWhere('sender_id', $user->id);
+            })
+                ->with([
+                    'sender:id,name,image',
+                    'receiver:id,name,image'
+                ])
+                ->select('id', 'sender_id', 'receiver_id', 'message', 'image', 'public_id', 'is_read', 'created_at')
+                ->latest()
+                ->get();
+
+            // If no messages found
+            if ($messages->isEmpty()) {
+                return ResponseHelper::Out('success', 'You have no messages', [], 200);
             }
-            $users = $usersQuery->paginate(30);
-            return ResponseHelper::Out('success', 'All user successfully fetched', $users, 200);
-        } catch (Exception $e) {
-            return ResponseHelper::Out('failed', 'Something went wrong', null, 500);
+
+            // Build unique chat list (one per conversation partner)
+            $chatList = $messages->unique(function ($chat) use ($user) {
+                // Return the partner ID (not current user)
+                return $chat->sender_id == $user->id ? $chat->receiver_id : $chat->sender_id;
+            })
+                ->values()
+                ->map(function ($chat) use ($user) {
+                    // Identify the chat partner (opposite user)
+                    $partner = $chat->sender_id == $user->id ? $chat->receiver : $chat->sender;
+
+                    return [
+                        'chat_id' => $chat->id,
+                        'partner_id' => $partner->id,
+                        'partner_name' => $partner->name,
+                        'partner_image' => $partner->image ?? null,
+                        'last_message' => $chat->message,
+                        'last_message_time' => $chat->created_at->diffForHumans(),
+                        'is_read' => $chat->is_read,
+                    ];
+                });
+
+            return ResponseHelper::Out('success', 'Chat list retrieved successfully', $chatList, 200);
+
+        } catch (\Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+
     // Send message
     public function sendMessage(Request $request, $receiverId)
     {
         try {
             $request->validate([
                 'message' => 'nullable|string',
-                'image' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf,doc,docx,xls,xlsx|max:10240',
+                'image.*' => 'nullable|mimes:jpg,jpeg,png,webp,pdf,doc,docx,xls,xlsx|max:10240',
                 'reply_to' => 'nullable|exists:chats,id',
             ]);
 

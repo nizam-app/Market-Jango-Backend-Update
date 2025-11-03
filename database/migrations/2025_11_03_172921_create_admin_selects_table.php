@@ -11,12 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('reviews', function (Blueprint $table) {
+        Schema::create('admin_selects', function (Blueprint $table) {
             $table->id();
-            $table->text('description')->nullable();
-            $table->double('rating')->default(0);
-            $table->foreignId('vendor_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
-            $table->foreignId('buyer_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
+            $table->string('key');
+            $table->foreignId('product_id')->constrained('products')->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
         });
     }
@@ -26,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('reviews');
+        Schema::dropIfExists('admin_selects');
     }
 };

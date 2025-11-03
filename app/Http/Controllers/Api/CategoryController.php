@@ -23,9 +23,9 @@ class CategoryController extends Controller
             $categories = Category::with([
                     'products' => function ($query) {
                         $query->where('is_active', 1)
-                            ->select('id','name', 'description', 'sell_price', 'buy_price','discount','image','color', 'size', 'vendor_id','remark', 'category_id')
+                            ->select('id','name', 'description', 'regular_price', 'sell_price','discount','image','color', 'size', 'vendor_id','remark', 'category_id')
                             ->with([
-                                'images:id,product_id,image_path,file_type',
+                                'images:id,product_id,image_path,public_id',
                                 'vendor:id,country,address,business_name,business_type,user_id',
                                 'vendor.user:id,name,image,email,phone,language',
                             ]);

@@ -13,6 +13,20 @@ return new class extends Migration
     {
         Schema::create('invoices', function (Blueprint $table) {
             $table->id();
+            $table->decimal('total', 10, 2);
+            $table->decimal('vat', 10, 2);
+            $table->decimal('payable', 10, 2);
+            $table->string('cus_name')->nullable();
+            $table->string('cus_email');
+            $table->string('cus_phone')->nullable();
+            $table->string('ship_address')->nullable();
+            $table->string('ship_city')->nullable();
+            $table->string('ship_country')->nullable();
+            $table->string('delivery_status')->nullable();
+            $table->string('payment_status')->nullable();
+            $table->string('tax_ref')->nullable();
+            $table->string('currency')->default('USD ');
+            $table->foreignId('user_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
         });
     }

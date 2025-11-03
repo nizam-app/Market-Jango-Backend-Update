@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Buyer;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\SearchHistory;
 use App\Models\User;
+use App\Models\Vendor;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,35 +19,31 @@ class BuyerHomeController extends Controller
     public function productFilter(Request $request)
     {
         try {
-            $query = Product::with('category');
-            if (
-                !$request->filled('category') &&
-                !$request->filled('country') &&
-                !$request->filled('location')
-            ) {
-                return ResponseHelper::Out('success', 'Please provide at least one filter parameter', [], 200);
+            $request->validate([
+                'location' => 'required|string',
+            ]);
+            $location   = $request->input('location');
+            $categoryName = $request->input('category');
+            $vendors = Vendor::where('address', 'LIKE', "%{$location}%")->pluck('id');
+            if ($vendors->isEmpty()) {
+                return ResponseHelper::Out('success', 'No vendors found for this location', null, 200);
             }
-            // Filter by Category Name
-            if ($request->filled('category')) {
-                $query->whereHas('category', function ($q) use ($request) {
-                    $q->where('name', 'LIKE', '%' . $request->category . '%');
-                });
+            $categories = Category::whereIn('vendor_id', $vendors)
+                ->where('name','LIKE', "%{$categoryName}%" )
+                ->pluck('id');
+            if ($categories->isEmpty()) {
+                return ResponseHelper::Out('success', 'No categories found for selected vendors', null, 200);
             }
-
-            //Filter by Country dropdown → location column
-            if ($request->filled('country')) {
-                $query->where('location', 'LIKE', '%' . $request->country . '%');
-            }
-
-            // 🔹 Filter by Google Map location → country column
-            if ($request->filled('location')) {
-                $query->where('country', 'LIKE', '%' . $request->location . '%');
-            }
-            $products = $query->get();
-            if ($products->isEmpty()) {
-                return ResponseHelper::Out('success', 'No matching data found', $products, 200);
-            }
-            return ResponseHelper::Out('success', 'Filtered data retrieved successfully', ["total"=>$products->count(), 'data' => $products], 200);
+            $products = Product::whereIn('category_id', $categories)->with([
+                'vendor:id,user_id',
+                'vendor.user:id,name',
+                'vendor.reviews:id,vendor_id,description,rating',
+                'category:id,name',
+                'images:id,image_path,public_id,product_id'])
+                ->select(['id','name','description','regular_price','sell_price','image','vendor_id','category_id', 'color', 'size', 'discount'])
+                ->latest()
+                ->paginate(20);
+            return ResponseHelper::Out('success', 'Products fetched successfully', ["total"=>$products->count(), 'data' => $products], 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Error filtering locations', $e->getMessage(), 500);
         }
@@ -82,16 +80,20 @@ class BuyerHomeController extends Controller
                     ->orWhere('description', 'LIKE', "%{$query}%");
             })
                 ->with([
-                    'category:id,name,description',
-                    'images:id,image_path,product_id'
+                    'vendor:id,user_id',
+                    'vendor.user:id,name',
+                    'vendor.reviews:id,vendor_id,description,rating',
+                    'category:id,name',
+                    'images:id,image_path,public_id,product_id'
                 ])
                 ->select([
                     'id',
                     'name',
                     'description',
                     'regular_price',
-                    'sell_price',
                     'image',
+                    'size',
+                    'color',
                     'vendor_id',
                     'category_id'
                 ])

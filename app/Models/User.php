@@ -17,17 +17,20 @@ use HasFactory, Notifiable;
 * @var list<string>
     */
     protected $fillable = [
+    'user_type',
     'name',
     'email',
-    'password',
     'phone',
     'otp',
-    'token',
-    'user_type',
-    'expires_at',
     'phone_verified_at',
+    'password',
+    'language',
+    'image',
+    'public_id',
+    'is_read',
+    'is_active',
     'status',
-    'public_id'
+    'expires_at'
     ];
 
     /**
@@ -83,6 +86,7 @@ use HasFactory, Notifiable;
     {
         return $this->hasMany(Notification::class, 'receiver_id');
     }
-        }
+
+}
 
 

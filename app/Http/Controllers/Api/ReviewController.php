@@ -34,7 +34,7 @@ class ReviewController extends Controller
         }
     }
 
-    // Store Wishlist
+    // Store Review
     public function store(Request $request): \Illuminate\Http\JsonResponse
     {
         try {

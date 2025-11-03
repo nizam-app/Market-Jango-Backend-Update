@@ -239,12 +239,12 @@ class AdminController extends Controller
     {
         try {
             $driver = Driver::with([
-                'user:id,name'
+                'user:id,name,image,phone,is_active'
             ])
                 ->whereHas('user', function ($query) {
                     $query->where('status', 'Approved');
                 })
-                ->select('id', 'user_id','created_at','location', 'car_name','car_model')
+                ->select('id', 'user_id','created_at','location', 'car_name','car_model','price')
                 ->paginate(10);
             if($driver->isEmpty()){
                 return ResponseHelper::Out('success', 'No active driver found', $driver, 200);

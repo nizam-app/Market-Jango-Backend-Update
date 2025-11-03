@@ -22,7 +22,13 @@ class ProductController extends Controller
     {
         try {
             //Get All Product But New Product First
-            $products = Product::with(['category:id,name,description','images:id,image_path,product_id'])
+            $products = Product::with([
+                'vendor:id,user_id',
+                'vendor.user:id,name',
+                'vendor.reviews:id,vendor_id,description,rating',
+                'category:id,name',
+                'images:id,image_path,public_id,product_id'
+            ])
                 ->select(['id','name','description','regular_price','sell_price','image','vendor_id','category_id', 'color', 'size'])
                 ->latest()
                 ->paginate(20);
@@ -30,6 +36,29 @@ class ProductController extends Controller
                 return ResponseHelper::Out('success', 'You have no products', [], 200);
             }
             return ResponseHelper::Out('success', 'All products successfully fetched', $products, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    // Get All Products
+    public function productDetails(Request $request, $id): JsonResponse
+    {
+        try {
+            //Get All Product But New Product First
+            $products = Product::where('id', $id)
+            ->with([
+                'vendor:id,user_id',
+                'vendor.user:id,name',
+                'vendor.reviews:id,vendor_id,description,rating',
+                'category:id,name',
+                'images:id,image_path,public_id,product_id'
+            ])
+                ->select(['id','name','description','regular_price','sell_price','image','vendor_id','category_id', 'color', 'size'])
+                ->first();
+            if (!$products) {
+                return ResponseHelper::Out('success', 'You have no products', [], 200);
+            }
+            return ResponseHelper::Out('success', 'Product successfully fetched', $products, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }

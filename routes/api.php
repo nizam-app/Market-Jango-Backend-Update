@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\AdminSelectController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\BuyerHomeController;
@@ -31,6 +32,8 @@ Route::post('/verify-mail-otp', [AuthController::class, 'verifyMailOtp']);
 Route::post('/login', [AuthController::class, 'login']);
 
 
+
+
 //Route::middleware('userTypeVerify:admin')->group(function () {
 //
 //});
@@ -45,14 +48,41 @@ Route::middleware('tokenVerify')->group(function () {
     Route::post('/register-email', [AuthController::class, 'registerEmail']);
     Route::post('/register-password', [AuthController::class, 'registerPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+    Route::get('/language', [AuthController::class, 'language']);
+
+    Route::prefix('admin-selects')->group(function () {
+
+        // Fetch all top products
+        Route::get('top-products', [AdminSelectController::class, 'getTopProduct']);
+        // Fetch all new items
+        Route::get('new-items', [AdminSelectController::class, 'getNewItem']);
+        // Fetch all "Just For You" products
+        Route::get('just-for-you', [AdminSelectController::class, 'getJustForYou']);
+        // Store new admin select
+        Route::post('/create', [AdminSelectController::class, 'store']);
+        // Update admin select
+        Route::post('/update/{id}', [AdminSelectController::class, 'update']);
+        // Delete admin select
+        Route::delete('/destroy/{id}', [AdminSelectController::class, 'destroy']);
+        // Optional: Fetch all grouped by key
+        Route::get('/', [AdminSelectController::class, 'index']);
+    });
+
+
+
+
+    //user Update routes
+    Route::prefix('user')->group(function () {
+        Route::post('/update', [AuthController::class, 'update']);
+    });
 
     // Invoice and payment
-    Route::get("/InvoiceCreate", [InvoiceController::class, 'InvoiceCreate']);
+    Route::get("/invoice/create", [InvoiceController::class, 'InvoiceCreate']);
+    Route::get("/payment/status", [InvoiceController::class, 'PaymentStatus']);
     Route::get("/InvoiceList", [InvoiceController::class, 'InvoiceList']);
     Route::get("/InvoiceProductList/{invoice_id}", [InvoiceController::class, 'InvoiceProductList']);
 
-// Payment callback routes
-    Route::post("/PaymentSuccess", [InvoiceController::class, 'PaymentSuccess']);
+    // Payment callback routes
     Route::post("/PaymentCancel", [InvoiceController::class, 'PaymentCancel']);
     Route::post("/PaymentFail", [InvoiceController::class, 'PaymentFail']);
     Route::post("/PaymentIPN", [InvoiceController::class, 'PaymentIPN']);
@@ -65,8 +95,10 @@ Route::middleware('tokenVerify')->group(function () {
     Route::get('/category', [CategoryController::class, 'index']);
     Route::get('/driver', [DriverController::class, 'index']);
     Route::get('/user', [UserController::class, 'index']);
+    Route::get('/user/detail', [UserController::class, 'userDetail']);
     Route::get('/user/show', [UserController::class, 'show']);
     Route::get('/product', [ProductController::class, 'index']);
+    Route::get('/product/detail/{id}', [ProductController::class, 'productDetails']);
 
     // Admin all routes
     Route::get('/active/vendor', [AdminController::class, 'activeVendor']);
@@ -111,7 +143,7 @@ Route::middleware('tokenVerify')->group(function () {
 
     //chat routes
     Route::prefix('chat')->group(function () {
-        Route::get('/user', [ChatController::class, 'userGetByType']);
+        Route::get('/user', [ChatController::class, 'userInbox']);
         Route::get('/user/search', [ChatController::class, 'userSearch']);
         Route::post('/send/{id}', [ChatController::class, 'sendMessage']); // not complete
         Route::get('/history/{id}', [ChatController::class, 'getMessages']); // not complete
@@ -138,11 +170,6 @@ Route::middleware('tokenVerify')->group(function () {
                 Route::get('/category/{id}', [VendorController::class, 'categoryByProduct']);
                 Route::get('/attribute', [VendorController::class, 'attribute']);
             });
-            //user vendor routes
-            Route::prefix('user')->group(function () {
-                Route::post('/update', [VendorHomePageController::class, 'update']);
-            });
-
             //category routes
             Route::prefix('category')->group(function () {
                 Route::post('/create', [CategoryController::class, 'store']);

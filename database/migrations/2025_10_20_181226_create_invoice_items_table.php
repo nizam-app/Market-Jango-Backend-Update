@@ -13,6 +13,16 @@ return new class extends Migration
     {
         Schema::create('invoice_items', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('invoice_id');
+            $table->unsignedBigInteger('product_id');
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('quantity');
+            $table->unsignedBigInteger('tran_id')->nullable();
+            $table->unsignedBigInteger('sale_price');
+            $table->index('invoice_id');
+            $table->index('product_id');
+            $table->index('user_id');
+            $table->index('tran_id');
             $table->timestamps();
         });
     }

@@ -23,9 +23,12 @@ return new class extends Migration
             $table->enum('language', ['English','Français','Русский','Tiếng Việt'])->default('English');
             $table->string('image', 200)->nullable();
             $table->string('public_id')->nullable();
+            $table->boolean('is_read')->default(false);
+            $table->boolean('is_active')->default(false);
             $table->enum('status', ['Pending','Approved','Rejected'])->default('Pending');
             $table->timestamp('expires_at')->nullable();
             $table->rememberToken();
+            $table->index('is_active');
             $table->index('user_type');
             $table->index('language');
             $table->index('status');

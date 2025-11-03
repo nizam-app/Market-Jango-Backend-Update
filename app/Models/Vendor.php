@@ -28,5 +28,9 @@ class Vendor extends Model
     public function images(){
         return $this->hasMany(UserImage::class,'user_id');
     }
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
 
 }

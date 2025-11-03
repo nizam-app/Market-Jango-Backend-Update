@@ -8,30 +8,28 @@ use Illuminate\Support\Facades\Http;
 
 class PaymentSystem
 {
-    static function InitiatePayment($Profile, $payable, $tran_id, $user_email): array
+    static function InitiatePayment($invoice): array
     {
         try {
-            $flutter = PaymentSystem::first();
-
             $data = [
-                "tx_ref" => $tran_id,
-                "amount" => $payable,
+                "tx_ref" => $invoice->tax_ref,
+                "amount" => $invoice->payable,
                 "currency" => $flutter->currency ?? "USD",
-                "redirect_url" => "$flutter->success_url?tran_id=$tran_id",
+                "redirect_url" => url('api/payment/status'),
                 "customer" => [
-                    "email" => $user_email,
-                    "phonenumber" => $Profile->cus_phone,
-                    "name" => $Profile->cus_name,
+                    "email" => $invoice->cus_email,
+                    "phonenumber" => $invoice->cus_phone,
+                    "name" => $invoice->cus_name,
                 ],
                 "customizations" => [
                     "title" => "Market Jango Invoice Payment",
-                    "description" => "Payment for Invoice #$tran_id",
-                    "logo" => $flutter->logo ?? null
+                    "description" => "Payment for Invoice #$invoice",
+                    "logo" => null
                 ],
             ];
 
-            $response = Http::withToken($flutter->secret_key)
-                ->post($flutter->init_url, $data);
+            $response = Http::withToken(env('secret_key'))
+                ->post(env('init_url'), $data);
 
             if ($response->successful()) {
                 $res = $response->json();
@@ -49,6 +47,7 @@ class PaymentSystem
             return [
                 "status" => "error",
                 "message" => $e->getMessage(),
+                "key"=> "hello"
             ];
         }
     }

@@ -34,7 +34,10 @@ class CartController extends Controller
             if($carts->isEmpty()){
                 return ResponseHelper::Out('success', 'Cart not found', null, 200);
             }
-            return ResponseHelper::Out('success', 'All carts successfully fetched', $carts, 200);
+            foreach ($carts as $cartItem) {
+                $total=$cartItem->price+$cartItem->delivery_charge;
+            }
+            return ResponseHelper::Out('success', 'All carts successfully fetched', ["cartData"=>$carts, "totalPrice"=> $total], 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
@@ -46,8 +49,9 @@ class CartController extends Controller
             // Validation
             $validator = Validator::make($request->all(), [
                 'product_id' => 'nullable|exists:products,id',
-                'color' => 'required|string|max:20',
-                'size' => 'required|string|max:20',
+                'color' => 'nullable|string|max:20',
+                'size' => 'nullable|string|max:20',
+                'action' => 'nullable|in:increase,decrease'
             ]);
             if ($validator->fails()) {
                 return ResponseHelper::Out('failed', 'Validation exception', $validator->errors()->first(), 422);
@@ -64,12 +68,14 @@ class CartController extends Controller
             }
             $vendorId = $product->vendor_id;
             $productQty = $request->input('quantity');
+            $updateProductQty = 1;
             $deliveryCharge = DeliveryCharge::where('vendor_id', $vendorId)
                 ->where('quantity', '<=', $productQty)
                 ->orderBy('quantity', 'desc')
                 ->first();
             $deliveryChargeAmount = $deliveryCharge ? $deliveryCharge->delivery_charge : 0;
             $unitPrice = $product->regular_price;
+            $action = $request->input('action');
             $totalPrice = $unitPrice * $productQty;
             // Create new cart item
             $cart = Cart::where('product_id', $productId)
@@ -77,23 +83,39 @@ class CartController extends Controller
                 ->first();
 
             if ($cart) {
-                // Total quantity after update
-                $newTotalQty = $cart->quantity + $productQty;
+                if ($action === 'increase') {
+                    $newQty = $cart->quantity + $productQty;
+                } else {
+                    $newQty = $cart->quantity - $productQty;
+                }
 
                 // Recalculate delivery charge based on total quantity
                 $deliveryCharge = DeliveryCharge::where('vendor_id', $vendorId)
-                    ->where('quantity', '<=', $newTotalQty)
+                    ->where('quantity', '<=', $newQty)
                     ->orderBy('quantity', 'desc')
                     ->first();
 
                 $deliveryChargeAmount = $deliveryCharge ? $deliveryCharge->delivery_charge : 0;
 
-                // Update existing
-                $cart->quantity = $newTotalQty;
-                $cart->price = (float)$product->regular_price * $cart->quantity;
-                $cart->delivery_charge = $deliveryChargeAmount;
-                $cart->save();
+                // Update cart
+                $cart->update([
+                    'quantity' => $newQty,
+                    'price' => (float)$product->regular_price * $newQty,
+                    'delivery_charge' => $deliveryChargeAmount,
+                ]);
+                return ResponseHelper::Out('success', 'Cart updated successfully', $cart, 200);
             } else {
+                if ($action === 'decrease') {
+                    return ResponseHelper::Out('failed', 'Item not found in cart to decrease', null, 404);
+                }
+
+                $deliveryCharge = DeliveryCharge::where('vendor_id', $vendorId)
+                    ->where('quantity', '<=', $productQty)
+                    ->orderBy('quantity', 'desc')
+                    ->first();
+
+                $deliveryChargeAmount = $deliveryCharge ? $deliveryCharge->delivery_charge : 0;
+
                 $cart = Cart::create([
                     'product_id' => $productId,
                     'vendor_id' => $vendorId,
@@ -101,12 +123,13 @@ class CartController extends Controller
                     'quantity' => $productQty,
                     'color' => $request->input('color'),
                     'size' => $request->input('size'),
-                    'price' => $totalPrice,
+                    'price' => $product->regular_price * $productQty,
                     'delivery_charge' => $deliveryChargeAmount,
                     'status' => 'active',
                 ]);
+
+                return ResponseHelper::Out('success', 'Cart item added successfully', $cart, 201);
             }
-            return ResponseHelper::Out('success', 'Cart successfully created', $cart, 201);
         } catch (ValidationException $e) {
             return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
         } catch (Exception $e) {

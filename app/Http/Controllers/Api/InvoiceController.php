@@ -23,59 +23,63 @@ class InvoiceController extends Controller
             $user_email=$request->header('email');
 
             $tran_id=uniqid();
+            $currency = "USD";
             $delivery_status='Pending';
             $payment_status='Pending';
 
-            $Profile=User::where('id','=',$user_id)->first();
-            $cus_details="Name:$Profile->cus_name,Address:$Profile->cus_add,City:$Profile->cus_city,Phone: $Profile->cus_phone";
-            $ship_details="Name:$Profile->ship_name,Address:$Profile->ship_add ,City:$Profile->ship_city ,Phone: $Profile->cus_phone";
 
+            $Profile=User::where('id','=',$user_id)->with('buyer')->first();
+            $buyer = $Profile->buyer;
+            $cus_details="Name:$Profile->name,Address:,City:$buyer->state,Phone: $Profile->phone";
+           $cus_name = $Profile->name;
+           $cus_phone = $Profile->phone;
+           $ship_address = $buyer->address;
+           $ship_city = $buyer->ship_city;
+           $ship_country = $buyer->country;
             // Payable Calculation
             $total=0;
-            $cartList=Cart::where('buyer_id','=',$user_id)->get();
+            $cartList = Cart::where('buyer_id', $buyer->id)
+                ->where('status', 'active')->get();
             foreach ($cartList as $cartItem) {
-                $total=$total+$cartItem->price;
+                $total=$total+$cartItem->price+$cartItem->delivery_charge;
             }
-
-            $vat=($total*3)/100;
+            $vat=($total*0)/100;
             $payable=$total+$vat;
-
-            $invoice= Invoice::create([
-                'total'=>$total,
-                'vat'=>$vat,
-                'payable'=>$payable,
-                'cus_details'=>$cus_details,
-                'ship_details'=>$ship_details,
-                'tran_id'=>$tran_id,
-                'delivery_status'=>$delivery_status,
-                'payment_status'=>$payment_status,
-                'user_id'=>$user_id
+            $invoice = Invoice::create([
+                'total'         => $total,
+                'vat'           => $vat,
+                'payable'       => $payable,
+                'cus_name'      => $cus_name,
+                'cus_email'     => $user_email,
+                'cus_phone'     => $cus_phone,
+                'ship_address'  => $ship_address,
+                'ship_city'     => $ship_city,
+                'ship_country'  => $ship_country,
+                'tax_ref'       => $tran_id,
+                'currency' => $currency,
+                'delivery_status'=> $delivery_status,
+                'payment_status' => $payment_status,
+                'user_id'      => $user_id
             ]);
-
             $invoiceID=$invoice->id;
-
             foreach ($cartList as $EachProduct) {
                 InvoiceItem::create([
                     'invoice_id' => $invoiceID,
+                    'tran_id' => $tran_id,
                     'product_id' => $EachProduct['product_id'],
                     'user_id'=>$user_id,
-                    'qty' =>  $EachProduct['qty'],
+                    'quantity' =>  $EachProduct['quantity'],
                     'sale_price'=>  $EachProduct['price'],
                 ]);
             }
-
-            $paymentMethod=PaymentSystem::InitiatePayment($Profile,$payable,$tran_id,$user_email);
-
+            $paymentMethod=PaymentSystem::InitiatePayment($invoice);
             DB::commit();
-
             return ResponseHelper::Out('success','',array(['paymentMethod'=>$paymentMethod,'payable'=>$payable,'vat'=>$vat,'total'=>$total]),200);
-
         }
         catch (Exception $e) {
             DB::rollBack();
             return ResponseHelper::Out('fail','',$e,200);
         }
-
     }
 
     function InvoiceList(Request $request){
@@ -89,20 +93,17 @@ class InvoiceController extends Controller
         return InvoiceItem::where(['user_id'=>$user_id,'invoice_id'=>$invoice_id])->with('product')->get();
     }
 
-    function PaymentSuccess(Request $request){
-        PaymentSystem::InitiateSuccess($request->query('tran_id'));
-        return redirect('/profile');
+    function PaymentStatus(Request $request){
+
     }
 
 
     function PaymentCancel(Request $request){
         PaymentSystem::InitiateCancel($request->query('tran_id'));
-        return redirect('/profile');
     }
 
     function PaymentFail(Request $request){
         return PaymentSystem::InitiateFail($request->query('tran_id'));
-        return redirect('/profile');
     }
 
     function PaymentIPN(Request $request){

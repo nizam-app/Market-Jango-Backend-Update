@@ -23,7 +23,7 @@ class VendorHomePageController extends Controller
     public function show(Request $request): JsonResponse
     {
         try {
-            $vendor = User::where('id', $request->header('id'))->select(['id', 'name', 'image','public_id'])->first();
+            $vendor = User::where('id', $request->header('id'))->select(['id', 'name', 'image', 'public_id'])->first();
             if (!$vendor) {
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
@@ -32,50 +32,9 @@ class VendorHomePageController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-    //update vendor image
-    public function update(Request $request): JsonResponse
-    {
-        try {
-            $user = User::where('id', $request->header('id'))
-                ->with(['buyer:id,age,gender,address,description,state,country', 'driver:id,price',])
-                ->select(['id', 'name', 'image','public_id','user_type','email','phone','phone_verified_at','language','status'])
-                ->first();
-            if (!$user) {
-                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
-            }
-            $userType = $user->user_type;
-            switch ($user) {
-                case 'vendor':
-                    $uploadedFile = null;
-                    if ($request->hasFile('image')) {
-                        $request->validate([
-                            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
-                        ]);
-                        // Delete old image if exists
-                        if (!empty($user->public_id)) {
-                            FileHelper::delete($user->public_id);
-                        }
-                        //Upload new image
-                        $file = $request->file('image');
-                        $uploadedFile = FileHelper::upload($file, $userType);
-                        $user->image = $uploadedFile[0]['url'];
-                        $user->public_id =  $uploadedFile[0]['public_id'];
-                        $user->save();
-                    }
-                    $user->update([
-                        "name"=> $request->input('name', $user->name),
-                    ]);
-                    break;
-                    case 'driver':
-                        $name = "test";
-                        break;
-            }
 
-            return ResponseHelper::Out('success', 'user update successfully', $user, 200);
-        } catch (Exception $e) {
-            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
-        }
-    }
+
+
     //search vendor product
     public function productSearchByVendor(Request $request): JsonResponse
     {
@@ -135,6 +94,7 @@ class VendorHomePageController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+
     //product by vendor
     public function vendorProduct(Request $request): JsonResponse
     {
@@ -148,18 +108,19 @@ class VendorHomePageController extends Controller
             }
             // vendor product
             $products = Product::where('vendor_id', $vendor->id)
-                ->with(['category:id,name,description','images:id,image_path,product_id'])
-                ->select(['id','name','description','regular_price','sell_price','image','vendor_id','category_id', 'color', 'size'])
+                ->with(['category:id,name,description', 'images:id,image_path,product_id'])
+                ->select(['id', 'name', 'description', 'regular_price', 'sell_price', 'image', 'vendor_id', 'category_id', 'color', 'size'])
                 ->latest()
                 ->paginate(10);
             if ($products->isEmpty()) {
                 return ResponseHelper::Out('success', 'You have no products', [], 200);
             }
-            return ResponseHelper::Out('success', 'Products found', ['all'=> $products->count(), 'products'=>$products], 200);
+            return ResponseHelper::Out('success', 'Products found', ['all' => $products->count(), 'products' => $products], 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+
     //driver search
     public function driverSearch(Request $request): JsonResponse
     {
@@ -170,7 +131,7 @@ class VendorHomePageController extends Controller
             $query = $request->input('query');
 
             $drivers = User::where('user_type', 'driver')->where('name', 'like', "%{$query}%")
-            ->with(['driver:id,']);
+                ->with(['driver:id,']);
 
             if ($drivers->isEmpty()) {
                 return ResponseHelper::Out('success', 'No driver found', [], 200);
@@ -184,7 +145,6 @@ class VendorHomePageController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
 
 
 }

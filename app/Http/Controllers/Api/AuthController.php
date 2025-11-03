@@ -44,6 +44,21 @@ class AuthController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+    //get language
+    public function language(Request $request): JsonResponse
+    {
+        try {
+            $languages = [
+                'English',
+                'Français',
+                'Русский',
+                'Tiếng Việt'
+            ];
+            return ResponseHelper::Out('success', 'All language successfully fetched', $languages, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
     //store user type
     public function registerType(Request $request):JsonResponse
     {
@@ -473,6 +488,91 @@ class AuthController extends Controller
             return ResponseHelper::Out('error','Validation Failed',$e->errors(),422);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed','Something went wrong',$e->getMessage(),500);
+        }
+    }
+    //update
+    public function update(Request $request): JsonResponse
+    {
+        try {
+            $user = User::where('id', $request->header('id'))
+                ->with([
+                    'buyer:id,age,gender,address,description,state,country,user_id',
+                    'driver:id,price,user_id',
+                    'vendor:id,user_id',
+                    'transport:id,user_id'
+                ])
+                ->select(['id', 'name', 'image', 'public_id', 'user_type', 'email', 'phone', 'phone_verified_at', 'language', 'status'])
+                ->first();
+            if (!$user) {
+                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+            }
+            $userType = $user->user_type;
+            $buyer = $user->buyer;
+            $driver = $user->driver;
+            $uploadedFile = null;
+            if ($request->hasFile('image')) {
+                $request->validate([
+                    'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
+                ]);
+                // Delete old image if exists
+                if (!empty($user->public_id)) {
+                    FileHelper::delete($user->public_id);
+                }
+                //Upload new image
+                $file = $request->file('image');
+                $uploadedFile = FileHelper::upload($file, $userType);
+                $user->image = $uploadedFile[0]['url'];
+                $user->public_id = $uploadedFile[0]['public_id'];
+                $user->save();
+            }
+            switch ($userType) {
+                case 'buyer':
+                    $user->update([
+                        "name" => $request->input('name', $user->name),
+                        "language" => $request->input('language', $user->language)
+                    ]);
+                    $buyer->update([
+                        "gender" => $request->input('gender', $buyer->gender),
+                        "age" => $request->input('age', $buyer->age),
+                        "address" => $request->input('address', $buyer->address),
+                        "state" => $request->input('state', $buyer->state),
+                        "postcode" => $request->input('postcode', $buyer->postcode),
+                        "country" => $request->input('country', $buyer->country),
+                        "ship_name" => $request->input('ship_name', $buyer->ship_name),
+                        "ship_email" => $request->input('ship_email', $buyer->ship_email),
+                        "ship_address" => $request->input('ship_address', $buyer->ship_address),
+                        "ship_city" => $request->input('ship_city', $buyer->ship_city),
+                        "ship_state" => $request->input('ship_state', $buyer->ship_state),
+                        "ship_country" => $request->input('ship_country', $buyer->ship_country),
+                        "ship_phone" => $request->input('ship_phone', $buyer->ship_phone),
+                        "description" => $request->input('description', $buyer->description),
+                        "location" => $request->input('location', $buyer->location)
+                    ]);
+                    break;
+                case 'vendor':
+                case 'transport':
+                    $user->update([
+                        "name" => $request->input('name', $user->name),
+                        "language" => $request->input('language', $user->language)
+                    ]);
+                    break;
+                case 'driver':
+                    $user->update([
+                        "name" => $request->input('name', $user->name),
+                        "language" => $request->input('language', $user->language),
+                        "is_active" => $request->input('is_active', $user->is_active)
+                    ]);
+                    $driver->update([
+                        "price" => $request->input('price', $driver->price),
+                    ]);
+                    break;
+                default:
+                    break;
+            }
+
+            return ResponseHelper::Out('success', 'user update successfully', $user, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
 }

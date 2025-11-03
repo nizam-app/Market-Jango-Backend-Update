@@ -19,8 +19,8 @@ return new class extends Migration
             $table->string('state', 100)->nullable();
             $table->string('postcode', 100)->nullable();
             $table->string('country', 100)->nullable();
-            $table->string('fax', 100)->nullable();
             $table->string('ship_name', 100)->nullable();
+            $table->string('ship_email', 100)->nullable();
             $table->string('ship_address', 100)->nullable();
             $table->string('ship_city', 100)->nullable();
             $table->string('ship_state', 100)->nullable();
@@ -30,6 +30,11 @@ return new class extends Migration
             $table->string('location', 200)->nullable();
             $table->foreignId('user_id')->unique()->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
+            $table->index('address');
+            $table->index('location');
+            $table->index('ship_name');
+            $table->index('ship_phone');
+            $table->index('ship_email');
         });
     }
 

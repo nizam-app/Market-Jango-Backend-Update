@@ -7,12 +7,21 @@ use Illuminate\Database\Eloquent\Model;
 class Buyer extends Model
 {
     protected $fillable = [
-
         'gender',
         'age',
+        'address',
+        'state',
+        'postcode',
+        'country',
+        'ship_name',
+        'ship_email',
+        'ship_address',
+        'ship_city',
+        'ship_state',
+        'ship_country',
+        'ship_phone',
         'description',
         'location',
-        'image',
         'user_id',
     ];
     public function cart()
