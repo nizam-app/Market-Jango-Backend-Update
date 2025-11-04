@@ -21,6 +21,8 @@ class InvoiceController extends Controller
         try {
             $user_id=$request->header('id');
             $user_email=$request->header('email');
+            $user_id=1;
+            $user_email='mills.howell@example.net';
 
             $tran_id=uniqid();
             $currency = "USD";
@@ -94,7 +96,7 @@ class InvoiceController extends Controller
     }
 
     function PaymentStatus(Request $request){
-
+    dd($request->all());
     }
 
 

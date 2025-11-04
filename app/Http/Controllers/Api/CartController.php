@@ -34,15 +34,11 @@ class CartController extends Controller
             if($carts->isEmpty()){
                 return ResponseHelper::Out('success', 'Cart not found', null, 200);
             }
-            foreach ($carts as $cartItem) {
-                $total=$cartItem->price+$cartItem->delivery_charge;
-            }
-            return ResponseHelper::Out('success', 'All carts successfully fetched', ["cartData"=>$carts, "totalPrice"=> $total], 200);
+            return ResponseHelper::Out('success', 'All carts successfully fetched', $carts, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-    //store cart
     public function store(Request $request): JsonResponse
     {
         try {
@@ -84,9 +80,9 @@ class CartController extends Controller
 
             if ($cart) {
                 if ($action === 'increase') {
-                    $newQty = $cart->quantity + $productQty;
+                    $newQty = $cart->quantity + $updateProductQty;
                 } else {
-                    $newQty = $cart->quantity - $productQty;
+                    $newQty = $cart->quantity - $updateProductQty;
                 }
 
                 // Recalculate delivery charge based on total quantity
@@ -136,6 +132,80 @@ class CartController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+    //store cart
+//    public function store(Request $request): JsonResponse
+//    {
+//        try {
+//            // Validation
+//            $validator = Validator::make($request->all(), [
+//                'product_id' => 'nullable|exists:products,id',
+//                'color' => 'required|string|max:20',
+//                'size' => 'required|string|max:20',
+//            ]);
+//            if ($validator->fails()) {
+//                return ResponseHelper::Out('failed', 'Validation exception', $validator->errors()->first(), 422);
+//            }
+//            $userId = $request->header('id');
+//            $buyer = Buyer::where('user_id', $userId)->select('id')->first();
+//            if (!$buyer) {
+//                return ResponseHelper::Out('failed', 'Buyer Not found', null, 404);
+//            }
+//            $productId = $request->input('product_id');
+//            $product = Product::where('id', $productId)->first();
+//            if (!$product) {
+//                return ResponseHelper::Out('failed', 'Product Not found', null, 422);
+//            }
+//            $vendorId = $product->vendor_id;
+//            $productQty = $request->input('quantity');
+//            $deliveryCharge = DeliveryCharge::where('vendor_id', $vendorId)
+//                ->where('quantity', '<=', $productQty)
+//                ->orderBy('quantity', 'desc')
+//                ->first();
+//            $deliveryChargeAmount = $deliveryCharge ? $deliveryCharge->delivery_charge : 0;
+//            $unitPrice = $product->regular_price;
+//            $totalPrice = $unitPrice * $productQty;
+//            // Create new cart item
+//            $cart = Cart::where('product_id', $productId)
+//                ->where('buyer_id', $buyer->id)
+//                ->first();
+//
+//            if ($cart) {
+//                // Total quantity after update
+//                $newTotalQty = $cart->quantity + $productQty;
+//
+//                // Recalculate delivery charge based on total quantity
+//                $deliveryCharge = DeliveryCharge::where('vendor_id', $vendorId)
+//                    ->where('quantity', '<=', $newTotalQty)
+//                    ->orderBy('quantity', 'desc')
+//                    ->first();
+//
+//                $deliveryChargeAmount = $deliveryCharge ? $deliveryCharge->delivery_charge : 0;
+//
+//                // Update existing
+//                $cart->quantity = $newTotalQty;
+//                $cart->price = (float)$product->regular_price * $cart->quantity;
+//                $cart->delivery_charge = $deliveryChargeAmount;
+//                $cart->save();
+//            } else {
+//                $cart = Cart::create([
+//                    'product_id' => $productId,
+//                    'vendor_id' => $vendorId,
+//                    'buyer_id' => $buyer->id,
+//                    'quantity' => $productQty,
+//                    'color' => $request->input('color'),
+//                    'size' => $request->input('size'),
+//                    'price' => $totalPrice,
+//                    'delivery_charge' => $deliveryChargeAmount,
+//                    'status' => 'active',
+//                ]);
+//            }
+//            return ResponseHelper::Out('success', 'Cart successfully created', $cart, 201);
+//        } catch (ValidationException $e) {
+//            return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
+//        } catch (Exception $e) {
+//            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+//        }
+//    }
     // Delete Cart
     public function checkout(Request $request): JsonResponse
     {

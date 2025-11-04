@@ -16,9 +16,9 @@ return new class extends Migration
             $table->unsignedBigInteger('invoice_id');
             $table->unsignedBigInteger('product_id');
             $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('quantity');
-            $table->unsignedBigInteger('tran_id')->nullable();
-            $table->unsignedBigInteger('sale_price');
+            $table->integer('quantity');
+            $table->string('tran_id')->nullable();
+            $table->integer('sale_price');
             $table->index('invoice_id');
             $table->index('product_id');
             $table->index('user_id');

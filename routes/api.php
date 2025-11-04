@@ -39,7 +39,8 @@ Route::post('/login', [AuthController::class, 'login']);
 //});
 
 
-
+Route::get("/invoice/create", [InvoiceController::class, 'InvoiceCreate']);
+Route::get("/payment/status", [InvoiceController::class, 'PaymentStatus']);
 //Authentication for all users
 Route::middleware('tokenVerify')->group(function () {
     Route::post('/register-name', [AuthController::class, 'registerName']);
@@ -50,21 +51,14 @@ Route::middleware('tokenVerify')->group(function () {
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     Route::get('/language', [AuthController::class, 'language']);
 
+    // Fetch all buyer home page products
     Route::prefix('admin-selects')->group(function () {
-
-        // Fetch all top products
         Route::get('top-products', [AdminSelectController::class, 'getTopProduct']);
-        // Fetch all new items
         Route::get('new-items', [AdminSelectController::class, 'getNewItem']);
-        // Fetch all "Just For You" products
         Route::get('just-for-you', [AdminSelectController::class, 'getJustForYou']);
-        // Store new admin select
         Route::post('/create', [AdminSelectController::class, 'store']);
-        // Update admin select
         Route::post('/update/{id}', [AdminSelectController::class, 'update']);
-        // Delete admin select
         Route::delete('/destroy/{id}', [AdminSelectController::class, 'destroy']);
-        // Optional: Fetch all grouped by key
         Route::get('/', [AdminSelectController::class, 'index']);
     });
 
@@ -77,8 +71,7 @@ Route::middleware('tokenVerify')->group(function () {
     });
 
     // Invoice and payment
-    Route::get("/invoice/create", [InvoiceController::class, 'InvoiceCreate']);
-    Route::get("/payment/status", [InvoiceController::class, 'PaymentStatus']);
+
     Route::get("/InvoiceList", [InvoiceController::class, 'InvoiceList']);
     Route::get("/InvoiceProductList/{invoice_id}", [InvoiceController::class, 'InvoiceProductList']);
 
@@ -99,12 +92,15 @@ Route::middleware('tokenVerify')->group(function () {
     Route::get('/user/show', [UserController::class, 'show']);
     Route::get('/product', [ProductController::class, 'index']);
     Route::get('/product/detail/{id}', [ProductController::class, 'productDetails']);
+    Route::get('/product/vendor/{id}', [BuyerHomeController::class, 'vendorByProduct']);
+    Route::get('/category/vendor/product/{id}', [BuyerHomeController::class, 'vendorCategoryByProduct']);
+
 
     // Admin all routes
     Route::get('/active/vendor', [AdminController::class, 'activeVendor']);
     Route::get('/pending/vendor', [AdminController::class, 'pendingVendor']);
     Route::get('/suspended/vendor', [AdminController::class, 'suspendedVendor']);
-    Route::get('/accept-reject/vendor/{vendor_id}', [AdminController::class, 'acceptOrRejectVendor']);
+    Route::post('/accept-reject/vendor/{vendor_id}', [AdminController::class, 'acceptOrRejectVendor']);
     Route::get('/business-type', [AuthController::class, 'businessType']);
     Route::get('/vendor-request-count', [AdminController::class, 'vendorRequestCount']);
     Route::get('/vendor-count', [AdminController::class, 'vendorCount']);

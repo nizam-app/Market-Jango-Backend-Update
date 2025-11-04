@@ -6,6 +6,7 @@ use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Buyer;
 use App\Models\Category;
+use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\SearchHistory;
 use App\Models\User;
@@ -113,7 +114,6 @@ class BuyerHomeController extends Controller
                 ])
                 ->limit(20)
                 ->paginate(10);
-
             if ($products->isEmpty()) {
                 return ResponseHelper::Out('success', 'No products found', null, 200);
             }
@@ -123,5 +123,78 @@ class BuyerHomeController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
+    //vendor by product
+    public function vendorByProduct(Request $request, $id): JsonResponse
+    {
+        try {
+            // vendor product
+            $products = Product::where('vendor_id', $id)
+                ->with(['category:id,name,description', 'images:id,image_path,product_id'])
+                ->select(['id', 'name', 'description', 'regular_price', 'sell_price', 'image', 'vendor_id', 'category_id', 'color', 'size'])
+                ->latest()
+                ->paginate(10);
+            if ($products->isEmpty()) {
+                return ResponseHelper::Out('success', 'You have no products', [], 200);
+            }
+            return ResponseHelper::Out('success', 'Products found', ['all' => $products->count(), 'products' => $products], 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    //vendor by category by product
+    public function vendorCategoryByProduct(Request $request, $id): JsonResponse
+    {
+        try {
+            $categories = Category::where('vendor_id', $id)
+                ->where('status', 'active')
+            ->with([
+                'products' => function ($query) {
+                    $query->where('is_active', 1)
+                        ->select('id','name', 'description', 'regular_price', 'sell_price','discount','image','color', 'size', 'vendor_id','remark', 'category_id')
+                        ->with([
+                            'images:id,product_id,image_path,public_id',
+                            'vendor:id,country,address,business_name,business_type,user_id',
+                            'vendor.user:id,name,image,email,phone,language',
+                        ]);
+                },
+                'categoryImages:id,category_id,image_path,public_id',
+                'vendor.user:id,name,image',
+                'vendor.reviews:id,vendor_id,description,rating',
+            ])
+            ->select(['id', 'name', 'status','vendor_id'])
+            ->paginate(10);
+            if ($categories->isEmpty()) {
+                return ResponseHelper::Out('success', 'You have no products', [], 200);
+            }
+            return ResponseHelper::Out('success', 'Products found', ['all' => $categories->count(), 'categories' => $categories], 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    // Get All invoice
+    public function userInvoice(Request $request): JsonResponse
+    {
+        try {
+            // get login buyer
+            $buyerId = Buyer::where('user_id',$request->header('id'))->select('id')->first();
+            if (!$buyerId) {
+                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+            }
+            // get cart data by login buyer
+            $carts = Invoice::where('buyer_id', $buyerId->id)
+                ->where('status', 'success')
+                ->with(['product', 'vendor', 'buyer'])
+                ->select('quantity', 'delivery_charge', 'color', 'size', 'price', 'product_id', 'buyer_id', 'vendor_id','status')
+                ->get();
+            if($carts->isEmpty()){
+                return ResponseHelper::Out('success', 'Cart not found', null, 200);
+            }
+            foreach ($carts as $cartItem) {
+                $total=$cartItem->price+$cartItem->delivery_charge;
+            }
+            return ResponseHelper::Out('success', 'All carts successfully fetched', ["cartData"=>$carts, "totalPrice"=> $total], 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
 }

@@ -16,7 +16,14 @@ class BannerController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $banners = ProductBanner::with('product')->paginate(10);
+            $banners = ProductBanner::with([
+                'product:id,name,regular_price,sell_price,image,category_id,vendor_id',
+                'product.images:id,product_id,image_path,public_id',
+                'product.vendor:id,user_id',
+                'product.vendor.user:id,name',
+                'product.vendor.reviews:id,vendor_id,description,rating',
+                'product.category:id,name'
+            ])->paginate(10);
             if ($banners->isEmpty()) {
                 return ResponseHelper::Out('success', 'You have no banner', [], 200);
             }

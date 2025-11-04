@@ -30,9 +30,10 @@ class CategoryController extends Controller
                                 'vendor.user:id,name,image,email,phone,language',
                             ]);
                         },
-                    'categoryImages:id,category_id,image_path,public_id'
+                    'categoryImages:id,category_id,image_path,public_id',
+                    'vendor:id'
                     ])
-                ->select(['id', 'name', 'status'])
+                ->select(['id', 'name', 'status','vendor_id'])
             ->paginate(10);
             return ResponseHelper::Out('success', 'All categories successfully fetched', $categories, 200);
         } catch (Exception $e) {
