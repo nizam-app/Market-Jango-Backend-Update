@@ -194,6 +194,25 @@ class AdminController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+    // Product Status Update
+    public function productStatusUpdate(Request $request, $id): JsonResponse
+    {
+        try {
+            $request->validate([
+                'status' => 'required|in:0,1',
+            ]);
+            $product = Product::select(['id', 'is_active'])->find($id);
+            if(!$product){
+                return ResponseHelper::Out('success', 'No pending product found', $product, 200);
+            }
+            $product->update([
+                'is_active' => $request->input('status')
+            ]);
+            return ResponseHelper::Out('success', 'All pending product successfully fetched', $product, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
     // request product details
     public function requestProductDetails(Request $request, $id): JsonResponse
     {

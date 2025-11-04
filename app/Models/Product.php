@@ -11,10 +11,14 @@ class Product extends Model
         'description',
         'regular_price',
         'sell_price',
+        'discount',
         'public_id',
+        'star',
         'image',
         'color',
         'size',
+        'remark',
+        'is_active',
         'vendor_id',
         'category_id'
     ];

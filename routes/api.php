@@ -101,6 +101,7 @@ Route::middleware('tokenVerify')->group(function () {
     Route::get('/pending/vendor', [AdminController::class, 'pendingVendor']);
     Route::get('/suspended/vendor', [AdminController::class, 'suspendedVendor']);
     Route::post('/accept-reject/vendor/{vendor_id}', [AdminController::class, 'acceptOrRejectVendor']);
+        Route::post('/product-status-update/{id}', [AdminController::class, 'productStatusUpdate']);
     Route::get('/business-type', [AuthController::class, 'businessType']);
     Route::get('/vendor-request-count', [AdminController::class, 'vendorRequestCount']);
     Route::get('/vendor-count', [AdminController::class, 'vendorCount']);
