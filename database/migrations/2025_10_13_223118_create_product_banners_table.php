@@ -13,12 +13,8 @@ return new class extends Migration
     {
         Schema::create('product_banners', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 50);
-            $table->text('description');
-            $table->decimal('discount', 10, 2);
             $table->string('image', 200);
             $table->string('public_id')->nullable();
-            $table->foreignId('product_id')->unique()->constrained('products')->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
         });
     }

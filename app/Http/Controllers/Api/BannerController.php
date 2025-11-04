@@ -16,14 +16,7 @@ class BannerController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $banners = ProductBanner::with([
-                'product:id,name,regular_price,sell_price,image,category_id,vendor_id',
-                'product.images:id,product_id,image_path,public_id',
-                'product.vendor:id,user_id',
-                'product.vendor.user:id,name',
-                'product.vendor.reviews:id,vendor_id,description,rating',
-                'product.category:id,name'
-            ])->paginate(10);
+            $banners = ProductBanner::select('id', 'image', 'public_id')->paginate(10);
             if ($banners->isEmpty()) {
                 return ResponseHelper::Out('success', 'You have no banner', [], 200);
             }
@@ -37,23 +30,15 @@ class BannerController extends Controller
     {
         try {
             $request->validate([
-                'name' => 'required|string|max:50',
-                'description' => 'required|string',
-                'discount' => 'required|string|max:50',
                 'image' => 'required',
-                'product_id' => 'required|unique:product_banners,product_id|exists:products,id'
             ]);
             // File upload using your helper
             $uploadedFiles = FileHelper::upload($request->file('image'), 'banner');
             // If multiple files, take first image path
             $imagePath = $uploadedFiles[0] ?? null;
             $banner = ProductBanner::create([
-                'name' => $request->input('name'),
-                'description' => $request->input('description'),
-                'discount' => $request->input('discount'),
                 'image' => $imagePath['url'],
-                'public_id' => $imagePath['public_id'],
-                'product_id' => $request->input('product_id'),
+                'public_id' => $imagePath['public_id']
             ]);
             return ResponseHelper::Out('success', 'Banner successfully created', $banner, 201);
         } catch (ValidationException $e) {
@@ -67,33 +52,23 @@ class BannerController extends Controller
     {
         try {
             $banner = ProductBanner::findOrFail($id);
-            $request->validate([
-                'name' => 'required|string|max:50',
-                'description' => 'required|string',
-                'discount' => 'required|string|max:50'
-            ]);
-            // Handle main image update
+            // Handle image update
             if ($request->hasFile('image')) {
-                // Delete old main image
+                // Delete old image
                 if ($banner->public_id) {
                     FileHelper::delete($banner->public_id);
                 }
-                // File upload using your helper
+                // File upload using helper
                 $uploadedFiles = FileHelper::upload($request->file('image'), 'banner'); // example: single or multiple files
                 // If multiple files, take first image path
                 $imagePath = $uploadedFiles[0]?? null;
-                $banner->image = $imagePath['url'];
-                $banner->public_id = $imagePath['public_id'];
-                $banner->save();
+                $banner->update([
+                    'image' => $imagePath['url'],
+                    'public_id' => $imagePath['public_id']
+                ]);
             } else {
                 $imagePath = $banner->image;
             }
-            $banner->update([
-                'name' => $request->input('name'),
-                'description' => $request->input('description'),
-                'discount' => $request->input('discount'),
-                'product_id' => $request->input('product_id'),
-            ]);
             return ResponseHelper::Out('success', 'Banner successfully updated', $banner, 200);
         } catch (ValidationException $e) {
             return ResponseHelper::Out('failed', 'Validation exception', $e->getMessage(), 422);

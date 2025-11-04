@@ -7,11 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class ProductBanner extends Model
 {
     protected $fillable = [
-        'name',
-        'description',
-        'discount',
         'image',
-        'product_id',
         'public_id'
     ];
     public function product(){
