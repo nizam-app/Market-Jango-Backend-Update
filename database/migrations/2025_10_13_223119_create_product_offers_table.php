@@ -16,6 +16,10 @@ return new class extends Migration
             $table->string('name', 50);
             $table->text('description');
             $table->decimal('price', 10,2);
+            $table->integer('quantity')->default(1);
+            $table->decimal('delivery_charge',10, 2);
+            $table->string('image_path',200);
+            $table->string('public_id')->nullable();
             $table->foreignId('product_id')->constrained('products')->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('buyer_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();

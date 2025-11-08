@@ -17,7 +17,7 @@ return new class extends Migration
             $table->text('description');
             $table->decimal('regular_price', 10, 2)->default(0.00);
             $table->decimal('sell_price', 10, 2)->default(0.00);
-            $table->integer('discount')->default(0);
+            $table->boolean('discount')->default(0);
             $table->string('public_id')->nullable();
             $table->integer('star')->default(0);
             $table->string('image', 200);

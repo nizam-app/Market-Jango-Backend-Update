@@ -5,110 +5,218 @@ namespace App\Http\Controllers\Api;
 use App\Helpers\PaymentSystem;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
+use App\Models\Buyer;
 use App\Models\Cart;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\InvoiceStatusLog;
 use App\Models\User;
+use App\Models\Vendor;
 use Exception;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class InvoiceController extends Controller
 {
+    // Get success order
+    public function index(Request $request): JsonResponse
+    {
+        try {
+            // get login buyer
+            $user_id = $request->header('id');
+            $buyer = User::where('id', '=', $user_id)->first();
+            if (!$buyer) {
+                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+            }
+            // get cart data by login buyer
+            $invoices = Invoice::where('user_id', $user_id)
+                ->where('delivery_status', 'successful')
+                ->with(['items', 'items.product'])
+                ->paginate(10);
+            if ($invoices->isEmpty()) {
+                return ResponseHelper::Out('success', 'order not found', null, 200);
+            }
+            return ResponseHelper::Out('success', 'All order successfully fetched', $invoices, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    // invoice delivery status update
+    public function updateStatus(Request $request, $invoiceId)
+    {
+        $request->validate([
+            'status' => 'required|string',
+            'note' => 'nullable|string'
+        ]);
+
+        $invoice = Invoice::findOrFail($invoiceId);
+
+        // Update main invoice status
+        $invoice->update(['delivery_status' => $request->status]);
+
+        // Create log
+        InvoiceStatusLog::create([
+            'invoice_id' => $invoice->id,
+            'status' => $request->status,
+            'note' => $request->note,
+        ]);
+        return ResponseHelper::Out('success', 'Status updated successfully', $invoice, 200);
+    }
+    // Show  all staus by delivery
+    public function showTracking($invoiceId)
+    {
+        $invoice = Invoice::with('statusLogs')->findOrFail($invoiceId);
+        return ResponseHelper::Out('success', 'Status History fetched successfully', $invoice, 200);
+    }
+
+    // all orders
+
+    public function allOrders(Request $request): JsonResponse
+    {
+        try {
+            // get login buyer
+            $user_id = $request->header('id');
+            $buyer = User::where('id', '=', $user_id)->first();
+            if (!$buyer) {
+                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+            }
+            // get cart data by login buyer
+            $invoices = Invoice::where('user_id', $user_id)
+                ->with(['items', 'items.product'])
+                ->withCount('items')
+                ->paginate(10);
+            if ($invoices->isEmpty()) {
+                return ResponseHelper::Out('success', 'order not found', null, 200);
+            }
+            return ResponseHelper::Out('success', 'All order successfully fetched', $invoices, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+
+
     function InvoiceCreate(Request $request)
     {
         DB::beginTransaction();
         try {
-            $user_id=$request->header('id');
-            $user_email=$request->header('email');
-            $user_id=1;
-            $user_email='mills.howell@example.net';
-
-            $tran_id=uniqid();
-            $currency = "USD";
-            $delivery_status='Pending';
-            $payment_status='Pending';
-
-
-            $Profile=User::where('id','=',$user_id)->with('buyer')->first();
-            $buyer = $Profile->buyer;
-            $cus_details="Name:$Profile->name,Address:,City:$buyer->state,Phone: $Profile->phone";
-           $cus_name = $Profile->name;
-           $cus_phone = $Profile->phone;
-           $ship_address = $buyer->address;
-           $ship_city = $buyer->ship_city;
-           $ship_country = $buyer->country;
-            // Payable Calculation
-            $total=0;
-            $cartList = Cart::where('buyer_id', $buyer->id)
-                ->where('status', 'active')->get();
-            foreach ($cartList as $cartItem) {
-                $total=$total+$cartItem->price+$cartItem->delivery_charge;
+            $user_id = $request->header('id');
+            $user_email = $request->header('email');
+            $Profile = User::where('id', '=', $user_id)->with('buyer')->first();
+            if (!$Profile) {
+                return ResponseHelper::Out('failed', 'User not found', null, 404);
             }
-            $vat=($total*0)/100;
-            $payable=$total+$vat;
+            $tran_id = uniqid();
+            $currency = "USD";
+            $delivery_status = 'Pending';
+            $payment_status = 'Pending';
+            $buyer = $Profile->buyer;
+            $buyerId = $buyer->id;
+            $cus_name = $Profile->name;
+            $cus_phone = $Profile->phone;
+            $ship_address = $buyer->address;
+            $ship_city = $buyer->ship_city;
+            $ship_country = $buyer->country;
+            // Payable Calculation
+            $total = 0;
+            $cartList = Cart::where('buyer_id', $buyerId)
+                ->where('status',    'active')->get();
+            if ($cartList->isEmpty()) {
+                return ResponseHelper::Out('failed', 'Cart not found', null, 404);
+            }
+            foreach ($cartList as $cartItem) {
+                $total = $total + $cartItem->price + $cartItem->delivery_charge;
+            }
+            $vat = ($total * 0) / 100;
+            $payable = $total + $vat;
             $invoice = Invoice::create([
-                'total'         => $total,
-                'vat'           => $vat,
-                'payable'       => $payable,
-                'cus_name'      => $cus_name,
-                'cus_email'     => $user_email,
-                'cus_phone'     => $cus_phone,
-                'ship_address'  => $ship_address,
-                'ship_city'     => $ship_city,
-                'ship_country'  => $ship_country,
-                'tax_ref'       => $tran_id,
+                'total' => $total,
+                'vat' => $vat,
+                'payable' => $payable,
+                'cus_name' => $cus_name,
+                'cus_email' => $user_email,
+                'cus_phone' => $cus_phone,
+                'ship_address' => $ship_address,
+                'ship_city' => $ship_city,
+                'ship_country' => $ship_country,
+                'tax_ref' => $tran_id,
                 'currency' => $currency,
-                'delivery_status'=> $delivery_status,
-                'payment_status' => $payment_status,
-                'user_id'      => $user_id
+                'delivery_status' => $delivery_status,
+                'status' => $payment_status,
+                'user_id' => $user_id
             ]);
-            $invoiceID=$invoice->id;
+            $invoiceID = $invoice->id;
             foreach ($cartList as $EachProduct) {
                 InvoiceItem::create([
                     'invoice_id' => $invoiceID,
                     'tran_id' => $tran_id,
                     'product_id' => $EachProduct['product_id'],
-                    'user_id'=>$user_id,
-                    'quantity' =>  $EachProduct['quantity'],
-                    'sale_price'=>  $EachProduct['price'],
+                    'vendor_id' => $EachProduct['vendor_id'],
+                    'quantity' => $EachProduct['quantity'],
+                    'sale_price' => $EachProduct['price'],
                 ]);
             }
-            $paymentMethod=PaymentSystem::InitiatePayment($invoice);
+            $paymentMethod = PaymentSystem::InitiatePayment($invoice);
             DB::commit();
-            return ResponseHelper::Out('success','',array(['paymentMethod'=>$paymentMethod,'payable'=>$payable,'vat'=>$vat,'total'=>$total]),200);
-        }
-        catch (Exception $e) {
+            return ResponseHelper::Out('success', '', array(['paymentMethod' => $paymentMethod, 'payable' => $payable, 'vat' => $vat, 'total' => $total]), 200);
+        } catch (Exception $e) {
             DB::rollBack();
-            return ResponseHelper::Out('fail','',$e,200);
+            return ResponseHelper::Out('fail', 'Something went wrong', $e->getMessage(), 200);
         }
     }
+    public function handleFlutterWaveResponse(Request $request)
+    {
+        try {
+            $transactionId = $request->input('transaction_id');
+            $tax = $request->input('tx_ref'); // Flutter wave response tx_ref
+            $status = $request->input('status'); // Flutter wave response status
+            $payment = Invoice::where('tax_ref', $tax)->first();
+            if (!$payment) {
+                return ResponseHelper::Out('failed', 'Transaction not found', $payment->getMessage(), 404);
+            }
+            switch ($status) {
+                case 'successful':
+                    $payment->status = 'successful';
+                    break;
 
-    function InvoiceList(Request $request){
-        $user_id=$request->header('id');
-        return Invoice::where('user_id',$user_id)->get();
-    }
+                case 'failed':
+                    $payment->status = 'failed';
+                    break;
 
-    function InvoiceProductList(Request $request){
-        $user_id=$request->header('id');
-        $invoice_id=$request->invoice_id;
-        return InvoiceItem::where(['user_id'=>$user_id,'invoice_id'=>$invoice_id])->with('product')->get();
-    }
+                case 'pending':
+                    $payment->status = 'pending';
+                    break;
 
-    function PaymentStatus(Request $request){
-    dd($request->all());
-    }
+                case 'cancelled':
+                    $payment->status = 'cancelled';
+                    break;
 
+                case 'reversed':
+                    $payment->status = 'reversed';
+                    break;
 
-    function PaymentCancel(Request $request){
-        PaymentSystem::InitiateCancel($request->query('tran_id'));
-    }
+                case 'expired':
+                    $payment->status = 'expired';
+                    break;
 
-    function PaymentFail(Request $request){
-        return PaymentSystem::InitiateFail($request->query('tran_id'));
-    }
+                case 'pending_verification':
+                    $payment->status = 'pending_verification';
+                    break;
 
-    function PaymentIPN(Request $request){
-        return PaymentSystem::InitiateIPN($request->input('tran_id'),$request->input('status'),$request->input('val_id'));
+                case 'processing':
+                    $payment->status = 'processing';
+                    break;
+
+                default:
+                    $payment->status = 'unknown';
+                    break;
+            }
+            // Set transaction_id explicitly
+            $payment->transaction_id = $transactionId;
+            $payment->save();
+            return ResponseHelper::Out('success', 'Payment status updated', $payment, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
     }
 }

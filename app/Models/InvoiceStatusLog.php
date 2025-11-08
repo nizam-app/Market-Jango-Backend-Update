@@ -1,0 +1,19 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class InvoiceStatusLog extends Model
+{
+
+    use HasFactory;
+
+    protected $fillable = ['invoice_id', 'status', 'note'];
+
+    public function invoice()
+    {
+        return $this->belongsTo(Invoice::class);
+    }
+}

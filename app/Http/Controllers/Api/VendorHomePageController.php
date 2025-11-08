@@ -131,9 +131,10 @@ class VendorHomePageController extends Controller
             $query = $request->input('query');
 
             $drivers = User::where('user_type', 'driver')->where('name', 'like', "%{$query}%")
-                ->with(['driver:id,']);
+                ->with(['driver'])
+            ->get();
 
-            if ($drivers->isEmpty()) {
+            if (!$drivers) {
                 return ResponseHelper::Out('success', 'No driver found', [], 200);
             }
             return ResponseHelper::Out('success', 'Driver data fetched successfully', $drivers, 200);

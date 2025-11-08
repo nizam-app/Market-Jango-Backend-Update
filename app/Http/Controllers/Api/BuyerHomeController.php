@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\VendorResource;
 use App\Models\Buyer;
 use App\Models\Category;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\SearchHistory;
 use App\Models\User;
@@ -14,9 +17,94 @@ use App\Models\Vendor;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BuyerHomeController extends Controller
 {
+    //popular product
+    public function popularProducts(Request $request, $id)
+    {
+        $vendorId = (int) $id;
+        if (!$vendorId) {
+            return response()->json(['status'=>'failed','message'=>'vendor_id is required'], 422);
+        }
+
+        $top = InvoiceItem::query()
+            ->where('vendor_id', $vendorId)
+            ->selectRaw('product_id, SUM(quantity) as sold_qty')
+            ->groupBy('product_id')
+            ->orderByDesc('sold_qty')
+            ->limit(30)
+            ->get();
+
+        if ($top->isEmpty()) {
+            return response()->json(['status' => 'failed', 'message' => 'No sales for this vendor'], 404);
+        }
+
+        // প্রোডাক্ট ডিটেইলস এনে সিরিয়াল ঠিক রেখে ম্যাপ করি
+        $productIds = $top->pluck('product_id')->all();
+
+        $products = Product::whereIn('id', $productIds)
+            ->get() // দরকার হলে আরও কলাম যোগ করো, যেমন 'thumbnail'
+            ->keyBy('id');
+
+        $data = $top->map(function ($row) use ($products) {
+            return [
+                'product'  => $products->get($row->product_id), // null হলে শুধু id দেখাতে পারো
+                'sold_qty' => (int) $row->sold_qty,
+            ];
+        });
+        return ResponseHelper::Out('success', 'Popular Product fetched successfully', $data, 200);
+    }
+    public function vendorFirstProduct(): JsonResponse
+    {
+        $vendors = Vendor::with(['user', 'categories.products'])
+            ->get();
+        $data = $vendors->map(function ($vendor) {
+            $firstCategory = $vendor->categories->first();
+            $firstProduct = $firstCategory ? $firstCategory->products->first() : null;
+            return [
+                'vendor_id' => $vendor->id,
+                'business_name' => $vendor->business_name,
+                'vendor_name' => $vendor->user ? $vendor->user->name : null,
+                'category' => $firstCategory ? [
+                    'id' => $firstCategory->id,
+                    'name' => $firstCategory->name,
+                ] : null,
+                'product' => $firstProduct ? [
+                    'id' => $firstProduct->id,
+                    'discount' => $firstProduct->discount,
+                    'name' => $firstProduct->name,
+                    'regular_price' => $firstProduct->regular_price,
+                    'sell_price' => $firstProduct->sell_price,
+                    'image' => $firstProduct->image ?? null,
+                ] : null,
+            ];
+        });
+
+        return ResponseHelper::Out('success', 'Product fetched successfully', $data, 200);
+    }
+
+    public function vendorListId(Request $request, $id): JsonResponse
+    {
+
+
+        // get all selected vendor
+        $vendor = Vendor::where('id', $id)
+            ->with([
+            'user',         // যদি vendor -> user থাকে
+            'products',
+            'location',
+            'ratings'       // যদি review/rating model থাকে
+        ]);
+
+        if (!$vendor) {
+            return ResponseHelper::Out('success', 'No vendors found for this location', null, 200);
+        }
+        $vendors = Vendor::orderByRaw("CASE WHEN id = ? THEN 0 ELSE 1 END", [$id])
+            ->get();
+        return ResponseHelper::Out('success', 'Vendor fetched successfully', $vendors, 200);
+    }
     public function productFilter(Request $request)
     {
         try {
@@ -129,7 +217,7 @@ class BuyerHomeController extends Controller
         try {
             // vendor product
             $products = Product::where('vendor_id', $id)
-                ->with(['category:id,name,description', 'images:id,image_path,product_id'])
+                ->with(['category', 'images:id,image_path,product_id'])
                 ->select(['id', 'name', 'description', 'regular_price', 'sell_price', 'image', 'vendor_id', 'category_id', 'color', 'size'])
                 ->latest()
                 ->paginate(10);
@@ -145,6 +233,8 @@ class BuyerHomeController extends Controller
     public function vendorCategoryByProduct(Request $request, $id): JsonResponse
     {
         try {
+            $vendor = Vendor::where('id', $id)->with(['user', 'user.reviews'])
+                ->first();
             $categories = Category::where('vendor_id', $id)
                 ->where('status', 'active')
             ->with([
@@ -159,14 +249,13 @@ class BuyerHomeController extends Controller
                 },
                 'categoryImages:id,category_id,image_path,public_id',
                 'vendor.user:id,name,image',
-                'vendor.reviews:id,vendor_id,description,rating',
+                'vendor.reviews',
             ])
-            ->select(['id', 'name', 'status','vendor_id'])
             ->paginate(10);
             if ($categories->isEmpty()) {
                 return ResponseHelper::Out('success', 'You have no products', [], 200);
             }
-            return ResponseHelper::Out('success', 'Products found', ['all' => $categories->count(), 'categories' => $categories], 200);
+            return ResponseHelper::Out('success', 'Products found', ['all' => $categories->count(), 'categories' => $categories, 'vendor'=>$vendor], 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }

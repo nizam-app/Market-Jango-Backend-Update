@@ -17,22 +17,22 @@ class AdminSelectController extends Controller
     {
         try {
             $selects = AdminSelect::with([
-                'product:id,name,regular_price,sell_price,image,category_id,vendor_id',
+                'product',
                 'product.images:id,product_id,image_path,public_id',
-                'product.vendor:id,user_id',
-                'product.vendor.user:id,name',
-                'product.vendor.reviews:id,vendor_id,description,rating',
-                'product.category:id,name',
+                'product.vendor',
+                'product.vendor.user',
+                'product.vendor.reviews',
+                'product.category',
             ])
                 ->select('id','key','product_id')
                 ->latest()
                 ->paginate(10);
 
             if ($selects->isEmpty()) {
-                return ResponseHelper::Out('success', 'No products found under this key', $selects, 200);
+                return ResponseHelper::Out('success', 'No admin select view  found under this key', $selects, 200);
             }
 
-            return ResponseHelper::Out('success', 'Products fetched successfully by key', $selects, 200);
+            return ResponseHelper::Out('success', 'admin select view  fetched successfully by key', $selects, 200);
 
         } catch (ValidationException $e) {
             return ResponseHelper::Out('failed', 'Validation error', $e->errors(), 422);
@@ -46,12 +46,12 @@ class AdminSelectController extends Controller
         try {
             $selects = AdminSelect::where('key', 'top_product')
               ->with([
-                  'product:id,name,regular_price,sell_price,image,category_id,vendor_id',
+                  'product',
                   'product.images:id,product_id,image_path,public_id',
-                  'product.vendor:id,user_id',
-                  'product.vendor.user:id,name',
-                  'product.vendor.reviews:id,vendor_id,description,rating',
-                  'product.category:id,name',
+                  'product.vendor',
+                  'product.vendor.user',
+                  'product.vendor.reviews',
+                  'product.category',
               ])
                   ->select('id','key','product_id')
                 ->latest()
@@ -61,7 +61,35 @@ class AdminSelectController extends Controller
                 return ResponseHelper::Out('success', 'No products found under this key', $selects, 200);
             }
 
-            return ResponseHelper::Out('success', 'Products fetched successfully by key', $selects, 200);
+            return ResponseHelper::Out('success', 'Top products fetched successfully by key', $selects, 200);
+
+        } catch (ValidationException $e) {
+            return ResponseHelper::Out('failed', 'Validation error', $e->errors(), 422);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    public function getTopCategory(Request $request): JsonResponse
+    {
+        try {
+            $selects = AdminSelect::where('key', 'top_category')
+              ->with([
+                  'product',
+                  'product.images:id,product_id,image_path,public_id',
+                  'product.vendor',
+                  'product.vendor.user',
+                  'product.vendor.reviews',
+                  'product.category',
+              ])
+                  ->select('id','key','product_id')
+                ->latest()
+                  ->paginate(10);
+
+            if ($selects->isEmpty()) {
+                return ResponseHelper::Out('success', 'No category found under this key', $selects, 200);
+            }
+
+            return ResponseHelper::Out('success', 'Top category fetched successfully by key', $selects, 200);
 
         } catch (ValidationException $e) {
             return ResponseHelper::Out('failed', 'Validation error', $e->errors(), 422);
@@ -75,22 +103,22 @@ class AdminSelectController extends Controller
         try {
             $selects = AdminSelect::where('key', 'new_item')
                 ->with([
-                    'product:id,name,regular_price,sell_price,image,category_id,vendor_id',
+                    'product',
                     'product.images:id,product_id,image_path,public_id',
-                    'product.vendor:id,user_id',
-                    'product.vendor.user:id,name',
-                    'product.vendor.reviews:id,vendor_id,description,rating',
-                    'product.category:id,name',
+                    'product.vendor',
+                    'product.vendor.user',
+                    'product.vendor.reviews',
+                    'product.category',
                 ])
                 ->select('id','key','product_id')
                 ->latest()
                 ->paginate(10);
 
             if ($selects->isEmpty()) {
-                return ResponseHelper::Out('success', 'No products found under this key', $selects, 200);
+                return ResponseHelper::Out('success', 'No new item found under this key', $selects, 200);
             }
 
-            return ResponseHelper::Out('success', 'Products fetched successfully by key', $selects, 200);
+            return ResponseHelper::Out('success', 'Top new item fetched successfully by key', $selects, 200);
 
         } catch (ValidationException $e) {
             return ResponseHelper::Out('failed', 'Validation error', $e->errors(), 422);
@@ -104,20 +132,20 @@ class AdminSelectController extends Controller
         try {
             $selects = AdminSelect::where('key', 'just_for_you')
                 ->with([
-                    'product:id,name,regular_price,sell_price,image,category_id,vendor_id',
+                    'product',
                     'product.images:id,product_id,image_path,public_id',
-                    'product.vendor:id,user_id',
-                    'product.vendor.user:id,name',
-                    'product.vendor.reviews:id,vendor_id,description,rating',
-                    'product.category:id,name',
+                    'product.vendor',
+                    'product.vendor.user',
+                    'product.vendor.reviews',
+                    'product.category',
                 ])
                 ->select('id','key','product_id')
                 ->latest()
                 ->paginate(10);
             if ($selects->isEmpty()) {
-                return ResponseHelper::Out('success', 'No products found under this key', $selects, 200);
+                return ResponseHelper::Out('success', 'No just for you  found under this key', $selects, 200);
             }
-            return ResponseHelper::Out('success', 'Products fetched successfully by key', $selects, 200);
+            return ResponseHelper::Out('success', 'just for you  fetched successfully by key', $selects, 200);
         } catch (ValidationException $e) {
             return ResponseHelper::Out('failed', 'Validation error', $e->errors(), 422);
         } catch (Exception $e) {

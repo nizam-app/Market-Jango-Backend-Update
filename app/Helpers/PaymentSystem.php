@@ -14,8 +14,8 @@ class PaymentSystem
             $data = [
                 "tx_ref" => $invoice->tax_ref,
                 "amount" => $invoice->payable,
-                "currency" => $flutter->currency ?? "USD",
-                "redirect_url" => url('api/payment/status'),
+                "currency" => $invoice->currency ?? "USD",
+                "redirect_url" => url('api/payment/response'),
                 "customer" => [
                     "email" => $invoice->cus_email,
                     "phonenumber" => $invoice->cus_phone,
@@ -46,37 +46,8 @@ class PaymentSystem
         } catch (Exception $e) {
             return [
                 "status" => "error",
-                "message" => $e->getMessage(),
-                "key"=> "hello"
+                "message" => $e->getMessage()
             ];
         }
-    }
-
-    static function InitiateSuccess($tran_id): int
-    {
-        Invoice::where(['tran_id' => $tran_id, 'val_id' => 0])
-            ->update(['payment_status' => 'Success']);
-        return 1;
-    }
-
-    static function InitiateFail($tran_id): int
-    {
-        Invoice::where(['tran_id' => $tran_id, 'val_id' => 0])
-            ->update(['payment_status' => 'Fail']);
-        return 1;
-    }
-
-    static function InitiateCancel($tran_id): int
-    {
-        Invoice::where(['tran_id' => $tran_id, 'val_id' => 0])
-            ->update(['payment_status' => 'Cancel']);
-        return 1;
-    }
-
-    static function InitiateIPN($tran_id, $status, $val_id): int
-    {
-        Invoice::where(['tran_id' => $tran_id, 'val_id' => 0])
-            ->update(['payment_status' => $status, 'val_id' => $val_id]);
-        return 1;
     }
 }

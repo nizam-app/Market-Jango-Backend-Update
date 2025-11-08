@@ -469,7 +469,7 @@ class AuthController extends Controller
         try {
 
         $request->validate([
-            'password' => 'required|string|min:6|confirmed',
+            'password' => 'required|string|min:8|confirmed',
         ]);
         $email = $request->header('email');
         $id = $request->header('id');
@@ -531,23 +531,41 @@ class AuthController extends Controller
                         "name" => $request->input('name', $user->name),
                         "language" => $request->input('language', $user->language)
                     ]);
+//                    $buyer->update([
+//                        "gender" => $request->input('gender', $buyer->gender),
+//                        "age" => $request->input('age', $buyer->age),
+//                        "address" => $request->input('address', $buyer->address),
+//                        "state" => $request->input('state', $buyer->state),
+//                        "postcode" => $request->input('postcode', $buyer->postcode),
+//                        "country" => $request->input('country', $buyer->country),
+//                        "ship_name" => $request->input('ship_name', $buyer->ship_name),
+//                        "ship_email" => $request->input('ship_email', $buyer->ship_email),
+//                        "ship_address" => $request->input('ship_address', $buyer->ship_address),
+//                        "ship_city" => $request->input('ship_city', $buyer->ship_city),
+//                        "ship_state" => $request->input('ship_state', $buyer->ship_state),
+//                        "ship_country" => $request->input('ship_country', $buyer->ship_country),
+//                        "ship_phone" => $request->input('ship_phone', $buyer->ship_phone),
+//                        "description" => $request->input('description', $buyer->description),
+//                        "location" => $request->input('location', $buyer->location)
+//                    ]);
                     $buyer->update([
-                        "gender" => $request->input('gender', $buyer->gender),
-                        "age" => $request->input('age', $buyer->age),
-                        "address" => $request->input('address', $buyer->address),
-                        "state" => $request->input('state', $buyer->state),
-                        "postcode" => $request->input('postcode', $buyer->postcode),
-                        "country" => $request->input('country', $buyer->country),
-                        "ship_name" => $request->input('ship_name', $buyer->ship_name),
-                        "ship_email" => $request->input('ship_email', $buyer->ship_email),
-                        "ship_address" => $request->input('ship_address', $buyer->ship_address),
-                        "ship_city" => $request->input('ship_city', $buyer->ship_city),
-                        "ship_state" => $request->input('ship_state', $buyer->ship_state),
-                        "ship_country" => $request->input('ship_country', $buyer->ship_country),
-                        "ship_phone" => $request->input('ship_phone', $buyer->ship_phone),
-                        "description" => $request->input('description', $buyer->description),
-                        "location" => $request->input('location', $buyer->location)
+                        "gender" => $request->filled('gender') ? $request->input('gender') : $buyer->gender,
+                        "age" => $request->filled('age') ? $request->input('age') : $buyer->age,
+                        "address" => $request->filled('address') ? $request->input('address') : $buyer->address,
+                        "state" => $request->filled('state') ? $request->input('state') : $buyer->state,
+                        "postcode" => $request->filled('postcode') ? $request->input('postcode') : $buyer->postcode,
+                        "country" => $request->filled('country') ? $request->input('country') : $buyer->country,
+                        "ship_name" => $request->filled('ship_name') ? $request->input('ship_name') : $buyer->ship_name,
+                        "ship_email" => $request->filled('ship_email') ? $request->input('ship_email') : $buyer->ship_email,
+                        "ship_address" => $request->filled('ship_address') ? $request->input('ship_address') : $buyer->ship_address,
+                        "ship_city" => $request->filled('ship_city') ? $request->input('ship_city') : $buyer->ship_city,
+                        "ship_state" => $request->filled('ship_state') ? $request->input('ship_state') : $buyer->ship_state,
+                        "ship_country" => $request->filled('ship_country') ? $request->input('ship_country') : $buyer->ship_country,
+                        "ship_phone" => $request->filled('ship_phone') ? $request->input('ship_phone') : $buyer->ship_phone,
+                        "description" => $request->filled('description') ? $request->input('description') : $buyer->description,
+                        "location" => $request->filled('location') ? $request->input('location') : $buyer->location,
                     ]);
+
                     break;
                 case 'vendor':
                 case 'transport':

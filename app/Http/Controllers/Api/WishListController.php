@@ -42,17 +42,20 @@ class WishListController extends Controller
                 'product_id' => 'required|exists:products,id'
             ]);
 
-            $buyer = User::where('id',$request->header('id'))
+            $user = User::where('id',$request->header('id'))
                 ->with('buyer')
                 ->first();
-            if (!$buyer) {
+            if (!$user) {
                 return ResponseHelper::Out('failed', 'Buyer not found', null, 404);
             }
             $productId =  $request->input('product_id');
-            $buyerId = $buyer->buyer->id;
-            $wishlist = WishList::createOrUpdate([
-                ['product_id' =>$productId,'buyer_id', $buyerId]
-            ]);
+            $buyerId = $user->buyer->id;
+            $wishlist = WishList::updateOrCreate(
+                [
+                    'product_id' => $productId,
+                    'buyer_id'   => $buyerId
+                ]
+            );
             return ResponseHelper::Out('success', 'Product added to wishlist', $wishlist, 201);
         } catch (ValidationException $e) {
             return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);

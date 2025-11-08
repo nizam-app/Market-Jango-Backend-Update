@@ -104,16 +104,19 @@ class VendorController extends Controller
                 'name' => 'required|string'
             ]);
             $name = $request->input('name');
-            $users = User::where('user_type', '=', 'vendor')->get();
-//            $vendors = Vendor::where('name', 'LIKE', "%{$name}%")->get();
-            if ($users->isEmpty()) {
+            $vendors = User::where('name', 'LIKE', "%{$name}%")
+                ->where('user_type', 'vendor')
+                ->where('status', 'Approved')
+                ->with('vendor')
+                ->paginate(10);
+            if ($vendors->isEmpty()) {
                 return response()->json([
                     'message' => 'No vendors found.'
                 ], 404);
             }
             return response()->json([
                 'status' => 'success',
-                'data' => $users
+                'data' => $vendors
             ],200);
         } catch (ValidationException $e) {
             return response()->json([

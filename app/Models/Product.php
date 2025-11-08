@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
 class Product extends Model
 {
@@ -47,5 +48,40 @@ class Product extends Model
     public function carts()
     {
         return $this->hasMany(Cart::class);
+    }
+    public function invoiceItems()
+    {
+        return $this->hasMany(InvoiceItem::class, 'product_id', 'id');
+    }
+    public function scopeBestSellersByVendorFromInvoice(
+        Builder $query,
+        int $vendorId,
+        ?int $days = null,
+        int $limit = 30
+    ): Builder {
+        // তোমার ইনভয়েসের সফল স্ট্যাটাসগুলো
+        $completedPaymentStatuses = ['Paid','Completed','Shipped']; // প্রয়োজনে কাস্টমাইজ
+
+        return $query
+            ->whereHas('invoiceItems', function ($q) use ($vendorId, $completedPaymentStatuses, $days) {
+                $q->where('vendor_id', $vendorId)
+                    ->whereHas('invoice', function ($iq) use ($completedPaymentStatuses, $days) {
+                        $iq->whereIn('payment_status', $completedPaymentStatuses);
+                        if ($days) {
+                            $iq->where('created_at', '>=', now()->subDays($days));
+                        }
+                    });
+            })
+            ->withSum(['invoiceItems as sold_qty' => function ($q) use ($vendorId, $completedPaymentStatuses, $days) {
+                $q->where('vendor_id', $vendorId)
+                    ->whereHas('invoice', function ($iq) use ($completedPaymentStatuses, $days) {
+                        $iq->whereIn('payment_status', $completedPaymentStatuses);
+                        if ($days) {
+                            $iq->where('created_at', '>=', now()->subDays($days));
+                        }
+                    });
+            }], 'quantity')
+            ->orderByDesc('sold_qty')
+            ->limit($limit);
     }
 }

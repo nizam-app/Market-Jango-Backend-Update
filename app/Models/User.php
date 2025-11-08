@@ -73,7 +73,11 @@ use HasFactory, Notifiable;
         }
         public function transport()
         {
-        return $this->hasOne(Transport::class);
+            return $this->hasOne(Transport::class);
+        }
+        public function reviews()
+        {
+            return $this->hasOne(Review::class);
         }
     // Notifications sent by this user
     public function sentNotifications()
