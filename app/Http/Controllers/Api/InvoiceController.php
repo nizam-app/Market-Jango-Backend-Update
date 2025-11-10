@@ -105,6 +105,7 @@ class InvoiceController extends Controller
     }
 
 
+    //create order
     function InvoiceCreate(Request $request)
     {
         DB::beginTransaction();
@@ -174,6 +175,7 @@ class InvoiceController extends Controller
         }
     }
 
+    //flutter wave redirect url method
     public function handleFlutterWaveResponse(Request $request)
     {
         try {

@@ -16,4 +16,11 @@ class InvoiceStatusLog extends Model
     {
         return $this->belongsTo(Invoice::class);
     }
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }  public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
+    }
 }

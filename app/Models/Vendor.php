@@ -32,5 +32,9 @@ class Vendor extends Model
     {
         return $this->hasMany(Review::class);
     }
+    public function invoiceItems()
+    {
+        return $this->hasMany(InvoiceItem::class);
+    }
 
 }

@@ -37,22 +37,22 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get("/payment/response", [InvoiceController::class, 'handleFlutterWaveResponse']);
 //Authentication for all users
 Route::middleware('tokenVerify')->group(function () {
-//    Route::post('/users/{user}/assign-roles', [UserController::class, 'assignRoles'])->middleware('permission:manage users');
-//    Route::post('/users/{user}/assign-permissions', [UserController::class, 'assignPermissions'])->middleware('permission:manage users');
-//
-//    // Roles routes - all require 'manage roles' permission except index and show
-//    Route::get('/roles', [RoleController::class, 'index']);
-//    Route::post('/roles', [RoleController::class, 'store'])->middleware('permission:manage roles');
-//    Route::get('/roles/{role}', [RoleController::class, 'show']);
-//    Route::put('/roles/{role}', [RoleController::class, 'update'])->middleware('permission:manage roles');
-//    Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->middleware('permission:manage roles');
-//
-//    // Permissions routes - all require 'manage permissions' permission except index and show
-//    Route::get('/permissions', [PermissionController::class, 'index']);
-//    Route::post('/permissions', [PermissionController::class, 'store'])->middleware('permission:manage permissions');
-//    Route::get('/permissions/{permission}', [PermissionController::class, 'show']);
-//    Route::put('/permissions/{permission}', [PermissionController::class, 'update'])->middleware('permission:manage permissions');
-//    Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy'])->middleware('permission:manage permissions');
+    Route::post('/users/{user}/assign-roles', [UserController::class, 'assignRoles'])->middleware('permission:manage users');
+    Route::post('/users/{user}/assign-permissions', [UserController::class, 'assignPermissions'])->middleware('permission:manage users');
+
+    // Roles routes - all require 'manage roles' permission except index and show
+    Route::get('/roles', [RoleController::class, 'index']);
+    Route::post('/roles', [RoleController::class, 'store'])->middleware('permission:manage roles');
+    Route::get('/roles/{role}', [RoleController::class, 'show']);
+    Route::put('/roles/{role}', [RoleController::class, 'update'])->middleware('permission:manage roles');
+    Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->middleware('permission:manage roles');
+
+    // Permissions routes - all require 'manage permissions' permission except index and show
+    Route::get('/permissions', [PermissionController::class, 'index']);
+    Route::post('/permissions', [PermissionController::class, 'store'])->middleware('permission:manage permissions');
+    Route::get('/permissions/{permission}', [PermissionController::class, 'show']);
+    Route::put('/permissions/{permission}', [PermissionController::class, 'update'])->middleware('permission:manage permissions');
+    Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy'])->middleware('permission:manage permissions');
 
 
 
@@ -87,6 +87,10 @@ Route::middleware('tokenVerify')->group(function () {
     //Invoice and payment
     Route::get("/invoice", [InvoiceController::class, 'index']);
     Route::get("/all-order", [InvoiceController::class, 'allOrders']);
+    Route::get("/all-order/transport", [TransportHomeController::class, 'allOrdersTransport']);
+    Route::get("/ongoing-order/transport", [TransportHomeController::class, 'ongoingOrderTransport']);
+    Route::get("/complete-order/transport", [TransportHomeController::class, 'completeOrderTransport']);
+    Route::get("/cancel-order/transport", [TransportHomeController::class, 'cancelOrderTransport']);
     Route::get("/invoice/create", [InvoiceController::class, 'InvoiceCreate']);
     Route::get("/InvoiceProductList/{invoice_id}", [InvoiceController::class, 'InvoiceProductList']);
     // Payment callback routes
@@ -242,12 +246,14 @@ Route::middleware('tokenVerify')->group(function () {
 
 
     });
-        Route::get("/transport/invoice/create/", [TransportHomeController::class, 'InvoiceCreateTransport']);
-    Route::get('/transport/invoice', [TransportHomeController::class, 'transportInvoiceList']);
+    Route::get("/transport/invoice/create/", [TransportHomeController::class, 'InvoiceCreateTransport']);
 
     //search
     Route::get('/search/product', [BuyerHomeController::class, 'productSearchByBuyer']);
     Route::get('/vendor/details/{id}', [TransportHomeController::class, 'driverDetails']);
+    Route::get('/transport/invoice/tracking/{id}', [TransportHomeController::class, 'showTransportTracking']);
+    Route::get('/transport/successful/invoice/tracking/{id}', [TransportHomeController::class, 'showSuccessfulTransportTracking']);
+    Route::get('/transport/cancel/invoice/tracking/{id}', [TransportHomeController::class, 'showCancelTransportTracking']);
     Route::get('/invoice/tracking/{id}', [InvoiceController::class, 'showTracking']);
     Route::post('/invoice/update-status/{id}', [InvoiceController::class, 'updateStatus']);
 

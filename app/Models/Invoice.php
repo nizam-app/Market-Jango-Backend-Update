@@ -31,11 +31,15 @@ class Invoice extends Model
     // invoice item
     public function items()
     {
-        return $this->hasMany(InvoiceItem::class, 'invoice_id', 'id');
+        return $this->hasMany(InvoiceItem::class);
     }
     public function statusLogs()
     {
         return $this->hasMany(InvoiceStatusLog::class);
+    }
+    public function statusLogTransports()
+    {
+        return $this->hasMany(TransportInvoiceStatusLogs::class);
     }
 
 
