@@ -221,6 +221,8 @@ Route::middleware('tokenVerify')->group(function () {
 
     });
         Route::get("/transport/invoice/create/", [TransportHomeController::class, 'InvoiceCreateTransport']);
+    Route::get('/transport/invoice', [TransportHomeController::class, 'transportInvoiceList']);
+
     //search
     Route::get('/search/product', [BuyerHomeController::class, 'productSearchByBuyer']);
     Route::get('/vendor/details/{id}', [TransportHomeController::class, 'driverDetails']);

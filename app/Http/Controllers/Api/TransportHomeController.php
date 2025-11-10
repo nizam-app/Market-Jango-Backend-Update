@@ -177,6 +177,29 @@ class TransportHomeController extends Controller
             return ResponseHelper::Out('fail', 'Something went wrong', $e->getMessage(), 200);
         }
     }
+    // all transport
+    public function transportInvoiceList(Request $request): JsonResponse
+    {
+        try {
+            // get login buyer
+            $user_id = $request->header('id');
+            $buyer = User::where('id', '=', $user_id)->first();
+            if (!$buyer) {
+                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+            }
+            // get cart data by login buyer
+            $invoices = Invoice::where('user_id', $user_id)
+                ->where('delivery_status', 'successful')
+                ->with(['items', 'items.product'])
+                ->paginate(10);
+            if ($invoices->isEmpty()) {
+                return ResponseHelper::Out('success', 'order not found', null, 200);
+            }
+            return ResponseHelper::Out('success', 'All order successfully fetched', $invoices, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
 
 
 

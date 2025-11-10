@@ -42,6 +42,7 @@ class InvoiceController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+
     // invoice delivery status update
     public function updateStatus(Request $request, $invoiceId)
     {
@@ -63,11 +64,19 @@ class InvoiceController extends Controller
         ]);
         return ResponseHelper::Out('success', 'Status updated successfully', $invoice, 200);
     }
+
     // Show  all staus by delivery
     public function showTracking($invoiceId)
     {
-        $invoice = Invoice::with('statusLogs')->findOrFail($invoiceId);
-        return ResponseHelper::Out('success', 'Status History fetched successfully', $invoice, 200);
+        try {
+            $invoice = Invoice::with('statusLogs')->findOrFail($invoiceId);
+            if (!$invoice) {
+                return ResponseHelper::Out('success', 'order not found', null, 200);
+            }
+            return ResponseHelper::Out('success', 'Status History fetched successfully', $invoice, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
     }
 
     // all orders
@@ -120,7 +129,7 @@ class InvoiceController extends Controller
             // Payable Calculation
             $total = 0;
             $cartList = Cart::where('buyer_id', $buyerId)
-                ->where('status',    'active')->get();
+                ->where('status', 'active')->get();
             if ($cartList->isEmpty()) {
                 return ResponseHelper::Out('failed', 'Cart not found', null, 404);
             }
@@ -164,6 +173,7 @@ class InvoiceController extends Controller
             return ResponseHelper::Out('fail', 'Something went wrong', $e->getMessage(), 200);
         }
     }
+
     public function handleFlutterWaveResponse(Request $request)
     {
         try {
