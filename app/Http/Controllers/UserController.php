@@ -66,4 +66,34 @@ class UserController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+    public function assignRoles(Request $request, User $user)
+    {
+        $request->validate([
+            'roles' => 'required|array',
+            'roles.*' => 'string|exists:roles,name',
+        ]);
+
+        $user->syncRoles($request->roles);
+        $user->load('roles', 'permissions');
+
+        return response()->json([
+            'message' => 'Roles assigned successfully',
+            'data' => $user,
+        ]);
+    }
+    public function assignPermissions(Request $request, User $user)
+    {
+        $request->validate([
+            'permissions' => 'required|array',
+            'permissions.*' => 'string|exists:permissions,name',
+        ]);
+
+        $user->syncPermissions($request->permissions);
+        $user->load('roles', 'permissions');
+
+        return response()->json([
+            'message' => 'Permissions assigned successfully',
+            'data' => $user,
+        ]);
+    }
 }

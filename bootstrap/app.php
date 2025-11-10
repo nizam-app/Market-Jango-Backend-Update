@@ -19,7 +19,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'tokenVerify' => TokenVerifyMiddleware::class,
             'userTypeVerify' => UserTypeVerificationMiddleware::class,
-            'statusVerify' => CheckUserStatusMiddleware::class
+            'statusVerify' => CheckUserStatusMiddleware::class,
+            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'verify.permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

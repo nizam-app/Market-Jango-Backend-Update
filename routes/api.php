@@ -23,6 +23,8 @@ use App\Http\Controllers\Api\VariantValueController;
 use App\Http\Controllers\Api\VendorController;
 use App\Http\Controllers\Api\VendorHomePageController;
 use App\Http\Controllers\Api\WishListController;
+use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -35,6 +37,26 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get("/payment/response", [InvoiceController::class, 'handleFlutterWaveResponse']);
 //Authentication for all users
 Route::middleware('tokenVerify')->group(function () {
+//    Route::post('/users/{user}/assign-roles', [UserController::class, 'assignRoles'])->middleware('permission:manage users');
+//    Route::post('/users/{user}/assign-permissions', [UserController::class, 'assignPermissions'])->middleware('permission:manage users');
+//
+//    // Roles routes - all require 'manage roles' permission except index and show
+//    Route::get('/roles', [RoleController::class, 'index']);
+//    Route::post('/roles', [RoleController::class, 'store'])->middleware('permission:manage roles');
+//    Route::get('/roles/{role}', [RoleController::class, 'show']);
+//    Route::put('/roles/{role}', [RoleController::class, 'update'])->middleware('permission:manage roles');
+//    Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->middleware('permission:manage roles');
+//
+//    // Permissions routes - all require 'manage permissions' permission except index and show
+//    Route::get('/permissions', [PermissionController::class, 'index']);
+//    Route::post('/permissions', [PermissionController::class, 'store'])->middleware('permission:manage permissions');
+//    Route::get('/permissions/{permission}', [PermissionController::class, 'show']);
+//    Route::put('/permissions/{permission}', [PermissionController::class, 'update'])->middleware('permission:manage permissions');
+//    Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy'])->middleware('permission:manage permissions');
+
+
+
+
     Route::post('/register-name', [AuthController::class, 'registerName']);
     Route::post('/register-phone', [AuthController::class, 'registerPhone']); // not complete
     Route::post('/user-verify-otp', [AuthController::class, 'verifyOtp']);
