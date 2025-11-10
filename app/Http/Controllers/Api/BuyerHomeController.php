@@ -28,7 +28,6 @@ class BuyerHomeController extends Controller
         if (!$vendorId) {
             return response()->json(['status'=>'failed','message'=>'vendor_id is required'], 422);
         }
-
         $top = InvoiceItem::query()
             ->where('vendor_id', $vendorId)
             ->selectRaw('product_id, SUM(quantity) as sold_qty')
@@ -36,18 +35,13 @@ class BuyerHomeController extends Controller
             ->orderByDesc('sold_qty')
             ->limit(30)
             ->get();
-
         if ($top->isEmpty()) {
             return response()->json(['status' => 'failed', 'message' => 'No sales for this vendor'], 404);
         }
-
-        // প্রোডাক্ট ডিটেইলস এনে সিরিয়াল ঠিক রেখে ম্যাপ করি
         $productIds = $top->pluck('product_id')->all();
-
         $products = Product::whereIn('id', $productIds)
-            ->get() // দরকার হলে আরও কলাম যোগ করো, যেমন 'thumbnail'
+            ->get()
             ->keyBy('id');
-
         $data = $top->map(function ($row) use ($products) {
             return [
                 'product'  => $products->get($row->product_id), // null হলে শুধু id দেখাতে পারো
@@ -59,6 +53,8 @@ class BuyerHomeController extends Controller
     public function vendorFirstProduct(): JsonResponse
     {
         $vendors = Vendor::with(['user', 'categories.products'])
+            ->inRandomOrder()
+            ->take(10)
             ->get();
         $data = $vendors->map(function ($vendor) {
             $firstCategory = $vendor->categories->first();
@@ -67,6 +63,7 @@ class BuyerHomeController extends Controller
                 'vendor_id' => $vendor->id,
                 'business_name' => $vendor->business_name,
                 'vendor_name' => $vendor->user ? $vendor->user->name : null,
+                'vendor_image' =>  $vendor->user->image,
                 'category' => $firstCategory ? [
                     'id' => $firstCategory->id,
                     'name' => $firstCategory->name,
@@ -81,10 +78,8 @@ class BuyerHomeController extends Controller
                 ] : null,
             ];
         });
-
         return ResponseHelper::Out('success', 'Product fetched successfully', $data, 200);
     }
-
     public function vendorListId(Request $request, $id): JsonResponse
     {
 
@@ -101,7 +96,9 @@ class BuyerHomeController extends Controller
         if (!$vendor) {
             return ResponseHelper::Out('success', 'No vendors found for this location', null, 200);
         }
-        $vendors = Vendor::orderByRaw("CASE WHEN id = ? THEN 0 ELSE 1 END", [$id])
+        $vendors = Vendor::orderByRaw("CASE WHEN id = ? THEN 0 ELSE 1 END", [$id]) ->with([
+            'user'
+        ])
             ->get();
         return ResponseHelper::Out('success', 'Vendor fetched successfully', $vendors, 200);
     }

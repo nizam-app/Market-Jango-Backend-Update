@@ -11,11 +11,14 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Product;
 use App\Models\SearchHistory;
+use App\Models\TransportInvoice;
+use App\Models\TransportInvoiceStatusLogs;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class TransportHomeController extends Controller
 {
@@ -105,59 +108,71 @@ class TransportHomeController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-    function InvoiceCreateTransport(Request $request, $id): JsonResponse
+    function InvoiceCreateTransport(Request $request): JsonResponse
     {
         DB::beginTransaction();
         try {
+            $request->validate(array(
+                'drop_of_address' => 'required|string',
+                'pickup_address' => 'required|string',
+                'driver_id' => 'required',
+                'distance' => 'required',
+            ));
             $user_id = $request->header('id');
             $user_email = $request->header('email');
             $user = User::where('id', '=', $user_id)->first();
             if (!$user) {
                 return ResponseHelper::Out('failed', 'User not found', null, 404);
             }
-            $driver = Driver::where('id', $id)->with('user')->first();
+            $driver_id = $request->input('driver_id');
+            $driver = Driver::where('id', $driver_id)->with('user')->first();
             if (!$driver) {
-                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+                return ResponseHelper::Out('failed', 'Driver not found', null, 404);
             }
             $tran_id = uniqid();
-            $payable = $driver->price;
+            $delivery_status = 'Pending';
+            $payment_status = 'Pending';
             $currency = "USD";
             $cus_name = $user->name;
             $cus_phone = $user->phone;
-            $delivery_status = 'Pending';
-            $payment_status = 'Pending';
-            $vat='0';
+            $total = $driver->price;
+            $pickup_address = $request->input('pickup_address');
+            $drop_of_address = $request->input('drop_of_address');
+            $distance = $request->input('distance');
+            $vat=0;
+            $subtotal = $total*$distance;
+            $payable = $subtotal + $vat;
             $invoice = Invoice::create([
-                'total' => $payable,
+                'total' => $subtotal,
                 'vat' => $vat,
                 'payable' => $payable,
                 'cus_name' => $cus_name,
                 'cus_email' => $user_email,
                 'cus_phone' => $cus_phone,
-                'ship_address' => null,
-                'ship_city' => null,
-                'ship_country' => null,
+                'pickup_address' => $pickup_address,
+                'drop_of_address' => $drop_of_address,
+                'delivery_status' => $delivery_status,
+                'distance' => $distance,
+                'status' => $payment_status,
                 'tax_ref' => $tran_id,
                 'currency' => $currency,
-                'delivery_status' => $delivery_status,
-                'status' => $payment_status,
                 'user_id' => $user_id
             ]);
             $invoiceID = $invoice->id;
 
-                InvoiceItem::create([
-                    'invoice_id' => $invoiceID,
-                    'tran_id' => $tran_id,
-                    'product_id' => null,
-                    'vendor_id' =>null,
-                    'quantity' => 1,
-                    'sale_price' =>$invoice->payable,
-                ]);
+            TransportInvoiceStatusLogs::create([
+                'status' => $delivery_status,
+                'invoice_id' => $invoiceID,
+            ]);
 
             $paymentMethod = PaymentSystem::InitiatePayment($invoice);
             DB::commit();
             return ResponseHelper::Out('success', '', array(['paymentMethod' => $paymentMethod, 'payable' => $payable, 'vat' => $vat, 'total' => $payable]), 200);
-        } catch (Exception $e) {
+        }catch (ValidationException $e) {
+            DB::rollBack();
+            return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
+        }
+        catch (Exception $e) {
             DB::rollBack();
             return ResponseHelper::Out('fail', 'Something went wrong', $e->getMessage(), 200);
         }

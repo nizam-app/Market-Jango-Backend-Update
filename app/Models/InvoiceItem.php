@@ -20,11 +20,11 @@ class InvoiceItem extends Model
     }
     public function product()
     {
-        return $this->belongsTo(Invoice::class, 'invoice_id', 'id');
+        return $this->belongsTo(Product::class, 'invoice_id', 'id');
     }
     public function rating()
     {
-        return $this->hasOne(Rating::class, 'invoice_item_id');
+        return $this->hasOne(Review::class, 'invoice_item_id');
     }
 
 }

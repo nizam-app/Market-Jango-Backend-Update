@@ -238,12 +238,35 @@ class AdminController extends Controller
     {
         try {
             $driver = Driver::with([
-                'user:id,name'
+                'user:id,name,image'
             ])
                 ->whereHas('user', function ($query) {
                     $query->where('status', 'Pending');
                 })
-                ->select('id', 'user_id','created_at','location', 'car_name','car_model')
+                ->select('id', 'user_id','created_at','location', 'car_name','car_model','price','rating','route_id')
+                ->paginate(10);
+            if($driver->isEmpty()){
+                return ResponseHelper::Out('success', 'No pending driver found', $driver, 200);
+            }
+            return ResponseHelper::Out('success', 'All pending driver successfully fetched', $driver, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    // request driver details
+    public function requestDriverDetails(Request $request): JsonResponse
+    {
+        try {
+            $driver = Driver::with([
+                'user:id,name,image',
+                'images',
+                'route'
+            ])
+                ->where('id', $request->id)
+                ->whereHas('user', function ($query) {
+                    $query->where('status', 'Pending');
+                })
+                ->select('id', 'user_id','created_at','location', 'car_name','car_model','price','rating','route_id')
                 ->paginate(10);
             if($driver->isEmpty()){
                 return ResponseHelper::Out('success', 'No pending driver found', $driver, 200);
@@ -263,7 +286,6 @@ class AdminController extends Controller
                 ->whereHas('user', function ($query) {
                     $query->where('status', 'Approved');
                 })
-//                ->select('id', 'user_id','created_at','location', 'car_name','car_model','price')
                 ->paginate(10);
             if($driver->isEmpty()){
                 return ResponseHelper::Out('success', 'No active driver found', $driver, 200);
@@ -293,4 +315,180 @@ class AdminController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+    // suspended driver
+    public function suspendedDriverDetails(Request $request): JsonResponse
+    {
+        try {
+            $driver = Driver::with([
+                'user',
+                'images:id,image_path,public_id,user_type,file_type,user_id',
+                'route'
+            ])
+                ->where('id', $request->id)
+                ->whereHas('user', function ($query) {
+                    $query->where('status', 'Rejected');
+                })
+                ->paginate(10);
+            if($driver->isEmpty()){
+                return ResponseHelper::Out('success', 'No suspended driver found', $driver, 200);
+            }
+            return ResponseHelper::Out('success', 'All suspended driver successfully fetched', $driver, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+
+    //Get Single User
+    public function driverDetails(Request $request): JsonResponse
+    {
+        try {
+            $user = Driver::where('id', $request->input('id'))
+                ->with(['user','images'])
+                ->first();
+            if (!$user) {
+                return ResponseHelper::Out('failed', 'Driver not found', null, 404);
+            }
+            return ResponseHelper::Out('success', 'Driver data fetched successfully', $user, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+
+//    public function driverFilter(Request $request)
+//    {
+//        try {
+//            $request->validate([
+//                'q'               => 'nullable|string',
+//                'location'        => 'nullable|string',
+//                'status'          => 'nullable|in:online,offline,busy',
+//                'min_price'       => 'nullable|numeric',
+//                'max_price'       => 'nullable|numeric',
+//                'pickup_lat'      => 'nullable|numeric|between:-90,90',
+//                'pickup_lng'      => 'nullable|numeric|between:-180,180',
+//                'destination_lat' => 'nullable|numeric|between:-90,90',
+//                'destination_lng' => 'nullable|numeric|between:-180,180',
+//                'radius_km'       => 'nullable|numeric|min:0',
+//                'sort'            => 'nullable|in:distance,price,rating',
+//                'per_page'        => 'nullable|integer|min:1|max:100',
+//            ]);
+//
+//            $drivers = Driver::all();
+//
+//            // Search (name/phone/city)
+//            if ($request->filled('q')) {
+//                $term = $request->q;
+//                $drivers->where(function($x) use ($term) {
+//                    $x->where('name','LIKE',"%{$term}%")
+//                        ->orWhere('phone','LIKE',"%{$term}%")
+//                        ->orWhere('city','LIKE',"%{$term}%");
+//                });
+//            }
+//
+//            // Location LIKE
+//            if ($request->filled('location')) {
+//                $loc = $request->location;
+//                $drivers->where(function($x) use ($loc) {
+//                    $x->where('address','LIKE',"%{$loc}%")
+//                        ->orWhere('city','LIKE',"%{$loc}%");
+//                });
+//            }
+//
+//            // Status + price range
+//            if ($request->filled('status'))    $drivers->where('status', $request->status);
+//            if ($request->filled('min_price')) $drivers->where('price_per_km','>=',$request->min_price);
+//            if ($request->filled('max_price')) $drivers->where('price_per_km','<=',$request->max_price);
+//
+//            // Nearby from pickup (adds distance_km)
+//            if ($request->filled(['pickup_lat','pickup_lng'])) {
+//                $lat = (float)$request->pickup_lat;
+//                $lng = (float)$request->pickup_lng;
+//
+//                $drivers->addSelect(DB::raw("
+//                    6371 * acos(
+//                       cos(radians($lat)) * cos(radians(lat)) *
+//                       cos(radians(lng) - radians($lng)) +
+//                       sin(radians($lat)) * sin(radians(lat))
+//                    ) as distance_km
+//                "));
+//
+//                if ($request->filled('radius_km') && $request->radius_km > 0) {
+//                    $drivers->having('distance_km','<=',(float)$request->radius_km);
+//                }
+//            }
+//
+//            // Sorting
+//            switch ($request->input('sort')) {
+//                case 'distance':
+//                    if ($request->filled(['pickup_lat','pickup_lng'])) {
+//                        $drivers->orderBy('distance_km');
+//                    }
+//                    break;
+//                case 'price':  $drivers->orderBy('price_per_km'); break;
+//                case 'rating': $drivers->orderByDesc('rating');   break;
+//                default:       $drivers->latest('id');            break;
+//            }
+//
+//            $paginated = $drivers->paginate(10);
+//
+//            // Estimated fare (pickup -> destination distance)
+//            if ($request->filled(['pickup_lat','pickup_lng','destination_lat','destination_lng'])) {
+//                $tripKm = $this->haversine(
+//                    (float)$request->pickup_lat, (float)$request->pickup_lng,
+//                    (float)$request->destination_lat, (float)$request->destination_lng
+//                );
+//
+//                $paginated->getCollection()->transform(function ($d) use ($tripKm) {
+//                    if (isset($d->distance_km)) $d->distance_km = round($d->distance_km, 2);
+//                    $d->estimated_fare = round($d->base_fare + ($d->price_per_km * $tripKm), 2);
+//                    unset($d->lat, $d->lng); // চাইলে লুকানো
+//                    return $d;
+//                });
+//            } else {
+//                $paginated->getCollection()->transform(function ($d) {
+//                    if (isset($d->distance_km)) $d->distance_km = round($d->distance_km, 2);
+//                    unset($d->lat, $d->lng);
+//                    return $d;
+//                });
+//            }
+//
+//            // NOTE: total আইটেম জানতে চাইলে count() নয়, total() ইউজ করো।
+//            return ResponseHelper::Out('success', 'Drivers fetched successfully', [
+//                'total'      => $paginated->count(),     // current page count
+//                'pagination' => [
+//                    'current_page' => $paginated->currentPage(),
+//                    'per_page'     => $paginated->perPage(),
+//                    'last_page'    => $paginated->lastPage(),
+//                    'total'        => $paginated->total(), // all pages total
+//                ],
+//                'data'       => $paginated->items(),
+//            ], 200);
+//
+//        } catch (Exception $e) {
+//            return ResponseHelper::Out('failed', 'Error fetching drivers', $e->getMessage(), 500);
+//        }
+//    }
+//
+//    // GET /api/drivers/{id}
+//    public function driverDetails($id)
+//    {
+//        try {
+//            $driver = Driver::select([
+//                'id','name','phone','avatar_url as avatar',
+//                'status','is_available','price_per_km','base_fare',
+//                'rating','total_trips','city','address','lat','lng','created_at'
+//            ])->find($id);
+//
+//            if (!$driver) {
+//                return ResponseHelper::Out('success', 'Driver not found', null, 404);
+//            }
+//
+//            unset($driver->lat, $driver->lng); // চাইলে hide
+//
+//            return ResponseHelper::Out('success', 'Driver details', $driver, 200);
+//
+//        } catch (Exception $e) {
+//            return ResponseHelper::Out('failed', 'Error fetching driver details', $e->getMessage(), 500);
+//        }
+//    }
+
 }

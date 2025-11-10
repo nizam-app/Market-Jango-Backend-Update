@@ -47,13 +47,12 @@ class ProductController extends Controller
             //Get All Product But New Product First
             $products = Product::where('id', $id)
             ->with([
-                'vendor:id,user_id',
-                'vendor.user:id,name',
-                'vendor.reviews:id,vendor_id,description,rating',
-                'category:id,name',
+                'vendor',
+                'vendor.user',
+                'vendor.reviews',
+                'category',
                 'images:id,image_path,public_id,product_id'
             ])
-                ->select(['id','name','description','regular_price','sell_price','image','vendor_id','category_id', 'color', 'size'])
                 ->first();
             if (!$products) {
                 return ResponseHelper::Out('success', 'You have no products', [], 200);

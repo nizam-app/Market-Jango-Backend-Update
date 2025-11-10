@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('invoices', function (Blueprint $table) {
+        Schema::create('transport_invoices', function (Blueprint $table) {
             $table->id();
             $table->decimal('total', 10, 2);
             $table->decimal('vat', 10, 2);
@@ -19,13 +19,10 @@ return new class extends Migration
             $table->string('cus_name')->nullable();
             $table->string('cus_email');
             $table->string('cus_phone')->nullable();
-            $table->string('ship_address')->nullable();
-            $table->string('ship_city')->nullable();
-            $table->string('ship_country')->nullable();
             $table->string('pickup_address')->nullable();
             $table->string('drop_of_address')->nullable();
-            $table->string('distance')->nullable();
             $table->string('delivery_status')->nullable();
+            $table->string('distance')->nullable();
             $table->string('status')->nullable();
             $table->string('transaction_id')->nullable();
             $table->string('tax_ref')->nullable();
@@ -40,6 +37,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('invoices');
+        Schema::dropIfExists('transport_invoices');
     }
 };

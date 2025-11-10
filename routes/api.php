@@ -45,6 +45,8 @@ Route::middleware('tokenVerify')->group(function () {
     Route::get('/vendor/first/product', [BuyerHomeController::class, 'vendorFirstProduct']);
     Route::get('/popular/product/{id}', [BuyerHomeController::class, 'popularProducts']);
     Route::get('/language', [AuthController::class, 'language']);
+//    Route::get('/drivers/filter',        [AdminController::class, 'driverFilter']);
+//    Route::get('/drivers/{id}',   [AdminController::class, 'driverDetails']);
     // Fetch all buyer home page products
     Route::prefix('admin-selects')->group(function () {
         Route::get('top-categories', [AdminSelectController::class, 'getTopCategory']);
@@ -94,8 +96,10 @@ Route::middleware('tokenVerify')->group(function () {
     Route::get('/request-product', [AdminController::class, 'requestProduct']);
     Route::get('/request-product-details/{id}', [AdminController::class, 'requestProductDetails']);
     Route::get('/request-driver', [AdminController::class, 'requestDriver']);
+    Route::get('/request-driver/show', [AdminController::class, 'requestDriverDetails']);
     Route::get('/approved-driver', [AdminController::class, 'approvedDriver']);
     Route::get('/suspended-driver', [AdminController::class, 'suspendedDriver']);
+    Route::get('/suspended-driver/show', [AdminController::class, 'suspendedDriverDetails']);
     Route::get('/drivers/search', [VendorHomePageController::class, 'driverSearch']);
     // Route routes
     Route::prefix('route')->group(function () {
@@ -216,7 +220,7 @@ Route::middleware('tokenVerify')->group(function () {
 
 
     });
-        Route::get("/transport/invoice/create/{driver_id}", [TransportHomeController::class, 'InvoiceCreateTransport']);
+        Route::get("/transport/invoice/create/", [TransportHomeController::class, 'InvoiceCreateTransport']);
     //search
     Route::get('/search/product', [BuyerHomeController::class, 'productSearchByBuyer']);
     Route::get('/vendor/details/{id}', [TransportHomeController::class, 'driverDetails']);
@@ -224,6 +228,7 @@ Route::middleware('tokenVerify')->group(function () {
     Route::post('/invoice/update-status/{id}', [InvoiceController::class, 'updateStatus']);
 
     Route::prefix('driver')->group(function () {
+        Route::get('/show', [AdminController::class, 'driverDetails']);
     });
     Route::prefix('vendor')->group(function () {
         Route::get('/', [VendorController::class, 'index']);

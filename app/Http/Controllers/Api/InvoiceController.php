@@ -168,7 +168,7 @@ class InvoiceController extends Controller
     {
         try {
             $transactionId = $request->input('transaction_id');
-            $tax = $request->input('tx_ref'); // Flutter wave response tx_ref
+            $tax = $request->input('tx_ref');
             $status = $request->input('status'); // Flutter wave response status
             $payment = Invoice::where('tax_ref', $tax)->first();
             if (!$payment) {

@@ -22,5 +22,10 @@ class Driver extends Model
     {
         return $this->hasMany(UserImage::class, 'user_id', 'id');
     }
+    public function route()
+    {
+        return $this->belongsTo(Route::class);
+    }
+
 
 }
