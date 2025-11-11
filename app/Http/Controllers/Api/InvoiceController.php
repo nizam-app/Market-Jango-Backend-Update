@@ -69,7 +69,7 @@ class InvoiceController extends Controller
     public function showTracking($invoiceId)
     {
         try {
-            $invoice = Invoice::with('statusLogs')->findOrFail($invoiceId);
+            $invoice = Invoice::with('statusLogs')->find($invoiceId);
             if (!$invoice) {
                 return ResponseHelper::Out('success', 'order not found', null, 200);
             }

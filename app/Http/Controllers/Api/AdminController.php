@@ -281,7 +281,8 @@ class AdminController extends Controller
     {
         try {
             $driver = Driver::with([
-                'user'
+                'user',
+                'images'
             ])
                 ->whereHas('user', function ($query) {
                     $query->where('status', 'Approved');

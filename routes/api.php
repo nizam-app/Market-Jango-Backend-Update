@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\DeliveryChargeController;
 use App\Http\Controllers\Api\DriverController;
+use App\Http\Controllers\Api\DriverHomeController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\NotificationController;
@@ -91,6 +92,11 @@ Route::middleware('tokenVerify')->group(function () {
     Route::get("/ongoing-order/transport", [TransportHomeController::class, 'ongoingOrderTransport']);
     Route::get("/complete-order/transport", [TransportHomeController::class, 'completeOrderTransport']);
     Route::get("/cancel-order/transport", [TransportHomeController::class, 'cancelOrderTransport']);
+    Route::get("/all-order/driver", [DriverHomeController::class, 'allOrdersDriver']);
+    Route::get("/ongoing-order/driver", [DriverHomeController::class, 'ongoingOrderDriver']);
+    Route::get("/complete-order/driver", [DriverHomeController::class, 'completeOrderDriver']);
+    Route::get("/new-order/driver", [DriverHomeController::class, 'newOrdersDriver']);
+    Route::get("/cancel-order/driver", [DriverHomeController::class, 'cancelOrderDriver']);
     Route::get("/invoice/create", [InvoiceController::class, 'InvoiceCreate']);
     Route::get("/InvoiceProductList/{invoice_id}", [InvoiceController::class, 'InvoiceProductList']);
     // Payment callback routes
@@ -254,8 +260,13 @@ Route::middleware('tokenVerify')->group(function () {
     Route::get('/transport/invoice/tracking/{id}', [TransportHomeController::class, 'showTransportTracking']);
     Route::get('/transport/successful/invoice/tracking/{id}', [TransportHomeController::class, 'showSuccessfulTransportTracking']);
     Route::get('/transport/cancel/invoice/tracking/{id}', [TransportHomeController::class, 'showCancelTransportTracking']);
+    Route::get('/driver/invoice/pending/tracking/{id}', [DriverHomeController::class, 'showDriverTracking']);
+    Route::get('/driver/invoice/tracking/{id}', [DriverHomeController::class, 'DriverTracking']);
+    Route::get('/driver/successful/invoice/tracking/{id}', [DriverHomeController::class, 'showSuccessfulDriverTracking']);
+    Route::get('/driver/cancel/invoice/tracking/{id}', [DriverHomeController::class, 'showCancelDriverTracking']);
     Route::get('/invoice/tracking/{id}', [InvoiceController::class, 'showTracking']);
     Route::post('/invoice/update-status/{id}', [InvoiceController::class, 'updateStatus']);
+    Route::post('/driver/invoice/update-status/{id}', [InvoiceController::class, 'updateStatus']);
 
     Route::prefix('driver')->group(function () {
         Route::get('/show', [AdminController::class, 'driverDetails']);

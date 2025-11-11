@@ -14,8 +14,7 @@ class UserController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $users = User::with('vendor','buyer','driver','transport')
-                ->select(['id','name','image','email','phone','user_type','language','status','phone_verified_at'])
+            $users = User::with('vendor','buyer','driver','transport','userImages')
                 ->paginate(20);
             if($users->isEmpty()){
                 return ResponseHelper::Out('success', 'User not found', null, 200);
@@ -30,8 +29,7 @@ class UserController extends Controller
     {
         try {
             $user = User::where('id', $request->input('id'))
-                ->with('vendor', 'buyer', 'driver', 'transport')
-                ->select(['id', 'name', 'image', 'email', 'phone', 'user_type', 'language', 'status', 'phone_verified_at'])
+                ->with('vendor', 'buyer', 'driver', 'transport','userImages')
                 ->first();
             if (!$user) {
                 return ResponseHelper::Out('failed', 'User not found', null, 404);
@@ -54,7 +52,7 @@ class UserController extends Controller
                 return ResponseHelper::Out('failed', 'user not found', null, 404);
             }
             $user = User::where('id', $user->id)
-                ->with('vendor', 'buyer', 'driver', 'transport')
+                ->with('vendor', 'buyer', 'driver', 'transport','userImages')
                 ->select(['id', 'name', 'image', 'email', 'phone', 'user_type', 'language', 'status', 'phone_verified_at'])
                 ->first();
             if (!$user) {

@@ -110,9 +110,7 @@ class VendorController extends Controller
                 ->with('vendor')
                 ->paginate(10);
             if ($vendors->isEmpty()) {
-                return response()->json([
-                    'message' => 'No vendors found.'
-                ], 404);
+                return ResponseHelper::Out('success', 'You have no products', $vendors, 200);
             }
             return response()->json([
                 'status' => 'success',

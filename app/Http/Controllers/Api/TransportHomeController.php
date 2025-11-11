@@ -284,7 +284,7 @@ class TransportHomeController extends Controller
             }
             // get cart data by login buyer
             $invoices = Invoice::where('user_id', $user_id)
-                ->where('delivery_status', 'successful')
+                ->where('delivery_status', 'completed')
                 ->with(['items', 'items.driver'])
                 ->paginate(10);
             if ($invoices->isEmpty()) {

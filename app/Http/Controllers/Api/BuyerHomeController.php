@@ -36,7 +36,7 @@ class BuyerHomeController extends Controller
             ->limit(30)
             ->get();
         if ($top->isEmpty()) {
-            return response()->json(['status' => 'failed', 'message' => 'No sales for this vendor'], 404);
+            return response()->json(['status' => 'success', 'message' => 'No sales for this vendor'], 404);
         }
         $productIds = $top->pluck('product_id')->all();
         $products = Product::whereIn('id', $productIds)
