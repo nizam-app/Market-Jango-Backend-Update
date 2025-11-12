@@ -128,6 +128,7 @@ Route::middleware('tokenVerify')->group(function () {
     Route::get('/suspended-driver', [AdminController::class, 'suspendedDriver']);
     Route::get('/suspended-driver/show', [AdminController::class, 'suspendedDriverDetails']);
     Route::get('/drivers/search', [VendorHomePageController::class, 'driverSearch']);
+    Route::get('/vendor/pending/order', [VendorHomePageController::class, 'vendorPendingOrder']);
     // Route routes
     Route::prefix('route')->group(function () {
         Route::get('/', [RouteController::class, 'index']);

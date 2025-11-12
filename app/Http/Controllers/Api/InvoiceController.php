@@ -146,7 +146,9 @@ class InvoiceController extends Controller
                 'cus_name' => $cus_name,
                 'cus_email' => $user_email,
                 'cus_phone' => $cus_phone,
+                'pickup_address' => $ship_address,
                 'ship_address' => $ship_address,
+                'drop_of_address' => $ship_address,
                 'ship_city' => $ship_city,
                 'ship_country' => $ship_country,
                 'tax_ref' => $tran_id,
@@ -159,6 +161,7 @@ class InvoiceController extends Controller
             foreach ($cartList as $EachProduct) {
                 InvoiceItem::create([
                     'invoice_id' => $invoiceID,
+                    'status' => $delivery_status,
                     'tran_id' => $tran_id,
                     'product_id' => $EachProduct['product_id'],
                     'vendor_id' => $EachProduct['vendor_id'],

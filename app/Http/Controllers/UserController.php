@@ -15,7 +15,7 @@ class UserController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $users = User::with('vendor','buyer','driver','transport','userImages')
+            $users = User::with('vendor','buyer','driver','transport')
                 ->paginate(20);
             if($users->isEmpty()){
                 return ResponseHelper::Out('success', 'User not found', null, 200);

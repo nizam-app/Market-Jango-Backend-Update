@@ -7,6 +7,8 @@ use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Driver;
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Vendor;
@@ -32,9 +34,6 @@ class VendorHomePageController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
-
-
     //search vendor product
     public function productSearchByVendor(Request $request): JsonResponse
     {
@@ -146,6 +145,28 @@ class VendorHomePageController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
+    //Vendor Pending Order
+    public function vendorPendingOrder(Request $request): JsonResponse
+    {
+        try {
+            // get login buyer
+            $user_id = $request->header('id');
+            $vendor = Vendor::where('user_id', '=', $user_id)->first();
+            if (!$vendor) {
+                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+            }
+            // get order item  data by login vendor
+            $invoices = InvoiceItem::where('vendor_id', $vendor->id)
+                ->where('status', 'Pending')
+                ->with(['invoice', 'product'])
+                ->paginate(10);
+            if ($invoices->isEmpty()) {
+                return ResponseHelper::Out('success', 'order not found', null, 200);
+            }
+            return ResponseHelper::Out('success', 'All order successfully fetched', $invoices, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
 
 }

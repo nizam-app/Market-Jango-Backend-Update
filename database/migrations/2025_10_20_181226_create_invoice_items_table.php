@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->integer('quantity')->nullable();
             $table->string('tran_id')->nullable();
+            $table->string('status',50)->nullable();
             $table->integer('sale_price');
             $table->foreignId('invoice_id')->constrained()->cascadeOnDelete()->cascadeOnUpdate();
             $table->foreignId('product_id')->nullable()->constrained()->cascadeOnDelete()->cascadeOnUpdate();

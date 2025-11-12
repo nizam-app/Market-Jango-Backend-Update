@@ -13,6 +13,7 @@ class InvoiceItem extends Model
         'driver_id',
         'quantity',
         'sale_price',
+        'status',
         'tran_id'
     ];
     public function invoice()
@@ -21,7 +22,7 @@ class InvoiceItem extends Model
     }
     public function product()
     {
-        return $this->belongsTo(Product::class, 'invoice_id', 'id');
+        return $this->belongsTo(Product::class);
     }
     public function driver()
     {
