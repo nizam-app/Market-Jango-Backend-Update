@@ -13,10 +13,4 @@ class UserImage extends Model
         'file_type',
         'public_id'
     ];
-    public function user()
-    {
-        return $this->belongsTo(User::class, 'user_id');
-    }
-
-
 }

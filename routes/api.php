@@ -14,7 +14,6 @@ use App\Http\Controllers\Api\DriverHomeController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\NotificationController;
-use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductVariantController;
 use App\Http\Controllers\Api\ReviewController;
@@ -42,11 +41,11 @@ Route::middleware('tokenVerify')->group(function () {
     Route::post('/users/{user}/assign-permissions', [UserController::class, 'assignPermissions'])->middleware('permission:manage users');
 
     // Roles routes - all require 'manage roles' permission except index and show
-    Route::get('/roles', [RoleController::class, 'index']);
-    Route::post('/roles', [RoleController::class, 'store'])->middleware('permission:manage roles');
-    Route::get('/roles/{role}', [RoleController::class, 'show']);
-    Route::put('/roles/{role}', [RoleController::class, 'update'])->middleware('permission:manage roles');
-    Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->middleware('permission:manage roles');
+    Route::get('/role', [RoleController::class, 'index']);
+    Route::post('/role/create', [RoleController::class, 'store'])->middleware('permission:manage roles');
+    Route::get('/role/{role}', [RoleController::class, 'show']);
+    Route::put('/role/update/{role}', [RoleController::class, 'update'])->middleware('permission:manage roles');
+    Route::delete('/role/destroy/{role}', [RoleController::class, 'destroy'])->middleware('permission:manage roles');
 
     // Permissions routes - all require 'manage permissions' permission except index and show
     Route::get('/permissions', [PermissionController::class, 'index']);
@@ -54,10 +53,6 @@ Route::middleware('tokenVerify')->group(function () {
     Route::get('/permissions/{permission}', [PermissionController::class, 'show']);
     Route::put('/permissions/{permission}', [PermissionController::class, 'update'])->middleware('permission:manage permissions');
     Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy'])->middleware('permission:manage permissions');
-
-
-
-
     Route::post('/register-name', [AuthController::class, 'registerName']);
     Route::post('/register-phone', [AuthController::class, 'registerPhone']); // not complete
     Route::post('/user-verify-otp', [AuthController::class, 'verifyOtp']);

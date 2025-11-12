@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ResponseHelper;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 
@@ -10,11 +11,7 @@ class RoleController extends Controller
     public function index()
     {
         $roles = Role::with('permissions')->get();
-
-        return response()->json([
-            'message' => 'Roles retrieved successfully',
-            'data' => $roles,
-        ]);
+        return ResponseHelper::Out('success', 'Roles retrieved successfully', $roles, 200);
     }
     public function store(Request $request)
     {
@@ -31,20 +28,12 @@ class RoleController extends Controller
         }
 
         $role->load('permissions');
-
-        return response()->json([
-            'message' => 'Role created successfully',
-            'data' => $role,
-        ], 201);
+        return ResponseHelper::Out('success', 'Roles created successfully', $role, 201);
     }
     public function show(Role $role)
     {
         $role->load('permissions');
-
-        return response()->json([
-            'message' => 'Role retrieved successfully',
-            'data' => $role,
-        ]);
+        return ResponseHelper::Out('success', 'Roles retrieved successfully', $role, 200);
     }
     public function update(Request $request, Role $role)
     {
@@ -64,17 +53,12 @@ class RoleController extends Controller
 
         $role->load('permissions');
 
-        return response()->json([
-            'message' => 'Role updated successfully',
-            'data' => $role,
-        ]);
+        return ResponseHelper::Out('success', 'Roles update successfully', $role, 200);
+
     }
     public function destroy(Role $role)
     {
         $role->delete();
-
-        return response()->json([
-            'message' => 'Role deleted successfully',
-        ]);
+        return ResponseHelper::Out('success', 'Roles deleted successfully', $role, 200);
     }
 }

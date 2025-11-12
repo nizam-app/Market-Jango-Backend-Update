@@ -41,6 +41,4 @@ class Invoice extends Model
     {
         return $this->hasMany(TransportInvoiceStatusLogs::class);
     }
-
-
 }

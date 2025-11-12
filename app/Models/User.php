@@ -76,10 +76,6 @@ use HasFactory, Notifiable, HasRoles;
         {
             return $this->hasOne(Transport::class);
         }
-    public function userImages()
-    {
-        return $this->hasMany(UserImage::class, 'user_id');
-    }
         public function reviews()
         {
             return $this->hasOne(Review::class);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use App\Models\User;
+use App\Models\UserImage;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,14 +29,36 @@ class UserController extends Controller
     public function show(Request $request): JsonResponse
     {
         try {
-            $user = User::where('id', $request->input('id'))
-                ->with('vendor', 'buyer', 'driver', 'transport','userImages')
+            $userId = $request->input('id');
+            $user = User::where('id', $userId)
+                ->with('vendor', 'buyer', 'driver', 'transport')
                 ->first();
+            $userType =  $user->user_type;
+            switch ($userType) {
+                case 'vendor':
+                    $userId = $user->vendor->id ?? null;
+                    break;
+                case 'buyer':
+                    $userId = $user->buyer->id ?? null;
+                    break;
+                case 'driver':
+                    $userId = $user->driver->id ?? null;
+                    break;
+                case 'transport':
+                    $userId = $user->transport->id ?? null;
+                    break;
+            }
+            $userImages =  UserImage::where('user_type',$userType)->where('user_id', $userId)->get();
             if (!$user) {
                 return ResponseHelper::Out('failed', 'User not found', null, 404);
             }
+            $data = [
+                'user' => $user,
+                'images' => $userImages
+            ];
 
-            return ResponseHelper::Out('success', 'User data fetched successfully', $user, 200);
+
+            return ResponseHelper::Out('success', 'User data fetched successfully', $data, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
