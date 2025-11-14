@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\VendorResource;
 use App\Models\Buyer;
 use App\Models\Category;
 use App\Models\Invoice;
@@ -36,7 +35,7 @@ class BuyerHomeController extends Controller
             ->limit(30)
             ->get();
         if ($top->isEmpty()) {
-            return response()->json(['status' => 'success', 'message' => 'No sales for this vendor'], 404);
+            return response()->json(['status' => 'success', 'message' => 'No sales for this vendor'], 200);
         }
         $productIds = $top->pluck('product_id')->all();
         $products = Product::whereIn('id', $productIds)

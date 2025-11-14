@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Models\DeliveryCharge;
+use App\Models\Product;
 use App\Models\Vendor;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -21,7 +22,7 @@ class DeliveryChargeController extends Controller
             if (!$vendor) {
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
-            $deliveryCharges = DeliveryCharge::where('vendor_id',$vendor->id)->select('id','delivery_charge','vendor_id','quantity')->get();
+            $deliveryCharges = DeliveryCharge::where('vendor_id',$vendor->id)->select('id','delivery_charge','vendor_id','quantity','product_id')->get();
             if ($deliveryCharges->isEmpty()) {
                 return ResponseHelper::Out('success', 'delivery charge not found', null, 200);
             }
@@ -53,17 +54,23 @@ class DeliveryChargeController extends Controller
         try {
             $request->validate([
                 'quantity' => 'required|max:50',
-                'delivery_charge' => 'required|max:50'
+                'delivery_charge' => 'required|max:50',
+                'product_id' => 'required'
             ]);
             // Auth user with vendor
             $vendor = Vendor::where('user_id', $request->header('id'))->select(['id'])->first();
             if (!$vendor) {
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
+            $product = Product::where('vendor_id',$vendor->id)->where('id', $request->input('product_id'))->first();
+            if (!$product) {
+                return ResponseHelper::Out('failed', 'Product not found', null, 404);
+            }
             $deliveryCharge = DeliveryCharge::create([
                 'quantity' => $request->input('quantity'),
                 'delivery_charge' => $request->input('delivery_charge'),
                 'vendor_id' => $vendor->id,
+                'product_id' =>  $product->id
             ]);
             return ResponseHelper::Out('success', 'delivery Charge successfully created', $deliveryCharge, 201);
         } catch (ValidationException $e) {
@@ -95,6 +102,7 @@ class DeliveryChargeController extends Controller
             $deliveryCharge->update([
                 'quantity' => $request->input('quantity') ?? $deliveryCharge->quantity,
                 'delivery_charge' => $request->input('delivery_charge') ?? $deliveryCharge->delivery_charge,
+                'product_id' => $request->input('product_id') ?? $deliveryCharge->product_id
             ]);
             return ResponseHelper::Out('success', 'Delivery charge successfully updated', $deliveryCharge, 200);
         } catch (ValidationException $e) {

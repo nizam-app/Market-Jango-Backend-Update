@@ -33,7 +33,7 @@ class CartController extends Controller
             $carts = Cart::where('buyer_id', $buyerId->id)
                 ->where('status', 'active')
                 ->with(['product', 'vendor', 'buyer'])
-                ->select('quantity', 'delivery_charge', 'color', 'size', 'price', 'product_id', 'buyer_id', 'vendor_id','status')
+                ->select('id','quantity', 'delivery_charge', 'color', 'size', 'price', 'product_id', 'buyer_id', 'vendor_id','status')
                 ->get();
             if($carts->isEmpty()){
                 return ResponseHelper::Out('success', 'Cart not found', null, 200);
@@ -66,22 +66,22 @@ class CartController extends Controller
             $buyer = Buyer::where('user_id', $userId)->select('id')->first();
 
             if (!$buyer) {
-                return ResponseHelper::Out('failed', 'Buyer Not found', null, 404);
+                return ResponseHelper::Out('failed', 'Buyer not found', null, 404);
             }
 
             $productId = $request->input('product_id');
             $product = Product::find($productId);
 
             if (!$product) {
-                return ResponseHelper::Out('failed', 'Product Not found', null, 422);
+                return ResponseHelper::Out('failed', 'Product not found', null, 422);
             }
 
             $vendorId = $product->vendor_id;
-            $requestedQty = $request->input('quantity', 1); // default 1
+            $requestedQty = $request->input('quantity', 1);
             $action = $request->input('action');
             $updateQty = 1;
 
-            // Check if cart item exists
+            // ✅ Check if cart item already exists
             $cart = Cart::where('product_id', $productId)
                 ->where('buyer_id', $buyer->id)
                 ->first();
@@ -90,44 +90,45 @@ class CartController extends Controller
                 // Increase / Decrease logic
                 if ($action === 'increase') {
                     $newQty = $cart->quantity + $updateQty;
-                } else if ($action === 'decrease') {
-                    $newQty = max($cart->quantity - $updateQty, 1); // prevent 0 or negative
+                } elseif ($action === 'decrease') {
+                    $newQty = max($cart->quantity - $updateQty, 1);
                 } else {
-                    $newQty = $cart->quantity; // no action, keep current quantity
+                    $newQty = $cart->quantity;
                 }
 
-                // Recalculate delivery charge
+                // ✅ Find correct delivery charge (vendor + product wise)
                 $deliveryCharge = DeliveryCharge::where('vendor_id', $vendorId)
+                    ->where('product_id', $productId)
                     ->where('quantity', '<=', $newQty)
                     ->orderBy('quantity', 'desc')
                     ->first();
 
-                $deliveryChargeAmount = $deliveryCharge ? $deliveryCharge->delivery_charge : 0;
+                $deliveryChargeAmount = $deliveryCharge ? $deliveryCharge->delivery_charge : 0; // column name = charge
 
-                // Update cart
+                // 🧾 Update cart
                 $cart->update([
                     'quantity' => $newQty,
-                    'price' => (float)$product->regular_price * $newQty,
+                    'price' => (float) $product->regular_price * $newQty,
                     'delivery_charge' => $deliveryChargeAmount,
                 ]);
 
                 return ResponseHelper::Out('success', 'Cart updated successfully', $cart, 200);
-
-            } else {
-                // If trying to decrease non-existing item
+            }
+            else {
+                // ❌ If trying to decrease non-existing item
                 if ($action === 'decrease') {
                     return ResponseHelper::Out('failed', 'Item not found in cart to decrease', null, 404);
                 }
 
-                // Calculate delivery charge for new item
+                // ✅ Calculate delivery charge for new item (vendor + product wise)
                 $deliveryCharge = DeliveryCharge::where('vendor_id', $vendorId)
+                    ->where('product_id', $productId)
                     ->where('quantity', '<=', $requestedQty)
                     ->orderBy('quantity', 'desc')
                     ->first();
-
                 $deliveryChargeAmount = $deliveryCharge ? $deliveryCharge->delivery_charge : 0;
 
-                // Create new cart item
+                // 🛒 Create new cart item
                 $cart = Cart::create([
                     'product_id' => $productId,
                     'vendor_id' => $vendorId,
@@ -135,7 +136,7 @@ class CartController extends Controller
                     'quantity' => $requestedQty,
                     'color' => $request->input('color'),
                     'size' => $request->input('size'),
-                    'price' => $product->regular_price * $requestedQty,
+                    'price' => (float) $product->regular_price * $requestedQty,
                     'delivery_charge' => $deliveryChargeAmount,
                     'status' => 'active',
                 ]);
@@ -148,6 +149,108 @@ class CartController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+//    public function store(Request $request): JsonResponse
+//    {
+//        try {
+//            // Validation
+//            $validator = Validator::make($request->all(), [
+//                'product_id' => 'required|exists:products,id',
+//                'color' => 'nullable|string|max:20',
+//                'size' => 'nullable|string|max:20',
+//                'quantity' => 'nullable|integer|min:1',
+//                'action' => 'nullable|in:increase,decrease'
+//            ]);
+//
+//            if ($validator->fails()) {
+//                return ResponseHelper::Out('failed', 'Validation exception', $validator->errors()->first(), 422);
+//            }
+//
+//            $userId = $request->header('id');
+//            $buyer = Buyer::where('user_id', $userId)->select('id')->first();
+//
+//            if (!$buyer) {
+//                return ResponseHelper::Out('failed', 'Buyer Not found', null, 404);
+//            }
+//
+//            $productId = $request->input('product_id');
+//            $product = Product::find($productId);
+//
+//            if (!$product) {
+//                return ResponseHelper::Out('failed', 'Product Not found', null, 422);
+//            }
+//
+//            $vendorId = $product->vendor_id;
+//            $requestedQty = $request->input('quantity', 1); // default 1
+//            $action = $request->input('action');
+//            $updateQty = 1;
+//
+//            // Check if cart item exists
+//            $cart = Cart::where('product_id', $productId)
+//                ->where('buyer_id', $buyer->id)
+//                ->first();
+//
+//            if ($cart) {
+//                // Increase / Decrease logic
+//                if ($action === 'increase') {
+//                    $newQty = $cart->quantity + $updateQty;
+//                } else if ($action === 'decrease') {
+//                    $newQty = max($cart->quantity - $updateQty, 1); // prevent 0 or negative
+//                } else {
+//                    $newQty = $cart->quantity; // no action, keep current quantity
+//                }
+//
+//                // Recalculate delivery charge
+//                $deliveryCharge = DeliveryCharge::where('vendor_id', $vendorId)
+//                    ->where('quantity', '<=', $newQty)
+//                    ->orderBy('quantity', 'desc')
+//                    ->first();
+//
+//                $deliveryChargeAmount = $deliveryCharge ? $deliveryCharge->delivery_charge : 0;
+//
+//                // Update cart
+//                $cart->update([
+//                    'quantity' => $newQty,
+//                    'price' => (float)$product->regular_price * $newQty,
+//                    'delivery_charge' => $deliveryChargeAmount,
+//                ]);
+//
+//                return ResponseHelper::Out('success', 'Cart updated successfully', $cart, 200);
+//
+//            } else {
+//                // If trying to decrease non-existing item
+//                if ($action === 'decrease') {
+//                    return ResponseHelper::Out('failed', 'Item not found in cart to decrease', null, 404);
+//                }
+//
+//                // Calculate delivery charge for new item
+//                $deliveryCharge = DeliveryCharge::where('vendor_id', $vendorId)
+//                    ->where('quantity', '<=', $requestedQty)
+//                    ->orderBy('quantity', 'desc')
+//                    ->first();
+//
+//                $deliveryChargeAmount = $deliveryCharge ? $deliveryCharge->delivery_charge : 0;
+//
+//                // Create new cart item
+//                $cart = Cart::create([
+//                    'product_id' => $productId,
+//                    'vendor_id' => $vendorId,
+//                    'buyer_id' => $buyer->id,
+//                    'quantity' => $requestedQty,
+//                    'color' => $request->input('color'),
+//                    'size' => $request->input('size'),
+//                    'price' => $product->regular_price * $requestedQty,
+//                    'delivery_charge' => $deliveryChargeAmount,
+//                    'status' => 'active',
+//                ]);
+//
+//                return ResponseHelper::Out('success', 'Cart item added successfully', $cart, 201);
+//            }
+//        } catch (ValidationException $e) {
+//            return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
+//        } catch (Exception $e) {
+//            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+//        }
+//    }
 
 //public function store(Request $request): JsonResponse
 //    {
