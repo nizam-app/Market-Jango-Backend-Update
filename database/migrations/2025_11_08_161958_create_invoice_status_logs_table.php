@@ -15,7 +15,9 @@ return new class extends Migration
             $table->id();
             $table->string('status');
             $table->string('note')->nullable();
+            $table->boolean('is_active')->default(false);
             $table->foreignId('invoice_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
+            $table->foreignId('invoice_item_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
         });
     }

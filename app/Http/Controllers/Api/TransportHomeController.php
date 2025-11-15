@@ -9,6 +9,7 @@ use App\Models\Buyer;
 use App\Models\Driver;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\InvoiceStatusLog;
 use App\Models\Product;
 use App\Models\SearchHistory;
 use App\Models\TransportInvoice;
@@ -135,9 +136,10 @@ class TransportHomeController extends Controller
             $delivery_status = 'Pending';
             $payment_status = 'Pending';
             $currency = "USD";
-            $cus_name = $user->name;
-            $cus_phone = $user->phone;
             $driverId = $driver->id;
+            $cus_name = $driverId->user->name;
+            $cus_phone = $driverId->user->phone;
+            $cus_email = $driverId->user->email;
             $total = $driver->price;
             $pickup_address = $request->input('pickup_address');
             $drop_of_address = $request->input('drop_of_address');
@@ -150,7 +152,7 @@ class TransportHomeController extends Controller
                 'vat' => $vat,
                 'payable' => $payable,
                 'cus_name' => $cus_name,
-                'cus_email' => $user_email,
+                'cus_email' => $cus_email,
                 'cus_phone' => $cus_phone,
                 'pickup_address' => $pickup_address,
                 'drop_of_address' => $drop_of_address,
@@ -169,9 +171,10 @@ class TransportHomeController extends Controller
                 'driver_id' => $driverId,
                 'sale_price' => $payable,
             ]);
-            TransportInvoiceStatusLogs::create([
-                'status' => $delivery_status,
+            InvoiceStatusLog::create([
+                'status' => null,
                 'invoice_id' => $invoiceID,
+                'invoice_item_id' => $invoiceID,
             ]);
 
             $paymentMethod = PaymentSystem::InitiatePayment($invoice);
@@ -210,14 +213,21 @@ class TransportHomeController extends Controller
         }
     }
     //tracking transport order Details
-    public function showTransportTracking($invoiceId)
+    public function showTransportTracking(Request $request,$invoiceId)
     {
         try {
-            $invoice = Invoice::with(['items', 'items.driver','statusLogTransports'])->findOrFail($invoiceId);
-            if (!$invoice) {
+            $user_id = $request->header('id');
+            $user = User::where('id', '=', $user_id)->first();
+            if (!$user) {
+                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+            }
+            $invoice = Invoice::where('user_id', $user_id)
+                ->first();
+            $invoiceItem = InvoiceItem::where('id', $invoiceId)->where('invoice_id', $invoice->id)->with(['invoice','invoice.statusLogs','statusLogs'])->findOrFail($invoiceId);
+            if (!$invoiceItem) {
                 return ResponseHelper::Out('success', 'order not found', null, 200);
             }
-            return ResponseHelper::Out('success', 'Status History fetched successfully', $invoice, 200);
+            return ResponseHelper::Out('success', 'Status History fetched successfully', $invoiceItem, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
@@ -226,7 +236,7 @@ class TransportHomeController extends Controller
     public function showSuccessfulTransportTracking($invoiceId)
     {
         try {
-            $invoice = Invoice::where('delivery_status', 'successful')->with(['items', 'items.driver','statusLogTransports'])->findOrFail($invoiceId);
+            $invoice = Invoice::where('delivery_status', 'Completed')->with(['items', 'items.driver','items.driver.user','statusLogTransports'])->findOrFail($invoiceId);
             if (!$invoice) {
                 return ResponseHelper::Out('success', 'order not found', null, 200);
             }
@@ -239,7 +249,7 @@ class TransportHomeController extends Controller
     public function showCancelTransportTracking($invoiceId)
     {
         try {
-            $invoice = Invoice::where('delivery_status', 'cancel')->with('statusLogTransports')->findOrFail($invoiceId);
+            $invoice = Invoice::where('delivery_status', 'Cancelled')->with('statusLogTransports')->findOrFail($invoiceId);
             if (!$invoice) {
                 return ResponseHelper::Out('success', 'order not found', null, 200);
             }
@@ -260,7 +270,7 @@ class TransportHomeController extends Controller
             }
             // get cart data by login buyer
             $invoices = Invoice::where('user_id', $user_id)
-                ->where('delivery_status', 'ongoing')
+                ->where('delivery_status', 'Ongoing')
                 ->with(['items', 'items.driver'])
                 ->paginate(10);
             if ($invoices->isEmpty()) {

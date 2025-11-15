@@ -12,6 +12,7 @@ class Driver extends Model
         'location',
         'price',
         'rating',
+        'description',
         'route_id',
         'user_id'
     ];

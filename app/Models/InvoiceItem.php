@@ -20,6 +20,10 @@ class InvoiceItem extends Model
     {
         return $this->belongsTo(Invoice::class);
     }
+    public function statusLogs()
+    {
+        return $this->belongsTo(InvoiceStatusLog::class);
+    }
     public function product()
     {
         return $this->belongsTo(Product::class);

@@ -22,7 +22,7 @@ class Invoice extends Model
         'tax_ref',
         'currency',
         'delivery_status',
-        'payment_status',
+        'status',
         'user_id'
     ];
     public function user(){
@@ -36,9 +36,5 @@ class Invoice extends Model
     public function statusLogs()
     {
         return $this->hasMany(InvoiceStatusLog::class);
-    }
-    public function statusLogTransports()
-    {
-        return $this->hasMany(TransportInvoiceStatusLogs::class);
     }
 }

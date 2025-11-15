@@ -7,15 +7,18 @@ use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Buyer;
 use App\Models\Cart;
+use App\Models\Driver;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoiceStatusLog;
+use App\Models\TransportInvoiceStatusLogs;
 use App\Models\User;
 use App\Models\Vendor;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class InvoiceController extends Controller
 {
@@ -46,30 +49,94 @@ class InvoiceController extends Controller
     // invoice delivery status update
     public function updateStatus(Request $request, $invoiceId)
     {
+        try {
         $request->validate([
             'status' => 'required|string',
-            'note' => 'nullable|string'
+            'note' => 'required|string'
         ]);
+        $user_id = $request->header('id');
+        $driver = Driver::where('user_id', '=', $user_id)->first();
+        if (!$driver) {
+            return ResponseHelper::Out('failed', 'Driver not found', null, 404);
+        }
+        $invoice = InvoiceItem::where('driver_id', $driver->id)
+            ->where('id', $invoiceId)
+            ->with(['invoice', 'product', 'driver', 'driver.user'])
+            ->first();
 
-        $invoice = Invoice::findOrFail($invoiceId);
+        if (!$invoice) {
+            return ResponseHelper::Out('failed', 'Order not found', null, 404);
+        }
+        $status =  $request->input('status');
+        if($status==='Pecked'){
+            $status = 'On The Way';
+        } else if($status==='Confirm Delivery'){
+            $status = 'Complete';
+        } else{
+            $status = 'Cancel';
+        }
+        // Update status
+        $invoice->update(['status' =>$status]);
 
-        // Update main invoice status
-        $invoice->update(['delivery_status' => $request->status]);
-
-        // Create log
+        //Create log
         InvoiceStatusLog::create([
             'invoice_id' => $invoice->id,
-            'status' => $request->status,
-            'note' => $request->note,
+            'status' => $status,
+            'note' => $request->input('note'),
+            'is_active' => true
         ]);
         return ResponseHelper::Out('success', 'Status updated successfully', $invoice, 200);
+
+        }catch (ValidationException $e) {
+            return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    // invoice items log status get
+    public function getItemStatus(Request $request, $invoiceItemId)
+    {
+        try {
+        $user_id = $request->header('id');
+        $driver = Driver::where('user_id', '=', $user_id)->first();
+        if (!$driver) {
+            return ResponseHelper::Out('failed', 'Driver not found', null, 404);
+        }
+        $invoice = InvoiceStatusLog::where('id', $invoiceItemId)
+            ->with(['invoice', 'product', 'driver', 'driver.user'])
+            ->first();
+        $invoice =  $invoice->status;
+        $status=null;
+        if($invoice==='On The Way'){
+            $status = 'Pecked';
+        } else if($invoice==='Complete'){
+            $status = 'Confirm Delivery';
+        } else{
+            $status = 'Cancel';
+        }
+        return ResponseHelper::Out('success', 'Status faced successfully', ['invoice'=>$invoice,'status'=>$status], 200);
+
+        }catch (ValidationException $e) {
+            return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
     }
 
     // Show  all staus by delivery
-    public function showTracking($invoiceId)
+    public function showTrackingBuyerDetails(Request $request, $invoiceId)
     {
         try {
-            $invoice = Invoice::with('statusLogs')->find($invoiceId);
+            // get login buyer
+            $user_id = $request->header('id');
+            $user = User::where('id', '=', $user_id)->first();
+            if (!$user) {
+                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+            }
+                $invoice = Invoice::where('user_id', $user_id)
+                    ->where('id', $invoiceId)
+                    ->with('statusLogs')
+                ->first();
             if (!$invoice) {
                 return ResponseHelper::Out('success', 'order not found', null, 200);
             }
@@ -161,14 +228,20 @@ class InvoiceController extends Controller
             foreach ($cartList as $EachProduct) {
                 InvoiceItem::create([
                     'invoice_id' => $invoiceID,
-                    'status' => $delivery_status,
+                    'status' => null,
                     'tran_id' => $tran_id,
                     'product_id' => $EachProduct['product_id'],
                     'vendor_id' => $EachProduct['vendor_id'],
                     'quantity' => $EachProduct['quantity'],
                     'sale_price' => $EachProduct['price'],
+                    'driver_id' => null,
                 ]);
             }
+            InvoiceStatusLog::create([
+                'status' => null,
+                'invoice_id' => $invoiceID,
+                'invoice_item_id' => $invoiceID,
+            ]);
             $paymentMethod = PaymentSystem::InitiatePayment($invoice);
             DB::commit();
             return ResponseHelper::Out('success', '', array(['paymentMethod' => $paymentMethod, 'payable' => $payable, 'vat' => $vat, 'total' => $total]), 200);
@@ -185,7 +258,7 @@ class InvoiceController extends Controller
             $transactionId = $request->input('transaction_id');
             $tax = $request->input('tx_ref');
             $status = $request->input('status'); // Flutter wave response status
-            $payment = Invoice::where('tax_ref', $tax)->first();
+            $payment = Invoice::where('tax_ref', $tax)->with('items')->first();
             if (!$payment) {
                 return ResponseHelper::Out('failed', 'Transaction not found', $payment->getMessage(), 404);
             }
@@ -193,11 +266,9 @@ class InvoiceController extends Controller
                 case 'successful':
                     $payment->status = 'successful';
                     break;
-
                 case 'failed':
                     $payment->status = 'failed';
                     break;
-
                 case 'pending':
                     $payment->status = 'pending';
                     break;
@@ -229,6 +300,12 @@ class InvoiceController extends Controller
             // Set transaction_id explicitly
             $payment->transaction_id = $transactionId;
             $payment->save();
+            if ($status === 'successful') {
+                foreach ($payment->items as $item) {
+                    $item->status = 'Pending';
+                    $item->save();
+                }
+            }
             return ResponseHelper::Out('success', 'Payment status updated', $payment, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);

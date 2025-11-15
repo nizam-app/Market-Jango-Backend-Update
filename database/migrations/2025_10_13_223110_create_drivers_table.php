@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('car_model', 50);
             $table->string('location', 200);
             $table->string('price', 200);
+            $table->text('description')->nullable();
             $table->integer('rating')->nullable()->default(0);
             $table->foreignId('user_id')->unique()->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('route_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();

@@ -93,7 +93,6 @@ class VendorHomePageController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
     //product by vendor
     public function vendorProduct(Request $request): JsonResponse
     {
@@ -119,7 +118,6 @@ class VendorHomePageController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
     //driver search
     public function driverSearch(Request $request): JsonResponse
     {
@@ -158,7 +156,73 @@ class VendorHomePageController extends Controller
             // get order item  data by login vendor
             $invoices = InvoiceItem::where('vendor_id', $vendor->id)
                 ->where('status', 'Pending')
-                ->with(['invoice', 'product'])
+                ->with(['invoice', 'product','driver'])
+                ->paginate(10);
+            if ($invoices->isEmpty()) {
+                return ResponseHelper::Out('success', 'order not found', null, 200);
+            }
+            return ResponseHelper::Out('success', 'All order successfully fetched', $invoices, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    public function vendorAssignedOrder(Request $request): JsonResponse
+    {
+        try {
+            // get login buyer
+            $user_id = $request->header('id');
+            $vendor = Vendor::where('user_id', '=', $user_id)->first();
+            if (!$vendor) {
+                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+            }
+            // get order item  data by login vendor
+            $invoices = InvoiceItem::where('vendor_id', $vendor->id)
+                ->where('status', 'AssignedOrder')
+                ->with(['invoice', 'product', 'driver', 'driver.user'])
+                ->paginate(10);
+            if ($invoices->isEmpty()) {
+                return ResponseHelper::Out('success', 'assign order not found', null, 200);
+            }
+            return ResponseHelper::Out('success', 'All order successfully fetched', $invoices, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    public function vendorCompletedOrder(Request $request): JsonResponse
+    {
+        try {
+            // get login buyer
+            $user_id = $request->header('id');
+            $vendor = Vendor::where('user_id', '=', $user_id)->first();
+            if (!$vendor) {
+                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+            }
+            // get order item  data by login vendor
+            $invoices = InvoiceItem::where('vendor_id', $vendor->id)
+                ->where('status', 'Complete')
+                ->with(['invoice', 'product', 'driver', 'driver.user'])
+                ->paginate(10);
+            if ($invoices->isEmpty()) {
+                return ResponseHelper::Out('success', 'Complete order not found', null, 200);
+            }
+            return ResponseHelper::Out('success', 'All complete order successfully fetched', $invoices, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    public function vendorCanceledOrder(Request $request): JsonResponse
+    {
+        try {
+            // get login buyer
+            $user_id = $request->header('id');
+            $vendor = Vendor::where('user_id', '=', $user_id)->first();
+            if (!$vendor) {
+                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+            }
+            // get order item  data by login vendor
+            $invoices = InvoiceItem::where('vendor_id', $vendor->id)
+                ->where('status', 'Cancel')
+                ->with(['invoice', 'product','driver','driver.user'])
                 ->paginate(10);
             if ($invoices->isEmpty()) {
                 return ResponseHelper::Out('success', 'order not found', null, 200);

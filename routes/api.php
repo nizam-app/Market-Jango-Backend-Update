@@ -33,7 +33,7 @@ Route::post('/register-type', [AuthController::class, 'registerType']);
 Route::post('/forget-password', [AuthController::class, 'forgetPassword']);
 Route::post('/verify-mail-otp', [AuthController::class, 'verifyMailOtp']);
 Route::post('/login', [AuthController::class, 'login']);
-// Testing purpose invoice routes
+// Payment callback routes
 Route::get("/payment/response", [InvoiceController::class, 'handleFlutterWaveResponse']);
 //Authentication for all users
 Route::middleware('tokenVerify')->group(function () {
@@ -88,16 +88,13 @@ Route::middleware('tokenVerify')->group(function () {
     Route::get("/complete-order/transport", [TransportHomeController::class, 'completeOrderTransport']);
     Route::get("/cancel-order/transport", [TransportHomeController::class, 'cancelOrderTransport']);
     Route::get("/all-order/driver", [DriverHomeController::class, 'allOrdersDriver']);
-    Route::get("/ongoing-order/driver", [DriverHomeController::class, 'ongoingOrderDriver']);
-    Route::get("/complete-order/driver", [DriverHomeController::class, 'completeOrderDriver']);
     Route::get("/new-order/driver", [DriverHomeController::class, 'newOrdersDriver']);
+    Route::get("/on-the-way-order/driver", [DriverHomeController::class, 'onTheWayOrderDriver']);
     Route::get("/cancel-order/driver", [DriverHomeController::class, 'cancelOrderDriver']);
+    Route::get("/complete-order/driver", [DriverHomeController::class, 'completeOrderDriver']);
     Route::get("/invoice/create", [InvoiceController::class, 'InvoiceCreate']);
     Route::get("/InvoiceProductList/{invoice_id}", [InvoiceController::class, 'InvoiceProductList']);
-    // Payment callback routes
-    Route::post("/PaymentCancel", [InvoiceController::class, 'PaymentCancel']);
-    Route::post("/PaymentFail", [InvoiceController::class, 'PaymentFail']);
-    Route::post("/PaymentIPN", [InvoiceController::class, 'PaymentIPN']);
+
     //Home Buyer all routes
     Route::get('/product/filter', [BuyerHomeController::class, 'productFilter']); // not complete
     Route::get('/category', [CategoryController::class, 'index']);
@@ -127,8 +124,9 @@ Route::middleware('tokenVerify')->group(function () {
     Route::get('/approved-driver', [AdminController::class, 'approvedDriver']);
     Route::get('/suspended-driver', [AdminController::class, 'suspendedDriver']);
     Route::get('/suspended-driver/show', [AdminController::class, 'suspendedDriverDetails']);
-    Route::get('/drivers/search', [VendorHomePageController::class, 'driverSearch']);
-    Route::get('/vendor/pending/order', [VendorHomePageController::class, 'vendorPendingOrder']);
+    //Driver Home Page Routes
+//    Route::get('/driver/total-order/count', [DriverHomeController::class, 'driverTotalOrderCount']);
+
     // Route routes
     Route::prefix('route')->group(function () {
         Route::get('/', [RouteController::class, 'index']);
@@ -168,6 +166,13 @@ Route::middleware('tokenVerify')->group(function () {
     Route::middleware('userTypeVerify:vendor')->group(function () {
         Route::post('/vendor/register', [AuthController::class, 'registerVendor']);
         Route::middleware('statusVerify')->group(function () {
+            //Vendor Home Page
+            Route::get('/drivers/search', [VendorHomePageController::class, 'driverSearch']);
+            Route::get('/vendor/pending/order', [VendorHomePageController::class, 'vendorPendingOrder']);
+            Route::get('/vendor/assign/order', [VendorHomePageController::class, 'vendorAssignedOrder']);
+            Route::get('/vendor/complete/order', [VendorHomePageController::class, 'vendorCompletedOrder']);
+            Route::get('/vendor/cancel/order', [VendorHomePageController::class, 'vendorCanceledOrder']);
+
             //vendor routes
             Route::prefix('vendor')->group(function () {
                 Route::get('/product', [VendorHomePageController::class, 'vendorProduct']);
@@ -249,20 +254,25 @@ Route::middleware('tokenVerify')->group(function () {
 
     });
     Route::get("/transport/invoice/create/", [TransportHomeController::class, 'InvoiceCreateTransport']);
-
     //search
     Route::get('/search/product', [BuyerHomeController::class, 'productSearchByBuyer']);
     Route::get('/vendor/details/{id}', [TransportHomeController::class, 'driverDetails']);
     Route::get('/transport/invoice/tracking/{id}', [TransportHomeController::class, 'showTransportTracking']);
-    Route::get('/transport/successful/invoice/tracking/{id}', [TransportHomeController::class, 'showSuccessfulTransportTracking']);
+    Route::get('/transport/successful/invoice/details/{id}', [TransportHomeController::class, 'showSuccessfulTransportTracking']);
     Route::get('/transport/cancel/invoice/tracking/{id}', [TransportHomeController::class, 'showCancelTransportTracking']);
     Route::get('/driver/invoice/pending/tracking/{id}', [DriverHomeController::class, 'showDriverTracking']);
     Route::get('/driver/invoice/tracking/{id}', [DriverHomeController::class, 'DriverTracking']);
     Route::get('/driver/successful/invoice/tracking/{id}', [DriverHomeController::class, 'showSuccessfulDriverTracking']);
     Route::get('/driver/cancel/invoice/tracking/{id}', [DriverHomeController::class, 'showCancelDriverTracking']);
-    Route::get('/invoice/tracking/{id}', [InvoiceController::class, 'showTracking']);
+
+
+
+
+    Route::get('/buyer/invoice/tracking/details/{id}', [InvoiceController::class, 'showTrackingBuyerDetails']);
+
     Route::post('/invoice/update-status/{id}', [InvoiceController::class, 'updateStatus']);
     Route::post('/driver/invoice/update-status/{id}', [InvoiceController::class, 'updateStatus']);
+    Route::get('/get/item/status/{id}', [InvoiceController::class, 'getItemStatus']);
 
     Route::prefix('driver')->group(function () {
         Route::get('/show', [AdminController::class, 'driverDetails']);

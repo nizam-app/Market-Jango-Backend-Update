@@ -49,10 +49,54 @@ class DriverHomeController extends Controller
             }
             // get cart data by login buyer
             $invoices = InvoiceItem::where('driver_id', $driver->id)
-                ->whereHas('invoice', function ($query) {
-                    $query->where('delivery_status', 'Pending');
-                })
-                ->with('invoice')
+                ->where('status', 'AssignedOrder')
+                ->with(['invoice', 'product', 'driver', 'driver.user'])
+                ->paginate(10);
+            if ($invoices->isEmpty()) {
+                return ResponseHelper::Out('success', 'order not found', null, 200);
+            }
+            return ResponseHelper::Out('success', 'All order successfully fetched', $invoices, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    //all on the way orders driver
+    public function onTheWayOrderDriver(Request $request): JsonResponse
+    {
+        try {
+            // get login buyer
+            $user_id = $request->header('id');
+            $driver = Driver::where('user_id', '=', $user_id)->first();
+            if (!$driver) {
+                return ResponseHelper::Out('failed', 'Driver not found', null, 404);
+            }
+            // get cart data by login buyer
+            $invoices = InvoiceItem::where('driver_id', $driver->id)
+                ->where('status', 'On The Way')
+                ->with(['invoice', 'product', 'driver', 'driver.user'])
+                ->paginate(10);
+            if ($invoices->isEmpty()) {
+                return ResponseHelper::Out('success', 'order not found', null, 200);
+            }
+            return ResponseHelper::Out('success', 'All order successfully fetched', $invoices, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    //all complete orders Driver
+    public function completeOrderDriver(Request $request): JsonResponse
+    {
+        try {
+            // get login buyer
+            $user_id = $request->header('id');
+            $driver = Driver::where('user_id', '=', $user_id)->first();
+            if (!$driver) {
+                return ResponseHelper::Out('failed', 'Driver not found', null, 404);
+            }
+            // get cart data by login buyer
+            $invoices = InvoiceItem::where('driver_id', $driver->id)
+                ->where('status', 'Complete')
+                ->with(['invoice', 'product', 'driver', 'driver.user'])
                 ->paginate(10);
             if ($invoices->isEmpty()) {
                 return ResponseHelper::Out('success', 'order not found', null, 200);
@@ -73,9 +117,6 @@ class DriverHomeController extends Controller
                 return ResponseHelper::Out('failed', 'Driver not found', null, 404);
             }
             $invoice = InvoiceItem::where('driver_id', $driver->id)
-                ->whereHas('invoice', function ($query) {
-                    $query->where('delivery_status', 'Pending');
-                })
                 ->where('id', $invoiceId)
                 ->with(['invoice','invoice.statusLogTransports'])->first();
             if (!$invoice) {
@@ -96,6 +137,13 @@ class DriverHomeController extends Controller
             if (!$driver) {
                 return ResponseHelper::Out('failed', 'Driver not found', null, 404);
             }
+//            $invoice = InvoiceItem::where('driver_id', $driver->id)
+//                ->whereHas('invoice', function ($q) use ($invoiceId) {
+//                    $q->where('tax_ref', $invoiceId);
+//                })
+//                ->with(['invoice', 'invoice.statusLogTransports'])
+//                ->first();
+
             $invoice = InvoiceItem::where('driver_id', $driver->id)
                 ->where('id', $invoiceId)
                 ->with(['invoice','invoice.statusLogTransports'])->first();
@@ -107,53 +155,7 @@ class DriverHomeController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-    public function ongoingOrderDriver(Request $request): JsonResponse
-    {
-        try {
-            // get login buyer
-            $user_id = $request->header('id');
-            $buyer = User::where('id', '=', $user_id)->first();
-            if (!$buyer) {
-                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
-            }
-            // get cart data by login buyer
-            $invoices = Invoice::where('user_id', $user_id)
-                ->where('delivery_status', 'ongoing')
-                ->with(['items', 'items.driver'])
-                ->paginate(10);
-            if ($invoices->isEmpty()) {
-                return ResponseHelper::Out('success', 'order not found', null, 200);
-            }
-            return ResponseHelper::Out('success', 'All order successfully fetched', $invoices, 200);
-        } catch (Exception $e) {
-            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
-        }
-    }
-
-    //all complete orders Driver
-    public function completeOrderDriver(Request $request): JsonResponse
-    {
-        try {
-            // get login buyer
-            $user_id = $request->header('id');
-            $buyer = User::where('id', '=', $user_id)->first();
-            if (!$buyer) {
-                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
-            }
-            // get cart data by login buyer
-            $invoices = Invoice::where('user_id', $user_id)
-                ->where('delivery_status', 'successful')
-                ->with(['items', 'items.driver'])
-                ->paginate(10);
-            if ($invoices->isEmpty()) {
-                return ResponseHelper::Out('success', 'order not found', null, 200);
-            }
-            return ResponseHelper::Out('success', 'All order successfully fetched', $invoices, 200);
-        } catch (Exception $e) {
-            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
-        }
-    }
-    //all cancel orders transport
+    //cancel order
     public function cancelOrderDriver(Request $request): JsonResponse
     {
         try {
@@ -165,7 +167,7 @@ class DriverHomeController extends Controller
             }
             // get cart data by login buyer
             $invoices = Invoice::where('user_id', $user_id)
-                ->where('delivery_status', 'cancel')
+                ->where('delivery_status', 'Cancel')
                 ->with(['items', 'items.driver'])
                 ->paginate(10);
             if ($invoices->isEmpty()) {
@@ -202,6 +204,17 @@ class DriverHomeController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-    //all ongoing orders Driver
+    public function driverTotalOrderCount($invoiceId)
+    {
+        try {
+            $invoice = Invoice::where('delivery_status', 'cancel')->with('statusLogTransports')->findOrFail($invoiceId);
+            if (!$invoice) {
+                return ResponseHelper::Out('success', 'order not found', null, 200);
+            }
+            return ResponseHelper::Out('success', 'Status History fetched successfully', $invoice, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
 
 }

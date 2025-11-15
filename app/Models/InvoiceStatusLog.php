@@ -10,11 +10,15 @@ class InvoiceStatusLog extends Model
 
     use HasFactory;
 
-    protected $fillable = ['invoice_id', 'status', 'note'];
+    protected $fillable = ['invoice_id', 'status', 'note','is_active'];
 
     public function invoice()
     {
         return $this->belongsTo(Invoice::class);
+    }
+    public function invoiceItem()
+    {
+        return $this->hasMany(InvoiceItem::class);
     }
     public function product()
     {
