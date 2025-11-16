@@ -188,7 +188,7 @@ class VendorHomePageController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-    public function vendorCompletedOrder(Request $request): JsonResponse
+    public function vendorAllOrder(Request $request): JsonResponse
     {
         try {
             // get login buyer
@@ -199,7 +199,6 @@ class VendorHomePageController extends Controller
             }
             // get order item  data by login vendor
             $invoices = InvoiceItem::where('vendor_id', $vendor->id)
-                ->where('status', 'Complete')
                 ->with(['invoice', 'product', 'driver', 'driver.user'])
                 ->paginate(10);
             if ($invoices->isEmpty()) {

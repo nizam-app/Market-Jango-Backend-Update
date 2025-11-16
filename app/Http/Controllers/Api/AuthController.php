@@ -71,7 +71,7 @@ class AuthController extends Controller
             ]);
             $token = JWTToken::registerToken($user->user_type, $user->id);
             $sendToken = 'Bearer ' . $token;
-           return ResponseHelper::Out('success','User registered successfully',['uer'=>$user, 'token'=> $sendToken],201);
+           return ResponseHelper::Out('success','User registered successfully',['uer'=>$user, 'token'=> $sendToken],201)->cookie('token', $sendToken, 525600);
         } catch (ValidationException $e) {
            return ResponseHelper::Out('failed','Validation Failed',$e->errors(),422);
         } catch (Exception $e) {
@@ -411,7 +411,7 @@ class AuthController extends Controller
             // set token
             $token = JWTToken::loginToken($user->email, $user->id);
             $sendToken = 'Bearer ' . $token;
-            return ResponseHelper::Out('success', 'Login successful',['uer'=>$user, 'token'=> $sendToken], 200);
+            return ResponseHelper::Out('success', 'Login successful',['uer'=>$user, 'token'=> $sendToken], 200)->cookie('token', $sendToken, 525600);
         } catch (ValidationException $e) {
             return ResponseHelper::Out('error','Validation Failed',$e->errors(),422);
         } catch (Exception $e) {
@@ -456,7 +456,7 @@ class AuthController extends Controller
             $token = JWTToken::resetToken($email, $user->id);
             $sendToken = 'Bearer ' . $token;
             $user->update(['otp' => '0']);
-            return ResponseHelper::Out('success', 'Otp verification successful!',['uer'=>$user, 'token'=> $sendToken],200);
+            return ResponseHelper::Out('success', 'Otp verification successful!',['uer'=>$user, 'token'=> $sendToken],200)->cookie('token', $sendToken, 525600);
         } catch (ValidationException $e) {
             return ResponseHelper::Out('error','Validation Failed',$e->errors(),422);
         } catch (Exception $e) {

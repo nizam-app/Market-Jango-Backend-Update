@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\CheckUserStatusMiddleware;
+use App\Http\Middleware\SetLanguageMiddleware;
 use App\Http\Middleware\TokenVerifyMiddleware;
 use App\Http\Middleware\UserTypeVerificationMiddleware;
 use Illuminate\Foundation\Application;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tokenVerify' => TokenVerifyMiddleware::class,
             'userTypeVerify' => UserTypeVerificationMiddleware::class,
             'statusVerify' => CheckUserStatusMiddleware::class,
+            'language' => SetLanguageMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'verify.permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
