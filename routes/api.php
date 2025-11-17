@@ -37,6 +37,12 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get("/payment/response", [InvoiceController::class, 'handleFlutterWaveResponse']);
 //Authentication for all users
 Route::middleware(['tokenVerify','language'])->group(function () {
+
+    Route::prefix('review')->group(function () {
+        Route::get("/buyer", [ReviewController::class, 'buyerReview']);
+        Route::post('/create/{id}', [ReviewController::class, 'store']);
+    });
+
     Route::post('/users/{user}/assign-roles', [UserController::class, 'assignRoles'])->middleware('permission:manage users');
     Route::post('/users/{user}/assign-permissions', [UserController::class, 'assignPermissions'])->middleware('permission:manage users');
 
@@ -222,7 +228,6 @@ Route::middleware(['tokenVerify','language'])->group(function () {
         // review routes
         Route::prefix('review')->group(function () {
             Route::get('/', [ReviewController::class, 'index']);
-            Route::post('/create-update', [ReviewController::class, 'store']);
             Route::post('/destroy/{review_id}', [ReviewController::class, 'destroy']);
         });
     });

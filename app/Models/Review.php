@@ -7,16 +7,19 @@ use Illuminate\Database\Eloquent\Model;
 class Review extends Model
 {
     protected $fillable = [
-        'buyer_id',
-        'product_id',
-        'description',
+        'review',
         'rating',
+        'user_id',
+        'invoice_id',
+        'invoice_item_id',
+        'vendor_id',
+        'product_id',
     ];
 
     // Relationships
-    public function buyer()
+    public function user()
     {
-        return $this->belongsTo(Buyer::class);
+        return $this->belongsTo(User::class);
     }
 
     public function product()
@@ -26,6 +29,10 @@ class Review extends Model
     public function vendor()
     {
         return $this->belongsTo(Vendor::class);
+    }
+    public function driver()
+    {
+        return $this->belongsTo(Driver::class);
     }
 
 }

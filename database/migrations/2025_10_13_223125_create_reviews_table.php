@@ -15,12 +15,11 @@ return new class extends Migration
             $table->id();
             $table->text('review')->nullable();
             $table->double('rating',3, 1)->default(0);
-            $table->foreignId('user_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
-            $table->foreignId('vendor_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
-            $table->foreignId('product_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
-            $table->foreignId('buyer_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
-            $table->foreignId('invoice_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
-            $table->foreignId('invoice_item_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained()->cascadeOnUpdate()->cascadeOnDelete();
+            $table->foreignId('vendor_id')->nullable()->constrained()->cascadeOnUpdate()->cascadeOnDelete();
+            $table->foreignId('product_id')->nullable()->constrained()->cascadeOnUpdate()->cascadeOnDelete();
+            $table->foreignId('invoice_id')->nullable()->constrained()->cascadeOnUpdate()->cascadeOnDelete();
+            $table->foreignId('invoice_item_id')->nullable()->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
         });
     }
