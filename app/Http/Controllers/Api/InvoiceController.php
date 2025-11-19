@@ -145,9 +145,7 @@ class InvoiceController extends Controller
             $drop_long = $buyer->ship_longitude;
             $cus_name = $Profile->name;
             $cus_phone = $Profile->phone;
-            $ship_address = $buyer->address;
-            $ship_city = $buyer->address;
-            $ship_country = $buyer->country;
+            $ship_address = $buyer->ship_location;
             $paymentMethod =$request->input('payment_method');
             // Payable Calculation
             $total = 0;
@@ -165,17 +163,8 @@ class InvoiceController extends Controller
                 'total' => $total,
                 'vat' => $vat,
                 'payable' => $payable,
-                'cus_name' => $cus_name,
-                'cus_email' => $user_email,
-                'cus_phone' => $cus_phone,
-                'pickup_address' => $ship_address,
-                'ship_address' => $ship_address,
-                'drop_of_address' => $ship_address,
-                'ship_city' => $ship_city,
-                'ship_country' => $ship_country,
                 'tax_ref' => $tran_id,
                 'currency' => $currency,
-                'delivery_status' => $delivery_status,
                 'payment_method' => $paymentMethod,
                 'status' => $payment_status,
                 'user_id' => $user_id
@@ -183,21 +172,27 @@ class InvoiceController extends Controller
             $invoiceID = $invoice->id;
             foreach ($cartList as $EachProduct) {
                 $vendorId = $EachProduct['vendor_id'];
-                $vendor = Vendor::where('id', $vendorId)->select('id', 'longitude','latitude')->first();
+                $vendor = Vendor::where('id', $vendorId)->select('id', 'longitude','latitude','address')->first();
                 $pickup_lat = $vendor->latitude;
                 $pickup_long = $vendor->longitude;
+                $vendorLocation = $vendor->address;
                 $distance = CalculateDistance::Distance($pickup_lat, $pickup_long, $drop_lat, $drop_long);
                 InvoiceItem::create([
-                    'invoice_id' => $invoiceID,
-                    'user_id' => $user_id,
-                    'status' => $delivery_status,
+                    'cus_name' => $cus_name,
+                    'cus_email' => $user_email,
+                    'cus_phone' => $cus_phone,
+                    'pickup_address' => $vendorLocation,
+                    'ship_address' => $ship_address,
                     'distance' => $distance,
-                    'tran_id' => $tran_id,
+                    'quantity' => $EachProduct['quantity'],
+                    'status' => $delivery_status,
                     'delivery_charge' => $EachProduct['delivery_charge'],
+                    'sale_price' => $EachProduct['price'],
+                    'tran_id' => $tran_id,
+                    'user_id' => $user_id,
+                    'invoice_id' => $invoiceID,
                     'product_id' => $EachProduct['product_id'],
                     'vendor_id' => $vendorId,
-                    'quantity' => $EachProduct['quantity'],
-                    'sale_price' => $EachProduct['price'],
                     'driver_id' => null,
                 ]);
             }

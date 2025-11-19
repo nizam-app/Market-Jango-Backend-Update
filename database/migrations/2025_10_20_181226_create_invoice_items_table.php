@@ -13,12 +13,17 @@ return new class extends Migration
     {
         Schema::create('invoice_items', function (Blueprint $table) {
             $table->id();
-            $table->integer('quantity')->nullable();
-            $table->string('tran_id')->nullable();
-            $table->string('status',50)->nullable();
+            $table->string('cus_name',50)->nullable();
+            $table->string('cus_email',50)->nullable();
+            $table->string('cus_phone',20)->nullable();
+            $table->string('pickup_address',100)->nullable();
+            $table->string('ship_address',100)->nullable();
             $table->decimal('distance',10,2)->nullable();
-            $table->integer('sale_price');
+            $table->integer('quantity')->nullable();
+            $table->string('status',50)->nullable();
             $table->decimal('delivery_charge', 10, 2)->default(0.00);
+            $table->integer('sale_price');
+            $table->string('tran_id')->nullable();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete()->cascadeOnUpdate();
             $table->foreignId('invoice_id')->constrained()->cascadeOnDelete()->cascadeOnUpdate();
             $table->foreignId('product_id')->nullable()->constrained()->cascadeOnDelete()->cascadeOnUpdate();
