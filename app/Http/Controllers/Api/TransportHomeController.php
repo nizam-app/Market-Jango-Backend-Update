@@ -258,74 +258,8 @@ class TransportHomeController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-    //all ongoing orders transport
-    public function ongoingOrderTransport(Request $request): JsonResponse
-    {
-        try {
-            // get login buyer
-            $user_id = $request->header('id');
-            $buyer = User::where('id', '=', $user_id)->first();
-            if (!$buyer) {
-                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
-            }
-            // get cart data by login buyer
-            $invoices = Invoice::where('user_id', $user_id)
-                ->where('delivery_status', 'Ongoing')
-                ->with(['items', 'items.driver'])
-                ->paginate(10);
-            if ($invoices->isEmpty()) {
-                return ResponseHelper::Out('success', 'order not found', null, 200);
-            }
-            return ResponseHelper::Out('success', 'All order successfully fetched', $invoices, 200);
-        } catch (Exception $e) {
-            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
-        }
-    }
 
-    //all complete orders transport
-    public function completeOrderTransport(Request $request): JsonResponse
-    {
-        try {
-            // get login buyer
-            $user_id = $request->header('id');
-            $buyer = User::where('id', '=', $user_id)->first();
-            if (!$buyer) {
-                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
-            }
-            // get cart data by login buyer
-            $invoices = Invoice::where('user_id', $user_id)
-                ->where('delivery_status', 'completed')
-                ->with(['items', 'items.driver'])
-                ->paginate(10);
-            if ($invoices->isEmpty()) {
-                return ResponseHelper::Out('success', 'order not found', null, 200);
-            }
-            return ResponseHelper::Out('success', 'All order successfully fetched', $invoices, 200);
-        } catch (Exception $e) {
-            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
-        }
-    }
-    //all cancel orders transport
-    public function cancelOrderTransport(Request $request): JsonResponse
-    {
-        try {
-            // get login buyer
-            $user_id = $request->header('id');
-            $buyer = User::where('id', '=', $user_id)->first();
-            if (!$buyer) {
-                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
-            }
-            // get cart data by login buyer
-            $invoices = Invoice::where('user_id', $user_id)
-                ->where('delivery_status', 'cancel')
-                ->with(['items', 'items.driver'])
-                ->paginate(10);
-            if ($invoices->isEmpty()) {
-                return ResponseHelper::Out('success', 'order not found', null, 200);
-            }
-            return ResponseHelper::Out('success', 'All order successfully fetched', $invoices, 200);
-        } catch (Exception $e) {
-            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
-        }
-    }
+
+
+
 }

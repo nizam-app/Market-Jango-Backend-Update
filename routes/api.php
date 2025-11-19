@@ -72,33 +72,22 @@ Route::middleware(['tokenVerify','language'])->group(function () {
 //    Route::get('/drivers/filter',        [AdminController::class, 'driverFilter']);
 //    Route::get('/drivers/{id}',   [AdminController::class, 'driverDetails']);
     // Fetch all buyer home page products
-    Route::prefix('admin-selects')->group(function () {
-        Route::get('top-categories', [AdminSelectController::class, 'getTopCategory']);
-        Route::get('top-products', [AdminSelectController::class, 'getTopProduct']);
-        Route::get('new-items', [AdminSelectController::class, 'getNewItem']);
-        Route::get('just-for-you', [AdminSelectController::class, 'getJustForYou']);
-        Route::post('/create', [AdminSelectController::class, 'store']);
-        Route::post('/update/{id}', [AdminSelectController::class, 'update']);
-        Route::post('/destroy/{id}', [AdminSelectController::class, 'destroy']);
-        Route::get('/', [AdminSelectController::class, 'index']);
-    });
+//    Route::prefix('admin-selects')->group(function () {
+//        Route::get('top-categories', [AdminSelectController::class, 'getTopCategory']);
+//        Route::get('top-products', [AdminSelectController::class, 'getTopProduct']);
+//        Route::get('new-items', [AdminSelectController::class, 'getNewItem']);
+//        Route::get('just-for-you', [AdminSelectController::class, 'getJustForYou']);
+//    });
     //user Update routes
     Route::prefix('user')->group(function () {
         Route::post('/update', [AuthController::class, 'update']);
     });
     //Invoice and payment
     Route::get("/invoice", [InvoiceController::class, 'index']);
-    Route::get("/all-order", [InvoiceController::class, 'allOrders']);
+    Route::get("/buyer/all-order", [InvoiceController::class, 'allOrders']);
     Route::get("/all-order/transport", [TransportHomeController::class, 'allOrdersTransport']);
-    Route::get("/ongoing-order/transport", [TransportHomeController::class, 'ongoingOrderTransport']);
-    Route::get("/complete-order/transport", [TransportHomeController::class, 'completeOrderTransport']);
-    Route::get("/cancel-order/transport", [TransportHomeController::class, 'cancelOrderTransport']);
     Route::get("/all-order/driver", [DriverHomeController::class, 'allOrdersDriver']);
-    Route::get("/new-order/driver", [DriverHomeController::class, 'newOrdersDriver']);
-    Route::get("/on-the-way-order/driver", [DriverHomeController::class, 'onTheWayOrderDriver']);
-    Route::get("/cancel-order/driver", [DriverHomeController::class, 'cancelOrderDriver']);
-    Route::get("/complete-order/driver", [DriverHomeController::class, 'completeOrderDriver']);
-    Route::get("/invoice/create", [InvoiceController::class, 'InvoiceCreate']);
+    Route::post("/invoice/create", [InvoiceController::class, 'InvoiceCreate']);
     Route::get("/InvoiceProductList/{invoice_id}", [InvoiceController::class, 'InvoiceProductList']);
 
     //Home Buyer all routes
@@ -255,6 +244,7 @@ Route::middleware(['tokenVerify','language'])->group(function () {
         Route::get('/request-driver/show', [AdminController::class, 'requestDriverDetails']);
         Route::get('/suspended-driver', [AdminController::class, 'suspendedDriver']);
         Route::get('/suspended-driver/show', [AdminController::class, 'suspendedDriverDetails']);
+        Route::put('/admin-select-update/{id}', [AdminSelectController::class, 'adminSelectUpdate']);
     });
     Route::middleware('userTypeVerify:transport')->group(function () {
 
@@ -272,14 +262,8 @@ Route::middleware(['tokenVerify','language'])->group(function () {
     Route::get('/driver/successful/invoice/tracking/{id}', [DriverHomeController::class, 'showSuccessfulDriverTracking']);
     Route::get('/driver/cancel/invoice/tracking/{id}', [DriverHomeController::class, 'showCancelDriverTracking']);
 
-
-
-
     Route::get('/buyer/invoice/tracking/details/{id}', [InvoiceController::class, 'showTrackingBuyerDetails']);
-
-    Route::post('/invoice/update-status/{id}', [InvoiceController::class, 'updateStatus']);
-    Route::post('/driver/invoice/update-status/{id}', [InvoiceController::class, 'updateStatus']);
-    Route::get('/get/item/status/{id}', [InvoiceController::class, 'getItemStatus']);
+    Route::put('/invoice/update-status/{id}', [InvoiceController::class, 'updateStatus']);
 
     Route::prefix('driver')->group(function () {
         Route::get('/show', [AdminController::class, 'driverDetails']);

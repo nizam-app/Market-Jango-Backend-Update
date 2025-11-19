@@ -199,14 +199,14 @@ class AdminController extends Controller
     {
         try {
             $request->validate([
-                'status' => 'required|in:0,1',
+                'is_active' => 'required|in:0,1',
             ]);
             $product = Product::select(['id', 'is_active'])->find($id);
             if(!$product){
                 return ResponseHelper::Out('success', 'No pending product found', $product, 200);
             }
             $product->update([
-                'is_active' => $request->input('status')
+                'is_active' => $request->input('is_active')
             ]);
             return ResponseHelper::Out('success', 'All pending product successfully fetched', $product, 200);
         } catch (Exception $e) {

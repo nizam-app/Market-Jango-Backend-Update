@@ -11,7 +11,10 @@ class InvoiceItem extends Model
         'product_id',
         'vendor_id',
         'driver_id',
+        'delivery_charge',
+        'user_id',
         'quantity',
+        'distance',
         'sale_price',
         'status',
         'tran_id'

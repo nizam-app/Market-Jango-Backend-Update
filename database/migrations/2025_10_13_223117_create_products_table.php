@@ -25,6 +25,9 @@ return new class extends Migration
             $table->json('size');
             $table->enum('remark', ['Top', 'New'])->default('New');
             $table->boolean('is_active')->default(0)->comment('0 = No, 1 = Yes');
+            $table->boolean('new_item')->default(0)->comment('0 = No, 1 = Yes');
+            $table->boolean('just_for_you')->default(0)->comment('0 = No, 1 = Yes');
+            $table->boolean('top_product')->default(0)->comment('0 = No, 1 = Yes');
             $table->foreignId('vendor_id')->constrained('vendors')->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('category_id')->constrained('categories')->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();

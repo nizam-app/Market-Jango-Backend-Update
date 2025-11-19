@@ -21,8 +21,6 @@ class CartController extends Controller
     {
         try {
 
-
-
             // get login buyer
             $buyerId = Buyer::where('user_id',$request->header('id'))->select('id')->first();
             if (!$buyerId) {
@@ -111,7 +109,6 @@ class CartController extends Controller
                     'price' => (float) $product->regular_price * $newQty,
                     'delivery_charge' => $deliveryChargeAmount,
                 ]);
-
                 return ResponseHelper::Out('success', 'Cart updated successfully', $cart, 200);
             }
             else {

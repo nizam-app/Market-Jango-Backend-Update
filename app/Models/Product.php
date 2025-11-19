@@ -21,11 +21,17 @@ class Product extends Model
         'remark',
         'is_active',
         'vendor_id',
+        'new_item',
+        'just_for_you',
+        'top_product',
         'category_id'
     ];
     protected $casts = [
         'color' => 'array',
         'size' => 'array',
+//        'new_item' => 'boolean',
+//        'just_for_you' => 'boolean',
+//        'top_product' => 'boolean'
     ];
     public function vendor()
     {

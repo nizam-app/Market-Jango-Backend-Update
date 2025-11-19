@@ -9,6 +9,8 @@ class Vendor extends Model
     protected $fillable = [
         'country',
         'address',
+        'latitude',
+        'longitude',
         'business_name',
         'business_type',
         'user_id'

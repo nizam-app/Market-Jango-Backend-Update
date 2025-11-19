@@ -16,6 +16,8 @@ return new class extends Migration
             $table->string('country');
             $table->string('address', 50);
             $table->string('business_name', 100);
+            $table->decimal('longitude', 10,6)->nullable();
+            $table->decimal('latitude', 10,6)->nullable();
             $table->enum('business_type', ['Restaurant','Grocery','Pharmacy','Electronics','Clothing','Hardware'])->default('Restaurant');
             $table->foreignId('user_id')->unique()->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();

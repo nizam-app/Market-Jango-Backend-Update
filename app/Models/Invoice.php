@@ -22,6 +22,7 @@ class Invoice extends Model
         'tax_ref',
         'currency',
         'delivery_status',
+        'payment_method',
         'status',
         'user_id'
     ];

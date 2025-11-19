@@ -122,7 +122,7 @@ class BuyerHomeController extends Controller
             $products = Product::whereIn('category_id', $categories)->with([
                 'vendor:id,user_id',
                 'vendor.user:id,name',
-                'vendor.reviews:id,vendor_id,description,rating',
+                'vendor.reviews:id,vendor_id,review,rating',
                 'category:id,name',
                 'images:id,image_path,public_id,product_id'])
                 ->select(['id','name','description','regular_price','sell_price','image','vendor_id','category_id', 'color', 'size', 'discount'])
@@ -167,7 +167,7 @@ class BuyerHomeController extends Controller
                 ->with([
                     'vendor:id,user_id',
                     'vendor.user:id,name',
-                    'vendor.reviews:id,vendor_id,description,rating',
+                    'vendor.reviews:id,vendor_id,review,rating',
                     'category:id,name',
                     'images:id,image_path,public_id,product_id'
                 ])

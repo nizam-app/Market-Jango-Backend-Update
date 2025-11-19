@@ -16,7 +16,10 @@ return new class extends Migration
             $table->integer('quantity')->nullable();
             $table->string('tran_id')->nullable();
             $table->string('status',50)->nullable();
+            $table->decimal('distance',10,2)->nullable();
             $table->integer('sale_price');
+            $table->decimal('delivery_charge', 10, 2)->default(0.00);
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete()->cascadeOnUpdate();
             $table->foreignId('invoice_id')->constrained()->cascadeOnDelete()->cascadeOnUpdate();
             $table->foreignId('product_id')->nullable()->constrained()->cascadeOnDelete()->cascadeOnUpdate();
             $table->foreignId('vendor_id')->nullable()->constrained()->cascadeOnUpdate()->cascadeOnDelete();

@@ -18,14 +18,15 @@ use App\Helpers\ResponseHelper;
 class ProductController extends Controller
 {
     // Get All Products
-    public function index(Request $request): JsonResponse
+    public function
+    index(Request $request): JsonResponse
     {
         try {
             //Get All Product But New Product First
             $products = Product::with([
                 'vendor:id,user_id',
                 'vendor.user:id,name',
-                'vendor.reviews:id,vendor_id,description,rating',
+                'vendor.reviews:id,vendor_id,review,rating',
                 'category:id,name',
                 'images:id,image_path,public_id,product_id'
             ])

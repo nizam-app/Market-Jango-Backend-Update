@@ -21,9 +21,9 @@ return new class extends Migration
             $table->string('country', 100)->nullable();
             $table->string('ship_name', 100)->nullable();
             $table->string('ship_email', 100)->nullable();
-            $table->string('ship_address', 100)->nullable();
-            $table->string('ship_city', 100)->nullable();
-            $table->string('ship_state', 100)->nullable();
+            $table->string('ship_location', 100)->nullable();
+            $table->decimal('ship_latitude', 10,6)->nullable();
+            $table->decimal('ship_longitude', 10,6)->nullable();
             $table->string('ship_country', 100)->nullable();
             $table->string('ship_phone', 100)->nullable();
             $table->text('description')->nullable();

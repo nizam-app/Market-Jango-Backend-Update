@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\CalculateDistance;
 use App\Helpers\PaymentSystem;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
@@ -11,7 +12,6 @@ use App\Models\Driver;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoiceStatusLog;
-use App\Models\TransportInvoiceStatusLogs;
 use App\Models\User;
 use App\Models\Vendor;
 use Exception;
@@ -55,6 +55,7 @@ class InvoiceController extends Controller
             'note' => 'required|string'
         ]);
         $user_id = $request->header('id');
+        $user = User::find($user_id);
         $driver = Driver::where('user_id', '=', $user_id)->first();
         if (!$driver) {
             return ResponseHelper::Out('failed', 'Driver not found', null, 404);
@@ -63,66 +64,18 @@ class InvoiceController extends Controller
             ->where('id', $invoiceId)
             ->with(['invoice', 'product', 'driver', 'driver.user'])
             ->first();
-
         if (!$invoice) {
             return ResponseHelper::Out('failed', 'Order not found', null, 404);
         }
-        $status =  $request->input('status');
-        if($status==='Pecked'){
-            $status = 'On The Way';
-        } else if($status==='Confirm Delivery'){
-            $status = 'Complete';
-        } else{
-            $status = 'Cancel';
-        }
         // Update status
-        $invoice->update(['status' =>$status]);
-
-        //Create log
-        InvoiceStatusLog::create([
-            'invoice_id' => $invoice->id,
-            'status' => $status,
-            'note' => $request->input('note'),
-            'is_active' => true
-        ]);
+        $invoice->update(['status' =>$request->input('status')]);
         return ResponseHelper::Out('success', 'Status updated successfully', $invoice, 200);
-
         }catch (ValidationException $e) {
             return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-    // invoice items log status get
-    public function getItemStatus(Request $request, $invoiceItemId)
-    {
-        try {
-        $user_id = $request->header('id');
-        $driver = Driver::where('user_id', '=', $user_id)->first();
-        if (!$driver) {
-            return ResponseHelper::Out('failed', 'Driver not found', null, 404);
-        }
-        $invoice = InvoiceStatusLog::where('id', $invoiceItemId)
-            ->with(['invoice', 'product', 'driver', 'driver.user'])
-            ->first();
-        $invoice =  $invoice->status;
-        $status=null;
-        if($invoice==='On The Way'){
-            $status = 'Pecked';
-        } else if($invoice==='Complete'){
-            $status = 'Confirm Delivery';
-        } else{
-            $status = 'Cancel';
-        }
-        return ResponseHelper::Out('success', 'Status faced successfully', ['invoice'=>$invoice,'status'=>$status], 200);
-
-        }catch (ValidationException $e) {
-            return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
-        } catch (Exception $e) {
-            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
-        }
-    }
-
     // Show  all staus by delivery
     public function showTrackingBuyerDetails(Request $request, $invoiceId)
     {
@@ -158,9 +111,8 @@ class InvoiceController extends Controller
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
             // get cart data by login buyer
-            $invoices = Invoice::where('user_id', $user_id)
-                ->with(['items', 'items.product'])
-                ->withCount('items')
+            $invoices = InvoiceItem::where('user_id', $user_id)
+                ->with(['invoice'])
                 ->paginate(10);
             if ($invoices->isEmpty()) {
                 return ResponseHelper::Out('success', 'order not found', null, 200);
@@ -189,11 +141,14 @@ class InvoiceController extends Controller
             $payment_status = 'Pending';
             $buyer = $Profile->buyer;
             $buyerId = $buyer->id;
+            $drop_lat = $buyer->ship_latitude;
+            $drop_long = $buyer->ship_longitude;
             $cus_name = $Profile->name;
             $cus_phone = $Profile->phone;
             $ship_address = $buyer->address;
-            $ship_city = $buyer->ship_city;
+            $ship_city = $buyer->address;
             $ship_country = $buyer->country;
+            $paymentMethod =$request->input('payment_method');
             // Payable Calculation
             $total = 0;
             $cartList = Cart::where('buyer_id', $buyerId)
@@ -221,30 +176,51 @@ class InvoiceController extends Controller
                 'tax_ref' => $tran_id,
                 'currency' => $currency,
                 'delivery_status' => $delivery_status,
+                'payment_method' => $paymentMethod,
                 'status' => $payment_status,
                 'user_id' => $user_id
             ]);
             $invoiceID = $invoice->id;
             foreach ($cartList as $EachProduct) {
+                $vendorId = $EachProduct['vendor_id'];
+                $vendor = Vendor::where('id', $vendorId)->select('id', 'longitude','latitude')->first();
+                $pickup_lat = $vendor->latitude;
+                $pickup_long = $vendor->longitude;
+                $distance = CalculateDistance::Distance($pickup_lat, $pickup_long, $drop_lat, $drop_long);
                 InvoiceItem::create([
                     'invoice_id' => $invoiceID,
-                    'status' => null,
+                    'user_id' => $user_id,
+                    'status' => $delivery_status,
+                    'distance' => $distance,
                     'tran_id' => $tran_id,
+                    'delivery_charge' => $EachProduct['delivery_charge'],
                     'product_id' => $EachProduct['product_id'],
-                    'vendor_id' => $EachProduct['vendor_id'],
+                    'vendor_id' => $vendorId,
                     'quantity' => $EachProduct['quantity'],
                     'sale_price' => $EachProduct['price'],
                     'driver_id' => null,
                 ]);
             }
-            InvoiceStatusLog::create([
-                'status' => null,
-                'invoice_id' => $invoiceID,
-                'invoice_item_id' => $invoiceID,
-            ]);
-            $paymentMethod = PaymentSystem::InitiatePayment($invoice);
-            DB::commit();
-            return ResponseHelper::Out('success', '', array(['paymentMethod' => $paymentMethod, 'payable' => $payable, 'vat' => $vat, 'total' => $total]), 200);
+            if ($paymentMethod == 'OPU') {
+                DB::commit();
+                return ResponseHelper::Out('success', 'Order placed with Cash On Delivery', [
+                    'paymentMethod' => 'OPU',
+                    'payable' => $payable,
+                    'vat' => $vat,
+                    'total' => $total
+                ], 200);
+
+            } else {
+                // FlutterWave Payment
+                $paymentMethod = PaymentSystem::InitiatePayment($invoice);
+                DB::commit();
+                return ResponseHelper::Out('success', 'Order placed with Online payment', [
+                    'paymentMethod' => $paymentMethod,
+                    'payable' => $payable,
+                    'vat' => $vat,
+                    'total' => $total
+                ], 200);
+            }
         } catch (Exception $e) {
             DB::rollBack();
             return ResponseHelper::Out('fail', 'Something went wrong', $e->getMessage(), 200);
