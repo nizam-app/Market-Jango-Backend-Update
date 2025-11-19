@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Helpers\FileHelper;
+use App\Helpers\PaymentSystem;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Driver;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\InvoiceStatusLog;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Vendor;
@@ -16,6 +18,7 @@ use Dotenv\Validator;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class VendorHomePageController extends Controller
@@ -143,51 +146,7 @@ class VendorHomePageController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-    //Vendor Pending Order
-    public function vendorPendingOrder(Request $request): JsonResponse
-    {
-        try {
-            // get login buyer
-            $user_id = $request->header('id');
-            $vendor = Vendor::where('user_id', '=', $user_id)->first();
-            if (!$vendor) {
-                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
-            }
-            // get order item  data by login vendor
-            $invoices = InvoiceItem::where('vendor_id', $vendor->id)
-                ->where('status', 'Pending')
-                ->with(['invoice', 'product','driver'])
-                ->paginate(10);
-            if ($invoices->isEmpty()) {
-                return ResponseHelper::Out('success', 'order not found', null, 200);
-            }
-            return ResponseHelper::Out('success', 'All order successfully fetched', $invoices, 200);
-        } catch (Exception $e) {
-            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
-        }
-    }
-    public function vendorAssignedOrder(Request $request): JsonResponse
-    {
-        try {
-            // get login buyer
-            $user_id = $request->header('id');
-            $vendor = Vendor::where('user_id', '=', $user_id)->first();
-            if (!$vendor) {
-                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
-            }
-            // get order item  data by login vendor
-            $invoices = InvoiceItem::where('vendor_id', $vendor->id)
-                ->where('status', 'AssignedOrder')
-                ->with(['invoice', 'product', 'driver', 'driver.user'])
-                ->paginate(10);
-            if ($invoices->isEmpty()) {
-                return ResponseHelper::Out('success', 'assign order not found', null, 200);
-            }
-            return ResponseHelper::Out('success', 'All order successfully fetched', $invoices, 200);
-        } catch (Exception $e) {
-            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
-        }
-    }
+
     public function vendorAllOrder(Request $request): JsonResponse
     {
         try {
@@ -209,27 +168,80 @@ class VendorHomePageController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-    public function vendorCanceledOrder(Request $request): JsonResponse
+    //Create Order
+    function vendorInvoice(Request $request): JsonResponse
     {
+        DB::beginTransaction();
         try {
-            // get login buyer
+            $request->validate(array(
+                'driver_id' => 'required'
+            ));
             $user_id = $request->header('id');
-            $vendor = Vendor::where('user_id', '=', $user_id)->first();
-            if (!$vendor) {
-                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+            $user_email = $request->header('email');
+            $user = User::where('id', '=', $user_id)->first();
+            if (!$user) {
+                return ResponseHelper::Out('failed', 'User not found', null, 404);
             }
-            // get order item  data by login vendor
-            $invoices = InvoiceItem::where('vendor_id', $vendor->id)
-                ->where('status', 'Cancel')
-                ->with(['invoice', 'product','driver','driver.user'])
-                ->paginate(10);
-            if ($invoices->isEmpty()) {
-                return ResponseHelper::Out('success', 'order not found', null, 200);
+            $driver_id = $request->input('driver_id');
+            $driver = Driver::where('id', $driver_id)->with('user')->first();
+            if (!$driver) {
+                return ResponseHelper::Out('failed', 'Driver not found', null, 404);
             }
-            return ResponseHelper::Out('success', 'All order successfully fetched', $invoices, 200);
-        } catch (Exception $e) {
-            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+            $tran_id = uniqid();
+            $delivery_status = 'Pending';
+            $payment_status = 'Pending';
+            $currency = "USD";
+            $driverId = $driver->id;
+            $cus_name = $driverId->user->name;
+            $cus_phone = $driverId->user->phone;
+            $cus_email = $driverId->user->email;
+            $total = $driver->price;
+            $pickup_address = $request->input('pickup_address');
+            $drop_of_address = $request->input('drop_of_address');
+            $distance = $request->input('distance');
+            $vat=0;
+            $subtotal = $total*$distance;
+            $payable = $subtotal + $vat;
+            $invoice = Invoice::create([
+                'total' => $subtotal,
+                'vat' => $vat,
+                'payable' => $payable,
+                'cus_name' => $cus_name,
+                'cus_email' => $cus_email,
+                'cus_phone' => $cus_phone,
+                'pickup_address' => $pickup_address,
+                'drop_of_address' => $drop_of_address,
+                'delivery_status' => $delivery_status,
+                'distance' => $distance,
+                'status' => $payment_status,
+                'tax_ref' => $tran_id,
+                'currency' => $currency,
+                'user_id' => $user_id
+            ]);
+            $invoiceID = $invoice->id;
+
+            InvoiceItem::create([
+                'invoice_id' => $invoiceID,
+                'tran_id' => $tran_id,
+                'driver_id' => $driverId,
+                'sale_price' => $payable,
+            ]);
+            InvoiceStatusLog::create([
+                'status' => null,
+                'invoice_id' => $invoiceID,
+                'invoice_item_id' => $invoiceID,
+            ]);
+
+            $paymentMethod = PaymentSystem::InitiatePayment($invoice);
+            DB::commit();
+            return ResponseHelper::Out('success', '', array(['paymentMethod' => $paymentMethod, 'payable' => $payable, 'vat' => $vat, 'total' => $payable]), 200);
+        }catch (ValidationException $e) {
+            DB::rollBack();
+            return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
+        }
+        catch (Exception $e) {
+            DB::rollBack();
+            return ResponseHelper::Out('fail', 'Something went wrong', $e->getMessage(), 200);
         }
     }
-
 }

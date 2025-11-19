@@ -119,11 +119,10 @@ class TransportHomeController extends Controller
                 'drop_of_address' => 'required|string',
                 'pickup_address' => 'required|string',
                 'driver_id' => 'required',
-                'distance' => 'required',
             ));
             $user_id = $request->header('id');
             $user_email = $request->header('email');
-            $user = User::where('id', '=', $user_id)->first();
+            $user = User::where('id', $user_id)->first();
             if (!$user) {
                 return ResponseHelper::Out('failed', 'User not found', null, 404);
             }
@@ -136,10 +135,9 @@ class TransportHomeController extends Controller
             $delivery_status = 'Pending';
             $payment_status = 'Pending';
             $currency = "USD";
-            $driverId = $driver->id;
-            $cus_name = $driverId->user->name;
-            $cus_phone = $driverId->user->phone;
-            $cus_email = $driverId->user->email;
+            $cus_name = $user->name;
+            $cus_phone = $user->phone;
+            $cus_email = $user->email;
             $total = $driver->price;
             $pickup_address = $request->input('pickup_address');
             $drop_of_address = $request->input('drop_of_address');

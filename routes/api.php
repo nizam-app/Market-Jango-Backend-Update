@@ -146,10 +146,8 @@ Route::middleware(['tokenVerify','language'])->group(function () {
         Route::middleware('statusVerify')->group(function () {
             //Vendor Home Page
             Route::get('/drivers/search', [VendorHomePageController::class, 'driverSearch']);
-            Route::get('/vendor/pending/order', [VendorHomePageController::class, 'vendorPendingOrder']);
-            Route::get('/vendor/assign/order', [VendorHomePageController::class, 'vendorAssignedOrder']);
             Route::get('/vendor/all/order', [VendorHomePageController::class, 'vendorAllOrder']);
-            Route::get('/vendor/cancel/order', [VendorHomePageController::class, 'vendorCanceledOrder']);
+            Route::get('/vendor/invoice/create/{id}', [VendorHomePageController::class, 'vendorInvoice']);
 
             //vendor routes
             Route::prefix('vendor')->group(function () {
