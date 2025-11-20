@@ -18,11 +18,13 @@ return new class extends Migration
             $table->string('cus_phone',20)->nullable();
             $table->string('pickup_address',100)->nullable();
             $table->string('ship_address',100)->nullable();
+            $table->decimal('ship_latitude', 10,6)->nullable();
+            $table->decimal('ship_longitude', 10,6)->nullable();
             $table->decimal('distance',10,2)->nullable();
             $table->integer('quantity')->nullable();
             $table->string('status',50)->nullable();
             $table->decimal('delivery_charge', 10, 2)->default(0.00);
-            $table->integer('sale_price');
+            $table->integer('sale_price')->nullable();
             $table->string('tran_id')->nullable();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete()->cascadeOnUpdate();
             $table->foreignId('invoice_id')->constrained()->cascadeOnDelete()->cascadeOnUpdate();

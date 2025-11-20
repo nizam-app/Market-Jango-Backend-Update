@@ -21,6 +21,9 @@ return new class extends Migration
             $table->string('transaction_id')->nullable();
             $table->string('payment_method')->nullable();
             $table->string('tax_ref')->nullable();
+            $table->string('cus_name',50)->default('USD ');
+            $table->string('cus_email',50)->nullable();
+            $table->string('cus_phone',20)->nullable();
             $table->string('currency')->default('USD ');
             $table->foreignId('user_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();

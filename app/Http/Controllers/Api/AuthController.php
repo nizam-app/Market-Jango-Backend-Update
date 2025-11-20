@@ -280,6 +280,8 @@ class AuthController extends Controller
                 'business_type'  => 'required|in:Restaurant,Grocery,Pharmacy,Electronics,Clothing,Hardware',
                 'address'        => 'required|string',
                 'files'   => 'nullable|array',
+                'longitude'   => 'nullable',
+                'latitude'   => 'nullable',
                 'files.*' => 'nullable|file|mimes:jpg,jpeg,png,avif,webp,pdf,doc,docx,xls,xlsx|max:10240'
             ]);
 
@@ -298,6 +300,8 @@ class AuthController extends Controller
                     'business_name'  => $request->input('business_name'),
                     'business_type'  => $request->input('business_type'),
                     'address'        => $request->input('address'),
+                    'longitude'        => $request->input('longitude'),
+                    'latitude'        => $request->input('latitude'),
                 ]
             );
             if ($request->hasFile('files')) {
@@ -509,6 +513,8 @@ class AuthController extends Controller
             $userType = $user->user_type;
             $buyer = $user->buyer;
             $driver = $user->driver;
+            $vendor = $user->vendor;
+            $transport = $user->transport;
             $uploadedFile = null;
             if ($request->hasFile('image')) {
                 $request->validate([
@@ -548,15 +554,31 @@ class AuthController extends Controller
                         "description" => $request->filled('description') ? $request->input('description') : $buyer->description,
                         "location" => $request->filled('location') ? $request->input('location') : $buyer->location,
                     ]);
-
                     break;
                 case 'vendor':
+                    $user->update([
+                        "name" => $request->input('name', $user->name),
+                        "language" => $request->input('language', $user->language)
+                    ]);
+                $vendor->update([
+                        "country" => $request->input('country', $user->country),
+                        "address" => $request->input('address', $user->address),
+                        "business_name" => $request->input('business_name', $user->business_name),
+                        "longitude" => $request->input('longitude', $user->longitude),
+                        "latitude" => $request->input('latitude', $user->latitude),
+                        "business_type" => $request->input('business_type', $user->business_type)
+                    ]);
+                    break;
                 case 'transport':
                     $user->update([
                         "name" => $request->input('name', $user->name),
                         "language" => $request->input('language', $user->language)
                     ]);
-                    break;
+                    $transport->update([
+                        "address" => $request->input('address', $user->address),
+                        "longitude" => $request->input('longitude', $user->longitude),
+                        "latitude" => $request->input('latitude', $user->latitude),
+                    ]);
                 case 'driver':
                     $user->update([
                         "name" => $request->input('name', $user->name),

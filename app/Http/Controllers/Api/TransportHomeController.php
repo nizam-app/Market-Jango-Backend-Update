@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\CalculateDistance;
 use App\Helpers\PaymentSystem;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
@@ -111,22 +112,21 @@ class TransportHomeController extends Controller
         }
     }
     //Create Order
-    function InvoiceCreateTransport(Request $request): JsonResponse
+    function InvoiceCreateTransport(Request $request, $driver_id): JsonResponse
     {
         DB::beginTransaction();
         try {
             $request->validate(array(
-                'drop_of_address' => 'required|string',
-                'pickup_address' => 'required|string',
-                'driver_id' => 'required',
+                'drop_address' => 'required',
+                'drop_longitude' => 'required',
+                'drop_latitude' => 'required',
             ));
             $user_id = $request->header('id');
             $user_email = $request->header('email');
-            $user = User::where('id', $user_id)->first();
+            $user = User::where('id', $user_id)->with('transport')->first();
             if (!$user) {
                 return ResponseHelper::Out('failed', 'User not found', null, 404);
             }
-            $driver_id = $request->input('driver_id');
             $driver = Driver::where('id', $driver_id)->with('user')->first();
             if (!$driver) {
                 return ResponseHelper::Out('failed', 'Driver not found', null, 404);
@@ -137,44 +137,53 @@ class TransportHomeController extends Controller
             $currency = "USD";
             $cus_name = $user->name;
             $cus_phone = $user->phone;
-            $cus_email = $user->email;
+            $drop_address =  $request->input('drop_address');
+            $drop_long =  $request->input('drop_longitude');
+            $drop_lat = $request->input('drop_latitude');
+            $transportDetails = $user->transport;
+            $pickup_address = $transportDetails->address;
+            $pickup_long =  $transportDetails->longitude;
+            $pickup_lat = $transportDetails->latitude;
+            $distance = CalculateDistance::Distance($pickup_lat, $pickup_long, $drop_lat, $drop_long);
             $total = $driver->price;
-            $pickup_address = $request->input('pickup_address');
-            $drop_of_address = $request->input('drop_of_address');
-            $distance = $request->input('distance');
             $vat=0;
             $subtotal = $total*$distance;
             $payable = $subtotal + $vat;
+            //create invoice
             $invoice = Invoice::create([
-                'total' => $subtotal,
+                'cus_name' => $cus_name,
+                'cus_email' => $user_email,
+                'cus_phone' => $cus_phone,
+                'total' => $total,
                 'vat' => $vat,
                 'payable' => $payable,
-                'cus_name' => $cus_name,
-                'cus_email' => $cus_email,
-                'cus_phone' => $cus_phone,
-                'pickup_address' => $pickup_address,
-                'drop_of_address' => $drop_of_address,
-                'delivery_status' => $delivery_status,
-                'distance' => $distance,
-                'status' => $payment_status,
                 'tax_ref' => $tran_id,
                 'currency' => $currency,
+                'payment_method' => 'FW',
+                'status' => $payment_status,
                 'user_id' => $user_id
             ]);
             $invoiceID = $invoice->id;
-
             InvoiceItem::create([
-                'invoice_id' => $invoiceID,
+                'cus_name' => $cus_name,
+                'cus_email' => $user_email,
+                'cus_phone' => $cus_phone,
+                'pickup_address' => $pickup_address,
+                'ship_address' => $drop_address,
+                'ship_latitude' => $drop_lat,
+                'ship_longitude' => $drop_long,
+                'distance' => $distance,
+                'status' => $delivery_status,
                 'tran_id' => $tran_id,
-                'driver_id' => $driverId,
-                'sale_price' => $payable,
-            ]);
-            InvoiceStatusLog::create([
-                'status' => null,
+                'user_id' => $user_id,
                 'invoice_id' => $invoiceID,
-                'invoice_item_id' => $invoiceID,
+                'driver_id' => $driver_id,
+//                'sale_price' => $EachProduct['price'],
+//                'product_id' => $EachProduct['product_id'],
+//                'vendor_id' => $vendorId,
+//                'quantity' => $EachProduct['quantity'],
+//                'delivery_charge' => $EachProduct['delivery_charge'],
             ]);
-
             $paymentMethod = PaymentSystem::InitiatePayment($invoice);
             DB::commit();
             return ResponseHelper::Out('success', '', array(['paymentMethod' => $paymentMethod, 'payable' => $payable, 'vat' => $vat, 'total' => $payable]), 200);

@@ -12,6 +12,8 @@ class InvoiceItem extends Model
         'cus_phone',
         'pickup_address',
         'ship_address',
+        'ship_latitude',
+        'ship_longitude',
         'delivery_charge',
         'user_id',
         'quantity',

@@ -72,12 +72,12 @@ Route::middleware(['tokenVerify','language'])->group(function () {
 //    Route::get('/drivers/filter',        [AdminController::class, 'driverFilter']);
 //    Route::get('/drivers/{id}',   [AdminController::class, 'driverDetails']);
     // Fetch all buyer home page products
-//    Route::prefix('admin-selects')->group(function () {
-//        Route::get('top-categories', [AdminSelectController::class, 'getTopCategory']);
-//        Route::get('top-products', [AdminSelectController::class, 'getTopProduct']);
-//        Route::get('new-items', [AdminSelectController::class, 'getNewItem']);
-//        Route::get('just-for-you', [AdminSelectController::class, 'getJustForYou']);
-//    });
+    Route::prefix('admin-selects')->group(function () {
+        Route::get('top-categories', [AdminSelectController::class, 'getTopCategory']);
+        Route::get('top-products', [AdminSelectController::class, 'getTopProduct']);
+        Route::get('new-items', [AdminSelectController::class, 'getNewItem']);
+        Route::get('just-for-you', [AdminSelectController::class, 'getJustForYou']);
+    });
     //user Update routes
     Route::prefix('user')->group(function () {
         Route::post('/update', [AuthController::class, 'update']);
@@ -248,7 +248,8 @@ Route::middleware(['tokenVerify','language'])->group(function () {
 
 
     });
-    Route::get("/transport/invoice/create/", [TransportHomeController::class, 'InvoiceCreateTransport']);
+    Route::post("/transport/invoice/create/{driver_id}", [TransportHomeController::class, 'InvoiceCreateTransport']);
+    Route::post("/transport/invoice/create/{driver_id}", [TransportHomeController::class, 'InvoiceCreateTransport']);
     //search
     Route::get('/search/product', [BuyerHomeController::class, 'productSearchByBuyer']);
     Route::get('/vendor/details/{id}', [TransportHomeController::class, 'driverDetails']);

@@ -45,7 +45,6 @@ class InvoiceController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
     // invoice delivery status update
     public function updateStatus(Request $request, $invoiceId)
     {
@@ -98,9 +97,7 @@ class InvoiceController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
     // all orders
-
     public function allOrders(Request $request): JsonResponse
     {
         try {
@@ -122,8 +119,6 @@ class InvoiceController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
-
     //create order
     function InvoiceCreate(Request $request)
     {
@@ -160,6 +155,9 @@ class InvoiceController extends Controller
             $vat = ($total * 0) / 100;
             $payable = $total + $vat;
             $invoice = Invoice::create([
+                'cus_name' => $cus_name,
+                'cus_email' => $user_email,
+                'cus_phone' => $cus_phone,
                 'total' => $total,
                 'vat' => $vat,
                 'payable' => $payable,
@@ -183,6 +181,8 @@ class InvoiceController extends Controller
                     'cus_phone' => $cus_phone,
                     'pickup_address' => $vendorLocation,
                     'ship_address' => $ship_address,
+                    'ship_latitude' => $drop_lat,
+                    'ship_longitude' => $drop_long,
                     'distance' => $distance,
                     'quantity' => $EachProduct['quantity'],
                     'status' => $delivery_status,
@@ -221,7 +221,6 @@ class InvoiceController extends Controller
             return ResponseHelper::Out('fail', 'Something went wrong', $e->getMessage(), 200);
         }
     }
-
     //flutter wave redirect url method
     public function handleFlutterWaveResponse(Request $request)
     {
