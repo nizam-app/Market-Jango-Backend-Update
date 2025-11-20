@@ -26,6 +26,8 @@ use App\Http\Controllers\Api\WishListController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Route;
 
 //after login
@@ -35,8 +37,16 @@ Route::post('/verify-mail-otp', [AuthController::class, 'verifyMailOtp']);
 Route::post('/login', [AuthController::class, 'login']);
 // Payment callback routes
 Route::get("/payment/response", [InvoiceController::class, 'handleFlutterWaveResponse']);
+
+Route::get('/translations', function (Request $request) {
+    $lang = $request->query('lang', 'en');
+    App::setLocale($lang);
+    $translations = trans('messages');
+    return response()->json($translations);
+});
+
 //Authentication for all users
-Route::middleware(['tokenVerify','language'])->group(function () {
+Route::middleware(['tokenVerify'])->group(function () {
 
     Route::prefix('review')->group(function () {
         Route::get("/buyer", [ReviewController::class, 'buyerReview']);
@@ -126,7 +136,7 @@ Route::middleware(['tokenVerify','language'])->group(function () {
         Route::get('/', [BannerController::class, 'index']);
         Route::post('/create', [BannerController::class, 'store']);
         Route::post('/update/{id}', [BannerController::class, 'update']);
-        Route::post('/destroy/{id}', [BannerController::class, 'destroy']);
+        Route::delete('/destroy/{id}', [BannerController::class, 'destroy']);
     });
     //chat routes
     Route::prefix('chat')->group(function () {
