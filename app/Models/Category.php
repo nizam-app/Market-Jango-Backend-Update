@@ -10,6 +10,7 @@ class Category extends Model
         'name',
         'description',
         'status',
+        'is_top_category',
         'vendor_id'
     ];
     public function vendor()

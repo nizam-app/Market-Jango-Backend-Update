@@ -33,6 +33,7 @@ use Illuminate\Support\Facades\Route;
 //after login
 Route::post('/register-type', [AuthController::class, 'registerType']);
 Route::post('/forget-password', [AuthController::class, 'forgetPassword']);
+Route::get('/business-type', [AuthController::class, 'businessType']);
 Route::post('/verify-mail-otp', [AuthController::class, 'verifyMailOtp']);
 Route::post('/login', [AuthController::class, 'login']);
 // Payment callback routes
@@ -84,9 +85,9 @@ Route::middleware(['tokenVerify'])->group(function () {
     // Fetch all buyer home page products
     Route::prefix('admin-selects')->group(function () {
         Route::get('top-categories', [AdminSelectController::class, 'getTopCategory']);
-        Route::get('top-products', [AdminSelectController::class, 'getTopProduct']);
-        Route::get('new-items', [AdminSelectController::class, 'getNewItem']);
-        Route::get('just-for-you', [AdminSelectController::class, 'getJustForYou']);
+        Route::get('top-products', [ProductController::class, 'getTopProduct']);
+        Route::get('new-items', [ProductController::class, 'getNewItem']);
+        Route::get('just-for-you', [ProductController::class, 'getJustForYou']);
     });
     //user Update routes
     Route::prefix('user')->group(function () {
@@ -157,7 +158,7 @@ Route::middleware(['tokenVerify'])->group(function () {
             //Vendor Home Page
             Route::get('/drivers/search', [VendorHomePageController::class, 'driverSearch']);
             Route::get('/vendor/all/order', [VendorHomePageController::class, 'vendorAllOrder']);
-            Route::get('/vendor/invoice/create/{id}', [VendorHomePageController::class, 'vendorInvoice']);
+            Route::post('/vendor/invoice/create/{driver_id}/{order_item_id}', [VendorHomePageController::class, 'vendorInvoice']);
 
             //vendor routes
             Route::prefix('vendor')->group(function () {
@@ -233,6 +234,7 @@ Route::middleware(['tokenVerify'])->group(function () {
         Route::post('/register', [AuthController::class, 'registerDriver']);
     });
     Route::get('/approved-driver', [AdminController::class, 'approvedDriver']);
+    Route::get('/driver/home-stats', [DriverHomeController::class, 'driverHomeStats']);
 
     //Admin Routes
     Route::middleware('userTypeVerify:admin')->group(function () {
@@ -241,7 +243,6 @@ Route::middleware(['tokenVerify'])->group(function () {
         Route::get('/suspended/vendor', [AdminController::class, 'suspendedVendor']);
         Route::post('/accept-reject/vendor/{vendor_id}', [AdminController::class, 'acceptOrRejectVendor']);
         Route::post('/product-status-update/{id}', [AdminController::class, 'productStatusUpdate']);
-        Route::get('/business-type', [AuthController::class, 'businessType']);
         Route::get('/vendor-request-count', [AdminController::class, 'vendorRequestCount']);
         Route::get('/vendor-count', [AdminController::class, 'vendorCount']);
         Route::get('/driver-request-count', [AdminController::class, 'driverRequestCount']);
@@ -253,12 +254,15 @@ Route::middleware(['tokenVerify'])->group(function () {
         Route::get('/suspended-driver', [AdminController::class, 'suspendedDriver']);
         Route::get('/suspended-driver/show', [AdminController::class, 'suspendedDriverDetails']);
         Route::put('/admin-select-update/{id}', [AdminSelectController::class, 'adminSelectUpdate']);
+        Route::get('/admin-product', [ProductController::class, 'adminProduct']);
+        Route::put('/admin-category-update/{id}', [AdminSelectController::class, 'adminCategoryUpdate']);
+        Route::delete('/user/destroy/{id}', [AdminController::class, 'destroy']);
     });
+
     Route::middleware('userTypeVerify:transport')->group(function () {
 
-
     });
-    Route::post("/transport/invoice/create/{driver_id}", [TransportHomeController::class, 'InvoiceCreateTransport']);
+
     Route::post("/transport/invoice/create/{driver_id}", [TransportHomeController::class, 'InvoiceCreateTransport']);
     //search
     Route::get('/search/product', [BuyerHomeController::class, 'productSearchByBuyer']);

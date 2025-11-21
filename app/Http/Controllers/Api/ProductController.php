@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\FileHelper;
 use App\Http\Controllers\Controller;
+use App\Models\InvoiceItem;
+use App\Models\OrderItem;
 use App\Models\ProductImage;
 use App\Models\User;
 use App\Models\Vendor;
@@ -18,8 +20,7 @@ use App\Helpers\ResponseHelper;
 class ProductController extends Controller
 {
     // Get All Products
-    public function
-    index(Request $request): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         try {
             //Get All Product But New Product First
@@ -35,6 +36,89 @@ class ProductController extends Controller
                 ->paginate(20);
             if ($products->isEmpty()) {
                 return ResponseHelper::Out('success', 'You have no products', [], 200);
+            }
+            return ResponseHelper::Out('success', 'All products successfully fetched', $products, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    public function adminProduct(Request $request): JsonResponse
+    {
+        try {
+            //Get All Product But New Product First
+            $products = Product::where('is_active', 1 )->with([
+                'vendor:id,user_id',
+                'vendor.user:id,name',
+                'vendor.reviews:id,vendor_id,review,rating',
+                'category:id,name',
+                'images:id,image_path,public_id,product_id'
+            ])
+            ->latest()
+            ->paginate(20);
+            if ($products->isEmpty()) {
+                return ResponseHelper::Out('success', 'You have no products', [], 200);
+            }
+            return ResponseHelper::Out('success', 'All products successfully fetched', $products, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+
+    public function getTopProduct(Request $request): JsonResponse
+    {
+        try {
+            //Get All Product But New Product First
+            $products = Product::where('is_active', 1 )->where('top_product',1)->with([
+                'vendor:id,user_id',
+                'vendor.user:id,name',
+                'vendor.reviews:id,vendor_id,review,rating',
+                'category:id,name',
+                'images:id,image_path,public_id,product_id'
+            ])
+            ->latest()
+            ->paginate(20);
+            if ($products->isEmpty()) {
+                return ResponseHelper::Out('success', 'You have no top products', [], 200);
+            }
+            return ResponseHelper::Out('success', 'All products successfully fetched', $products, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }public function getNewItem(Request $request): JsonResponse
+    {
+        try {
+            //Get All Product But New Product First
+            $products = Product::where('is_active', 1 )->where('new_item',1)->with([
+                'vendor:id,user_id',
+                'vendor.user:id,name',
+                'vendor.reviews:id,vendor_id,review,rating',
+                'category:id,name',
+                'images:id,image_path,public_id,product_id'
+            ])
+            ->latest()
+            ->paginate(20);
+            if ($products->isEmpty()) {
+                return ResponseHelper::Out('success', 'You have no new products', [], 200);
+            }
+            return ResponseHelper::Out('success', 'All products successfully fetched', $products, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }public function getJustForYou(Request $request): JsonResponse
+    {
+        try {
+            //Get All Product But New Product First
+            $products = Product::where('is_active', 1 )->where('just_for_you', 1)->with([
+                'vendor',
+                'vendor.user',
+                'vendor.reviews',
+                'category',
+                'images:id,image_path,public_id,product_id'
+            ])
+            ->latest()
+            ->paginate(20);
+            if ($products->isEmpty()) {
+                return ResponseHelper::Out('success', 'You have no just for you products', [], 200);
             }
             return ResponseHelper::Out('success', 'All products successfully fetched', $products, 200);
         } catch (Exception $e) {

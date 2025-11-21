@@ -38,6 +38,38 @@ class DriverHomeController extends Controller
         }
     }
 
+    public function driverHomeStats(Request $request)
+    {
+        try {
+            // Total Active Orders
+            $activeOrders = InvoiceItem::where('status', '!=', 'Complete')->where('driver_id', $request->header('id'))->count();
+
+            // Picked Orders
+            $picked = InvoiceItem::where('status', 'On The Way')->where('driver_id', $request->header('id'))->count();
+
+            // Delivered Today
+            $deliveredToday = InvoiceItem::where('status', 'Complete')
+                ->whereDate('updated_at', today())->where('driver_id', $request->header('id'))
+                ->count();
+
+            // Pending Deliveries (picked but not delivered today) // not complete
+            $pendingDeliveries = InvoiceItem::where('status', 'On The Way')
+//                ->where(function($q){
+//                    $q->whereNull('created_at')
+//                        ->orWhereDate('created_at', '!=', today());
+//                })
+                ->where('driver_id', $request->header('id'))
+                ->count();
+            return ResponseHelper::Out('success', 'Driver Order all Status', [ 'data' => [
+                'total_active_orders' => $activeOrders,
+                'picked' => $picked,
+                'pending_deliveries' => $pendingDeliveries,
+                'delivered_today' => $deliveredToday,
+            ]], 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
 
 
     public function showDriverTracking(Request $request, $invoiceId)

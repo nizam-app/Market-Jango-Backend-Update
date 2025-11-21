@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Models\AdminSelect;
+use App\Models\Category;
 use App\Models\Product;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -176,6 +177,28 @@ class AdminSelectController extends Controller
                 'success',
                 'Admin select saved',
                 $product,
+                200
+            );
+        } catch (ValidationException $e) {
+            return ResponseHelper::Out('failed', 'Validation error', $e->errors(), 422);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    public function adminCategoryUpdate(Request $request, $id): JsonResponse
+    {
+        try {
+            $request->validate([
+                'is_top_category' => 'nullable'
+            ]);
+            $category = Category::where('id', $id)->first();
+            $category->update([
+                'is_top_category' => $request->has('is_top_category') ? $request->input('is_top_category') : $category->is_top_category
+            ]);
+            return ResponseHelper::Out(
+                'success',
+                'Admin select saved',
+                $category,+
                 200
             );
         } catch (ValidationException $e) {

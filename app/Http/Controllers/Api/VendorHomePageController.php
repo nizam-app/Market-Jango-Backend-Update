@@ -11,6 +11,7 @@ use App\Models\Driver;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoiceStatusLog;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Vendor;
@@ -169,32 +170,31 @@ class VendorHomePageController extends Controller
         }
     }
     //Create Order
-    function vendorInvoice(Request $request): JsonResponse
+    function vendorInvoice(Request $request, $driver_id, $order_item_id ): JsonResponse
     {
         DB::beginTransaction();
         try {
-            $request->validate(array(
-                'driver_id' => 'required'
-            ));
             $user_id = $request->header('id');
             $user_email = $request->header('email');
-            $user = User::where('id', '=', $user_id)->first();
+            $user = User::where('id', '=', $user_id)->with('vendor')->first();
             if (!$user) {
                 return ResponseHelper::Out('failed', 'User not found', null, 404);
             }
-            $driver_id = $request->input('driver_id');
             $driver = Driver::where('id', $driver_id)->with('user')->first();
             if (!$driver) {
                 return ResponseHelper::Out('failed', 'Driver not found', null, 404);
+            }
+            $orderItem = InvoiceItem::where('id', $order_item_id)->where('vendor_id',$user->vendor->id)->with('invoice')->first();
+            if (!$orderItem) {
+                return ResponseHelper::Out('failed', 'Order item not found', null, 404);
             }
             $tran_id = uniqid();
             $delivery_status = 'Pending';
             $payment_status = 'Pending';
             $currency = "USD";
-            $driverId = $driver->id;
-            $cus_name = $driverId->user->name;
-            $cus_phone = $driverId->user->phone;
-            $cus_email = $driverId->user->email;
+            $cus_name = $user->name;
+            $cus_phone = $driver_id->user->phone;
+            $cus_email = $driver_id->user->email;
             $total = $driver->price;
             $pickup_address = $request->input('pickup_address');
             $drop_of_address = $request->input('drop_of_address');

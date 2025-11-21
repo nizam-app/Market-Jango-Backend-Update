@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name', 50);
             $table->text('description');
+            $table->boolean('is_top_category')->default(false);
             $table->enum('status', ['Active', 'Inactive'])->default('Active');
             $table->foreignId('vendor_id')->constrained('vendors')->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();

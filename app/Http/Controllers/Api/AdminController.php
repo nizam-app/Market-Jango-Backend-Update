@@ -36,7 +36,6 @@ class AdminController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
     // pending vendor
     public function pendingVendor(): JsonResponse
     {
@@ -63,13 +62,12 @@ class AdminController extends Controller
     {
         try {
             $vendors = Vendor::with([
-                'user:id,name,image,email,phone,language,status,phone_verified_at',
-                'images:id,user_id,user_type,image_path,file_type',
+                'user',
+                'images',
             ])
                 ->whereHas('user', function ($query) {
                     $query->where('status', 'Rejected');
                 })
-                ->select('id', 'user_id', 'country', 'address', 'business_name', 'business_type')
                 ->paginate(10);
             if($vendors->isEmpty()){
                 return ResponseHelper::Out('success', 'No suspended vendor found', $vendors, 200);
@@ -79,7 +77,7 @@ class AdminController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-    // suspended vendor
+    //vendor status update
     public function acceptOrRejectVendor(Request $request, $id): JsonResponse
     {
         try {
@@ -338,7 +336,6 @@ class AdminController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
     //Get Single User
     public function driverDetails(Request $request): JsonResponse
     {
@@ -354,6 +351,24 @@ class AdminController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+    //delete user
+    public function destroy($id)
+    {
+        try {
+            $route = Vendor::where('id', $id)->with('user')->first();
+            if(!$route){
+                return ResponseHelper::Out('failed','User not found',null, 404);
+            }
+            $route->user->delete();
+            $route->delete();
+            return ResponseHelper::Out('success','User Delete successfully',null, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed','Something went wrong',$e->getMessage(),500);
+        }
+    }
+
+
+
 
 //    public function driverFilter(Request $request)
 //    {
