@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Driver;
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Vendor;
@@ -78,15 +80,15 @@ class AdminController extends Controller
         }
     }
     //vendor status update
-    public function acceptOrRejectVendor(Request $request, $id): JsonResponse
+    public function vendorStatusUpdate(Request $request, $id): JsonResponse
     {
         try {
             $vendor = Vendor::with([
-                'user:id,name,image,email,phone,language,status,phone_verified_at',
+                'user',
                 'images:id,user_id,user_type,image_path,file_type',
             ])
             ->where('id', $id)
-            ->select('id', 'user_id', 'country', 'address', 'business_name', 'business_type')
+//            ->select('id', 'user_id', 'country', 'address', 'business_name', 'business_type')
             ->first();
             if (!$vendor) {
                 return ResponseHelper::Out('failed', 'Vendor not found for this user ID', null, 404);
@@ -96,6 +98,29 @@ class AdminController extends Controller
             //update status
             $user->update(['status' => $request->input('status')]);
             return ResponseHelper::Out('success', 'Vendor status update successfully', $vendor, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    //Driver status update
+    public function driverStatusUpdate(Request $request, $id): JsonResponse
+    {
+        try {
+            $driver = Driver::with([
+                'user',
+                'images:id,user_id,user_type,image_path,file_type',
+            ])
+            ->where('id', $id)
+//            ->select('id', 'user_id', 'country', 'address', 'business_name', 'business_type')
+            ->first();
+            if (!$driver) {
+                return ResponseHelper::Out('failed', 'Driver not found for this user ID', null, 404);
+            }
+            //get user status
+            $user = $driver->user;
+            //update status
+            $user->update(['status' => $request->input('status')]);
+            return ResponseHelper::Out('success', 'Driver status update successfully', $driver, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
@@ -197,7 +222,7 @@ class AdminController extends Controller
     {
         try {
             $request->validate([
-                'is_active' => 'required|in:0,1',
+                'is_active' => 'required|in:0,1,2',
             ]);
             $product = Product::select(['id', 'is_active'])->find($id);
             if(!$product){
@@ -236,7 +261,7 @@ class AdminController extends Controller
     {
         try {
             $driver = Driver::with([
-                'user:id,name,image'
+                'user','images','route'
             ])
                 ->whereHas('user', function ($query) {
                     $query->where('status', 'Pending');
@@ -299,7 +324,7 @@ class AdminController extends Controller
     {
         try {
             $driver = Driver::with([
-                'user:id,name'
+                'user'
             ])
                 ->whereHas('user', function ($query) {
                     $query->where('status', 'Rejected');
@@ -351,22 +376,51 @@ class AdminController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+    //Driver Cancel Order
+    public function notDeliveredOrder(Request $request): JsonResponse
+    {
+        try {
+            $order = InvoiceItem::where('status', 'Not Deliver')
+                ->with(['driver'])
+                ->paginate(10);
+            if (!$order) {
+                return ResponseHelper::Out('success', 'not delivered order  not found', null, 404);
+            }
+            return ResponseHelper::Out('success', 'not delivered order data fetched successfully', $order, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
     //delete user
     public function destroy($id)
     {
         try {
-            $route = Vendor::where('id', $id)->with('user')->first();
+            $route = User::where('id', $id)->with(['vendor','buyer','driver','transport'])->first();
             if(!$route){
                 return ResponseHelper::Out('failed','User not found',null, 404);
             }
-            $route->user->delete();
             $route->delete();
             return ResponseHelper::Out('success','User Delete successfully',null, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed','Something went wrong',$e->getMessage(),500);
         }
     }
+    // Get All order
+    public function allOrder(Request $request): JsonResponse
+    {
+        try {
 
+            // get cart data by login buyer
+            $invoices = InvoiceItem::with(['invoice'])
+                ->paginate(10);
+            if ($invoices->isEmpty()) {
+                return ResponseHelper::Out('success', 'order not found', null, 200);
+            }
+            return ResponseHelper::Out('success', 'All order successfully fetched', $invoices, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
 
 
 

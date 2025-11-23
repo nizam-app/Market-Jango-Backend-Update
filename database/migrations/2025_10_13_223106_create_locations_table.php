@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('locations', function (Blueprint $table) {
             $table->id();
             $table->string('name', 50);
+            $table->decimal('longitude', 10,6)->nullable();
+            $table->decimal('latitude', 10,6)->nullable();
             $table->foreignId('route_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
         });

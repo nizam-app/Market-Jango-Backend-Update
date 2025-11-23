@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('routes', function (Blueprint $table) {
             $table->id();
             $table->string('name', 50)->unique();
+            $table->decimal('longitude', 10,6)->nullable();
+            $table->decimal('longitude', 10,6)->nullable();
             $table->timestamps();
         });
     }

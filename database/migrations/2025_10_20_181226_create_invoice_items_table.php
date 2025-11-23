@@ -19,7 +19,11 @@ return new class extends Migration
             $table->string('pickup_address',100)->nullable();
             $table->string('ship_address',100)->nullable();
             $table->decimal('ship_latitude', 10,6)->nullable();
-            $table->decimal('ship_longitude', 10,6)->nullable();
+            $table->string('pickup_address',100)->nullable();
+            $table->string('current_address',100)->nullable();
+            $table->text('note')->nullable();
+            $table->decimal('current_latitude', 10,6)->nullable();
+            $table->decimal('current_longitude', 10,6)->nullable();
             $table->decimal('distance',10,2)->nullable();
             $table->integer('quantity')->nullable();
             $table->string('status',50)->nullable();

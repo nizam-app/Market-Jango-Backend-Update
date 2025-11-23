@@ -15,8 +15,8 @@ class LocationController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $locations = Location::with(['route:id,name'])
-                ->select(['id','name','route_id'])
+            $locations = Location::with(['route'])
+//                ->select(['id','name','route_id'])
                 ->get();
             if ($locations->isEmpty()) {
                 return ResponseHelper::Out('success', 'You have no location', [], 200);
@@ -35,7 +35,9 @@ class LocationController extends Controller
             ]);
             $location = Location::create([
                 'name' => $request->input('name'),
-                'route_id' => $request->input('route_id')
+                'route_id' => $request->input('route_id'),
+                'longitude' => $request->input('longitude'),
+                'latitude' => $request->input('latitude')
             ]);
             return ResponseHelper::Out('success','Location create successfully',$location, 201);
         }  catch (ValidationException $e) {

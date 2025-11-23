@@ -24,7 +24,7 @@ return new class extends Migration
             $table->json('color');
             $table->json('size');
             $table->enum('remark', ['Top', 'New'])->default('New');
-            $table->boolean('is_active')->default(0)->comment('0 = No, 1 = Yes');
+            $table->tinyInteger('is_active',[0,1,2])->default(0)->comment('0 = No, 1 = Yes, 2=cancel');
             $table->boolean('new_item')->default(0)->comment('0 = No, 1 = Yes');
             $table->boolean('just_for_you')->default(0)->comment('0 = No, 1 = Yes');
             $table->boolean('top_product')->default(0)->comment('0 = No, 1 = Yes');

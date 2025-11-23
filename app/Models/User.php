@@ -50,14 +50,13 @@ use HasFactory, Notifiable, HasRoles;
         * @return array<string, string>
         */
         protected $casts = [
-
+            'expires_at' => 'datetime', 'last_active_at' => 'datetime',
         ];
         protected function casts(): array
         {
         return [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
-        'expires_at' => 'datetime',
         ];
         }
         public function vendor()
@@ -90,6 +89,23 @@ use HasFactory, Notifiable, HasRoles;
     public function receivedNotifications()
     {
         return $this->hasMany(Notification::class, 'receiver_id');
+    }
+    /**
+     * Dynamic online status
+     */
+    public function getIsOnlineAttribute()
+    {
+        return $this->last_active_at
+            && $this->last_active_at->gt(now()->subMinutes(2));
+    }
+    /**
+     * Friendly last seen
+     */
+    public function getLastSeenAttribute()
+    {
+        return $this->last_active_at
+            ? $this->last_active_at->diffForHumans()
+            : 'Never';
     }
 
 }

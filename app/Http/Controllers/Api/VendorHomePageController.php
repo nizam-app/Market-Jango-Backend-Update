@@ -2,20 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Helpers\FileHelper;
 use App\Helpers\PaymentSystem;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
-use App\Models\Category;
 use App\Models\Driver;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
-use App\Models\InvoiceStatusLog;
-use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Vendor;
-use Dotenv\Validator;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,7 +19,7 @@ use Illuminate\Validation\ValidationException;
 
 class VendorHomePageController extends Controller
 {
-//screen 1
+    //screen 1
     //vendor details
     public function show(Request $request): JsonResponse
     {
@@ -189,49 +184,52 @@ class VendorHomePageController extends Controller
                 return ResponseHelper::Out('failed', 'Order item not found', null, 404);
             }
             $tran_id = uniqid();
-            $delivery_status = 'Pending';
             $payment_status = 'Pending';
             $currency = "USD";
-            $cus_name = $user->name;
-            $cus_phone = $driver_id->user->phone;
-            $cus_email = $driver_id->user->email;
+            $cus_name = $user->cus_name;
+            $cus_phone = $user->cus_phone;
             $total = $driver->price;
-            $pickup_address = $request->input('pickup_address');
-            $drop_of_address = $request->input('drop_of_address');
-            $distance = $request->input('distance');
             $vat=0;
+            $distance=  $orderItem->distance;
             $subtotal = $total*$distance;
             $payable = $subtotal + $vat;
             $invoice = Invoice::create([
-                'total' => $subtotal,
+                'cus_name' => $cus_name,
+                'cus_email' => $user_email,
+                'cus_phone' => $cus_phone,
+                'total' => $total,
                 'vat' => $vat,
                 'payable' => $payable,
-                'cus_name' => $cus_name,
-                'cus_email' => $cus_email,
-                'cus_phone' => $cus_phone,
-                'pickup_address' => $pickup_address,
-                'drop_of_address' => $drop_of_address,
-                'delivery_status' => $delivery_status,
-                'distance' => $distance,
-                'status' => $payment_status,
                 'tax_ref' => $tran_id,
                 'currency' => $currency,
+                'payment_method' => "FW",
+                'status' => $payment_status,
                 'user_id' => $user_id
             ]);
-            $invoiceID = $invoice->id;
-
-            InvoiceItem::create([
-                'invoice_id' => $invoiceID,
-                'tran_id' => $tran_id,
-                'driver_id' => $driverId,
-                'sale_price' => $payable,
+            $orderItem->update([
+                'driver_id'=> $driver_id
             ]);
-            InvoiceStatusLog::create([
-                'status' => null,
-                'invoice_id' => $invoiceID,
-                'invoice_item_id' => $invoiceID,
-            ]);
-
+//            $invoiceID = $invoice->id;
+//            InvoiceItem::create([
+//                'cus_name' => $cus_name,
+//                'cus_email' => $user_email,
+//                'cus_phone' => $cus_phone,
+//                'pickup_address' => $pickup_address,
+//                'ship_address' => $drop_of_address,
+//                'ship_latitude' => $drop_lat,
+//                'ship_longitude' => $drop_long,
+//                'distance' => $distance,
+//                'quantity' => $EachProduct['quantity'],
+//                'status' => $delivery_status,
+//                'delivery_charge' => $EachProduct['delivery_charge'],
+//                'sale_price' => $EachProduct['price'],
+//                'tran_id' => $tran_id,
+//                'user_id' => $user_id,
+//                'invoice_id' => $invoiceID,
+//                'product_id' => $EachProduct['product_id'],
+//                'vendor_id' => $vendorId,
+//                'driver_id' => null,
+//            ]);
             $paymentMethod = PaymentSystem::InitiatePayment($invoice);
             DB::commit();
             return ResponseHelper::Out('success', '', array(['paymentMethod' => $paymentMethod, 'payable' => $payable, 'vat' => $vat, 'total' => $payable]), 200);

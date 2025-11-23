@@ -598,4 +598,39 @@ class AuthController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+    //UPDATE USER ONLINE STATUS
+    public function heartbeat(Request $request)
+    {
+        $user = User::where('id', $request->header('id'))
+            ->first();
+        if (!$user) {
+            return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+        }
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        // Avoid too many writes
+        if (!$user->last_active_at || $user->last_active_at->lt(now()->subSeconds(30))) {
+            $user->update([
+                'last_active_at' => now()
+            ]);
+        }
+        return ResponseHelper::Out('success', 'user online status update successfully', null, 200);
+    }
+    // CHECK STATUS API
+    public function getstatus($id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        return response()->json([
+            'id' => $user->id,
+            'is_online' => $user->is_online,
+            'last_seen' => $user->last_seen,
+        ]);
+    }
 }

@@ -15,8 +15,8 @@ class RouteController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $routes = Route::with(['locations:id,name,route_id'])
-                ->select(['id', 'name'])
+            $routes = Route::with(['locations'])
+//                ->select(['id', 'name'])
                 ->get();
             return ResponseHelper::Out('success', 'All routes successfully fetched', $routes, 200);
         } catch (Exception $e) {
@@ -29,7 +29,11 @@ class RouteController extends Controller
             $request->validate([
                 'name' => 'required|string|max:50'
             ]);
-            $route = Route::create(['name' => $request->input('name')]);
+            $route = Route::create([
+                'name' => $request->input('name'),
+                'longitude' => $request->input('longitude'),
+                'latitude' => $request->input('latitude')
+            ]);
             return ResponseHelper::Out('success','Route create successfully',$route, 201);
         }  catch (ValidationException $e) {
             return ResponseHelper::Out('failed','Validation Failed',$e->errors(),422);

@@ -45,6 +45,7 @@ class InvoiceController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+
     // invoice delivery status update
     public function updateStatus(Request $request, $invoiceId)
     {

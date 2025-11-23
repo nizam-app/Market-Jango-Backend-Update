@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Driver;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\Location;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -25,14 +26,7 @@ class DriverHomeController extends Controller
                 return ResponseHelper::Out('failed', 'Driver not found', null, 404);
             }
             // get cart data by login buyer
-            $invoices = InvoiceItem::where('driver_id', $driver->id)
-                ->with(['invoice'])
-                ->withCount('invoice')
-                ->paginate(10);
-            if ($invoices->isEmpty()) {
-                return ResponseHelper::Out('success', 'order not found', null, 200);
-            }
-            return ResponseHelper::Out('success', 'All order successfully fetched', $invoices, 200);
+            return ResponseHelper::Out('success', 'All order successfully fetched', $driver, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
@@ -157,6 +151,25 @@ class DriverHomeController extends Controller
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
+    }
+
+    // DRIVER SEARCH BY DRIVER ROUTE
+    public function driverSearchByLocation(Request $request)
+    {
+        $pickup = $request->pickup_location;
+        $drop = $request->drop_location;
+        // pickup location
+        $pickupRoute = Location::where('name', 'LIKE', "%$pickup%")->pluck('route_id');
+        // drop location
+        $dropRoute = Location::where('name', 'LIKE', "%$drop%")->pluck('route_id');
+        // match routes
+        $commonRoutes = $pickupRoute->intersect($dropRoute);
+        if ($commonRoutes->count() == 0) {
+            return ResponseHelper::Out('success', 'No driver found for this route', null, 200);
+        }
+        // Route match driver
+        $drivers = Driver::whereIn('route_id', $commonRoutes)->get();
+        return ResponseHelper::Out('success', 'Driver fetched successfully', $drivers, 200);
     }
 
 }

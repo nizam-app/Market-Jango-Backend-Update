@@ -48,10 +48,12 @@ Route::get('/translations', function (Request $request) {
 
 //Authentication for all users
 Route::middleware(['tokenVerify'])->group(function () {
+    Route::post('/user/heartbeat', [AuthController::class, 'heartbeat']);
+    Route::post('/user/{id}/status', [AuthController::class, 'getstatus']);
 
     Route::prefix('review')->group(function () {
         Route::get("/buyer", [ReviewController::class, 'buyerReview']);
-        Route::post('/create/{id}', [ReviewController::class, 'store']);
+        Route::post('/create/buyer/{id}', [ReviewController::class, 'createBuyerReview']);
     });
 
     Route::post('/users/{user}/assign-roles', [UserController::class, 'assignRoles'])->middleware('permission:manage users');
@@ -241,10 +243,12 @@ Route::middleware(['tokenVerify'])->group(function () {
         Route::get('/active/vendor', [AdminController::class, 'activeVendor']);
         Route::get('/pending/vendor', [AdminController::class, 'pendingVendor']);
         Route::get('/suspended/vendor', [AdminController::class, 'suspendedVendor']);
-        Route::post('/accept-reject/vendor/{vendor_id}', [AdminController::class, 'acceptOrRejectVendor']);
+        Route::put('/vendor/status-update/{vendor_id}', [AdminController::class, 'vendorStatusUpdate']);
+        Route::put('/driver/status-update/{driver_id}', [AdminController::class, 'driverStatusUpdate']);
         Route::post('/product-status-update/{id}', [AdminController::class, 'productStatusUpdate']);
         Route::get('/vendor-request-count', [AdminController::class, 'vendorRequestCount']);
         Route::get('/vendor-count', [AdminController::class, 'vendorCount']);
+        Route::get('/not/delivered/order', [AdminController::class, 'notDeliveredOrder']);
         Route::get('/driver-request-count', [AdminController::class, 'driverRequestCount']);
         Route::get('/driver-count', [AdminController::class, 'driverCount']);
         Route::get('/request-product', [AdminController::class, 'requestProduct']);
@@ -257,7 +261,9 @@ Route::middleware(['tokenVerify'])->group(function () {
         Route::get('/admin-product', [ProductController::class, 'adminProduct']);
         Route::put('/admin-category-update/{id}', [AdminSelectController::class, 'adminCategoryUpdate']);
         Route::delete('/user/destroy/{id}', [AdminController::class, 'destroy']);
+        Route::get('/all/order', [AdminController::class, 'allOrder']);
     });
+        Route::get('/drivers/search/location', [DriverHomeController::class, 'driverSearchByLocation']);
 
     Route::middleware('userTypeVerify:transport')->group(function () {
 
