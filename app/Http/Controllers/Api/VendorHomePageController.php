@@ -207,29 +207,9 @@ class VendorHomePageController extends Controller
                 'user_id' => $user_id
             ]);
             $orderItem->update([
-                'driver_id'=> $driver_id
+                'driver_id'=> $driver_id,
+                'status'=> "AssignedOrder",
             ]);
-//            $invoiceID = $invoice->id;
-//            InvoiceItem::create([
-//                'cus_name' => $cus_name,
-//                'cus_email' => $user_email,
-//                'cus_phone' => $cus_phone,
-//                'pickup_address' => $pickup_address,
-//                'ship_address' => $drop_of_address,
-//                'ship_latitude' => $drop_lat,
-//                'ship_longitude' => $drop_long,
-//                'distance' => $distance,
-//                'quantity' => $EachProduct['quantity'],
-//                'status' => $delivery_status,
-//                'delivery_charge' => $EachProduct['delivery_charge'],
-//                'sale_price' => $EachProduct['price'],
-//                'tran_id' => $tran_id,
-//                'user_id' => $user_id,
-//                'invoice_id' => $invoiceID,
-//                'product_id' => $EachProduct['product_id'],
-//                'vendor_id' => $vendorId,
-//                'driver_id' => null,
-//            ]);
             $paymentMethod = PaymentSystem::InitiatePayment($invoice);
             DB::commit();
             return ResponseHelper::Out('success', '', array(['paymentMethod' => $paymentMethod, 'payable' => $payable, 'vat' => $vat, 'total' => $payable]), 200);

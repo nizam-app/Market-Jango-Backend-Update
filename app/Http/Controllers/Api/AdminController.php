@@ -2,20 +2,95 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\CalculateDistance;
+use App\Helpers\PaymentSystem;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
+use App\Models\Admin;
 use App\Models\Driver;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Product;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\Vendor;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class AdminController extends Controller
 {
+    // Get All approved vendor
+    public function index(): JsonResponse
+    {
+        try {
+            $vendors = User::where('user_type', 'admin')
+            ->with(['admin','admin.role'])
+            ->paginate(10);
+            if($vendors->isEmpty()){
+                return ResponseHelper::Out('success', 'No approved vendor found', $vendors, 200);
+            }
+            return ResponseHelper::Out('success', 'All approved vendor successfully fetched', $vendors, 200);
+
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+
+    public function createAdmin(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            // Validation
+            $request->validate([
+                'name' => 'required|string',
+                'email' => 'required|email|unique:users,email',
+                'password' => 'required|min:6',
+                'role' => 'nullable',
+                'date_of_birth' => 'nullable|date',
+                'present_address' => 'nullable|string',
+                'permanent_address' => 'nullable|string',
+                'city' => 'nullable|string',
+                'postal_code' => 'nullable|string',
+                'country' => 'nullable|string',
+            ]);
+
+            $role = $request->role;
+
+            // Create the user
+            $user = User::create([
+                'user_type' => 'admin',
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => bcrypt($request->password),
+            ]);
+
+            // Create admin in separate table
+            $admin = Admin::create([
+                'user_id'           => $user->id,
+                'role'              => $role,
+                'date_of_birth'     => $request->input('date_of_birth'),
+                'present_address'   => $request->input('present_address'),
+                'permanent_address' => $request->input('permanent_address'),
+                'city'              => $request->input('city'),
+                'postal_code'       => $request->input('postal_code'),
+                'country'           => $request->input('country'),
+            ]);
+            $user->roles()->sync([$role]);
+            DB::commit();
+            return response()->json([
+                'message' => 'New admin created successfully',
+                'user' => $user,
+                'admin' => $admin
+            ]);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+
     // Get All approved vendor
     public function activeVendor(): JsonResponse
     {
@@ -381,7 +456,7 @@ class AdminController extends Controller
     {
         try {
             $order = InvoiceItem::where('status', 'Not Deliver')
-                ->with(['driver'])
+                ->with('driver')
                 ->paginate(10);
             if (!$order) {
                 return ResponseHelper::Out('success', 'not delivered order  not found', null, 404);
@@ -419,6 +494,89 @@ class AdminController extends Controller
             return ResponseHelper::Out('success', 'All order successfully fetched', $invoices, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    function adminInvoice(Request $request, $driver_id, $order_item_id ): JsonResponse
+    {
+        DB::beginTransaction();
+        try {
+            $user_id = $request->header('id');
+            $user_email = $request->header('email');
+            $user = User::where('id', '=', $user_id)->with('admin')->first();
+            if (!$user) {
+                return ResponseHelper::Out('failed', 'User not found', null, 404);
+            }
+            $driver = Driver::where('id', $driver_id)->with('user')->first();
+            if (!$driver) {
+                return ResponseHelper::Out('failed', 'Driver not found', null, 404);
+            }
+
+            $orderItem = InvoiceItem::where('id', $order_item_id)->with('invoice')->first();
+            if (!$orderItem) {
+                return ResponseHelper::Out('failed', 'Order item not found', null, 404);
+            }
+            $tax_ref = uniqid();
+            $payment_status = 'Pending';
+            $currency = "USD";
+            $cus_name = $user->name;
+            $cus_phone = $user->phone;
+            $total = $driver->price;
+            $vat=0;
+            $drop_lat = $orderItem->ship_latitude;
+            $drop_long = $orderItem->ship_longitude;
+            $pickup_lat = $orderItem->current_latitude;
+            $pickup_long = $orderItem->current_longitude;
+            $distance = CalculateDistance::Distance($pickup_lat, $pickup_long, $drop_lat, $drop_long);
+            $subtotal = $total*$distance;
+            $payable = $subtotal + $vat;
+            $invoice = Invoice::create([
+                'cus_name' => $cus_name,
+                'cus_email' => $user_email,
+                'cus_phone' => $cus_phone,
+                'total' => $total,
+                'vat' => $vat,
+                'payable' => $payable,
+                'tax_ref' => $tax_ref,
+                'currency' => $currency,
+                'payment_method' => "FW",
+                'status' => $payment_status,
+                'user_id' => $user_id
+            ]);
+//            $orderItem->update([
+//                'driver_id'=> $driver_id,
+//                'status'=> "AssignedOrder"
+//            ]);
+//            $invoiceID = $invoice->id;
+//            InvoiceItem::create([
+//                'cus_name' => $cus_name,
+//                'cus_email' => $user_email,
+//                'cus_phone' => $cus_phone,
+//                'pickup_address' => $pickup_address,
+//                'ship_address' => $drop_of_address,
+//                'ship_latitude' => $drop_lat,
+//                'ship_longitude' => $drop_long,
+//                'distance' => $distance,
+//                'quantity' => $EachProduct['quantity'],
+//                'status' => $delivery_status,
+//                'delivery_charge' => $EachProduct['delivery_charge'],
+//                'sale_price' => $EachProduct['price'],
+//                'tran_id' => $tran_id,
+//                'user_id' => $user_id,
+//                'invoice_id' => $invoiceID,
+//                'product_id' => $EachProduct['product_id'],
+//                'vendor_id' => $vendorId,
+//                'driver_id' => null,
+//            ]);
+            $paymentMethod = PaymentSystem::InitiatePayment($invoice);
+            DB::commit();
+            return ResponseHelper::Out('success', '', array(['paymentMethod' => $paymentMethod, 'payable' => $payable, 'vat' => $vat, 'total' => $payable]), 200);
+        }catch (ValidationException $e) {
+            DB::rollBack();
+            return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
+        }
+        catch (Exception $e) {
+            DB::rollBack();
+            return ResponseHelper::Out('fail', 'Something went wrong', $e->getMessage(), 200);
         }
     }
 

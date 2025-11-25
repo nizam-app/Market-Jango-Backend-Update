@@ -1,5 +1,6 @@
 <?php
 
+use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AdminSelectController;
 use App\Http\Controllers\Api\AuthController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\Api\ProductVariantController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\RouteController;
 use App\Http\Controllers\Api\TransportHomeController;
+use App\Http\Controllers\Api\UserRoleController;
 use App\Http\Controllers\Api\VariantValueController;
 use App\Http\Controllers\Api\VendorController;
 use App\Http\Controllers\Api\VendorHomePageController;
@@ -26,9 +28,10 @@ use App\Http\Controllers\Api\WishListController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use App\Models\User;
 use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
 //after login
 Route::post('/register-type', [AuthController::class, 'registerType']);
@@ -39,15 +42,22 @@ Route::post('/login', [AuthController::class, 'login']);
 // Payment callback routes
 Route::get("/payment/response", [InvoiceController::class, 'handleFlutterWaveResponse']);
 
-Route::get('/translations', function (Request $request) {
-    $lang = $request->query('lang', 'en');
-    App::setLocale($lang);
-    $translations = trans('messages');
-    return response()->json($translations);
-});
+
 
 //Authentication for all users
 Route::middleware(['tokenVerify'])->group(function () {
+    Route::get('/translations', function (Request $request) {
+        $user_id = $request->header('id');
+
+        $user = User::where('id', $user_id)->first();
+        if (!$user) {
+            return ResponseHelper::Out('failed', 'User not found', null, 404);
+        }
+        $lang = $request->query('lang', $user->language ?? 'en');
+        App::setLocale($lang);
+        $translations = trans('messages');
+        return response()->json($translations);
+    });
     Route::post('/user/heartbeat', [AuthController::class, 'heartbeat']);
     Route::post('/user/{id}/status', [AuthController::class, 'getstatus']);
 
@@ -56,22 +66,25 @@ Route::middleware(['tokenVerify'])->group(function () {
         Route::post('/create/buyer/{id}', [ReviewController::class, 'createBuyerReview']);
     });
 
-    Route::post('/users/{user}/assign-roles', [UserController::class, 'assignRoles'])->middleware('permission:manage users');
-    Route::post('/users/{user}/assign-permissions', [UserController::class, 'assignPermissions'])->middleware('permission:manage users');
+    Route::prefix('roles')->group(function () {
+        Route::get('/', [RoleController::class, 'index']);
+        Route::post('/', [RoleController::class, 'store']);
+        Route::get('/{id}', [RoleController::class, 'show']);
+        Route::put('/{id}', [RoleController::class, 'updateRoles']);
+        Route::delete('/{id}', [RoleController::class, 'destroyRoles']);
+        Route::post('/{role_id}/permissions', [RoleController::class, 'assignPermissions']);
+    });
+    Route::prefix('permissions')->group(function () {
+    Route::get('/', [PermissionController::class, 'index']);
+    Route::post('/', [PermissionController::class, 'store']);
+    Route::put('/{id}', [PermissionController::class, 'update']);
+    Route::delete('/{id}', [PermissionController::class, 'destroy']);
 
-    // Roles routes - all require 'manage roles' permission except index and show
-    Route::get('/role', [RoleController::class, 'index']);
-    Route::post('/role/create', [RoleController::class, 'store'])->middleware('permission:manage roles');
-    Route::get('/role/{role}', [RoleController::class, 'show']);
-    Route::put('/role/update/{role}', [RoleController::class, 'update'])->middleware('permission:manage roles');
-    Route::delete('/role/destroy/{role}', [RoleController::class, 'destroy'])->middleware('permission:manage roles');
+    });
+    Route::post('/users/{user_id}/assign-role', [UserRoleController::class, 'assignRole']);
+    Route::delete('/users/{user_id}/remove-role', [UserRoleController::class, 'removeRole']);
+    Route::get('/users/{user_id}/permissions', [UserRoleController::class, 'getUserPermissions']);
 
-    // Permissions routes - all require 'manage permissions' permission except index and show
-    Route::get('/permissions', [PermissionController::class, 'index']);
-    Route::post('/permissions', [PermissionController::class, 'store'])->middleware('permission:manage permissions');
-    Route::get('/permissions/{permission}', [PermissionController::class, 'show']);
-    Route::put('/permissions/{permission}', [PermissionController::class, 'update'])->middleware('permission:manage permissions');
-    Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy'])->middleware('permission:manage permissions');
     Route::post('/register-name', [AuthController::class, 'registerName']);
     Route::post('/register-phone', [AuthController::class, 'registerPhone']); // not complete
     Route::post('/user-verify-otp', [AuthController::class, 'verifyOtp']);
@@ -132,7 +145,7 @@ Route::middleware(['tokenVerify'])->group(function () {
         Route::get('/show', [LocationController::class, 'show']);
         Route::post('/create', [LocationController::class, 'store']);
         Route::post('/update/{id}', [LocationController::class, 'update']);
-        Route::post('/destroy/{id}', [LocationController::class, 'destroy']);
+        Route::delete('/destroy/{id}', [LocationController::class, 'destroy']);
     });
     //banner routes
     Route::prefix('banner')->group(function () {
@@ -240,8 +253,11 @@ Route::middleware(['tokenVerify'])->group(function () {
 
     //Admin Routes
     Route::middleware('userTypeVerify:admin')->group(function () {
+        Route::post('/admin/invoice/create/{driver_id}/{order_item_id}', [AdminController::class, 'adminInvoice']);
+        Route::post('/create-admin', [AdminController::class, 'createAdmin']);
         Route::get('/active/vendor', [AdminController::class, 'activeVendor']);
         Route::get('/pending/vendor', [AdminController::class, 'pendingVendor']);
+        Route::get('/admin', [AdminController::class, 'index']);
         Route::get('/suspended/vendor', [AdminController::class, 'suspendedVendor']);
         Route::put('/vendor/status-update/{vendor_id}', [AdminController::class, 'vendorStatusUpdate']);
         Route::put('/driver/status-update/{driver_id}', [AdminController::class, 'driverStatusUpdate']);

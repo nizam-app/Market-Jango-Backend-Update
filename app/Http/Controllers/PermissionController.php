@@ -2,64 +2,76 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ResponseHelper;
+use App\Models\Permission;
+use Exception;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Permission;
 
 class PermissionController extends Controller
 {
     public function index()
     {
-        $permissions = Permission::all();
-
-        return response()->json([
-            'message' => 'Permissions retrieved successfully',
-            'data' => $permissions,
-        ]);
+        return Permission::all();
     }
+
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|unique:permissions,name',
-            'description' => 'nullable|string',
-        ]);
+        try {
+            $request->validate(['name' => 'required|unique:permissions']);
 
-        $permission = Permission::create([
-            'name' => $request->name,
-            'description' => $request->description ?? null,
-        ]);
+            $permission = Permission::create(['name' => $request->name]);
 
-        return response()->json([
-            'message' => 'Permission created successfully',
-            'data' => $permission,
-        ], 201);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Permission created',
+                'data' => $permission
+            ]);
+        }catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
     }
-    public function show(Permission $permission)
+    public function update(Request $request, $id)
     {
-        return response()->json([
-            'message' => 'Permission retrieved successfully',
-            'data' => $permission,
-        ]);
+        try {
+            $request->validate([
+                'name' => 'string|unique:permissions,name,' . $id,
+                'description' => 'nullable|string',
+            ]);
+
+            $permission = Permission::findOrFail($id);
+            $permission->update($request->only('name', 'description'));
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Permission updated successfully',
+                'data'    => $permission,
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'failed',
+                'message' => 'Something went wrong',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
     }
-    public function update(Request $request, Permission $permission)
+    public function destroy($id)
     {
-        $request->validate([
-            'name' => 'string|unique:permissions,name,' . $permission->id,
-            'description' => 'nullable|string',
-        ]);
+        try {
+            $permission = Permission::findOrFail($id);
+            $permission->delete();
 
-        $permission->update($request->only('name', 'description'));
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Permission deleted successfully',
+            ], 200);
 
-        return response()->json([
-            'message' => 'Permission updated successfully',
-            'data' => $permission,
-        ]);
-    }
-    public function destroy(Permission $permission)
-    {
-        $permission->delete();
-
-        return response()->json([
-            'message' => 'Permission deleted successfully',
-        ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'failed',
+                'message' => 'Something went wrong',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
     }
 }

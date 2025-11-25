@@ -8,6 +8,7 @@ use App\Helpers\ResponseHelper;
 use App\Helpers\TwilioService;
 use App\Http\Controllers\Controller;
 use App\Mail\OTPSend;
+use App\Models\Admin;
 use App\Models\Buyer;
 use App\Models\Driver;
 use App\Models\Transport;
@@ -66,8 +67,37 @@ class AuthController extends Controller
             $request->validate([
                 'user_type' => 'required|in:buyer,vendor,driver,transport,admin',
             ]);
+            $userType =  $request->input('user_type');
+            if($userType==='admin'){
+                $role = $request->role;
+                // Create the user
+                $user = User::create([
+                    'user_type' => 'admin',
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'status' => 'Approved',
+                    'password' => bcrypt($request->password),
+                ]);
+
+                // Create admin in separate table
+                $admin = Admin::create([
+                    'user_id'           => $user->id,
+                    'role'              => $role ?? 'admin',
+                    'date_of_birth'     => $request->input('date_of_birth'),
+                    'present_address'   => $request->input('present_address'),
+                    'permanent_address' => $request->input('permanent_address'),
+                    'city'              => $request->input('city'),
+                    'postal_code'       => $request->input('postal_code'),
+                    'country'           => $request->input('country'),
+                ]);
+                // Assign role via spatie
+                $user->assignRole($role??'admin');
+                $token = JWTToken::registerToken($user->user_type, $user->id);
+                $sendToken = 'Bearer ' . $token;
+                return ResponseHelper::Out('success','admin created successfully',['uer'=>$user, 'admin'=> $admin, 'token'=> $sendToken],201)->cookie('token', $sendToken, 525600);
+            }
             $user = User::create([
-                'user_type' => $request->input('user_type'),
+                'user_type' =>$userType,
             ]);
             $token = JWTToken::registerToken($user->user_type, $user->id);
             $sendToken = 'Bearer ' . $token;
@@ -500,10 +530,11 @@ class AuthController extends Controller
         try {
             $user = User::where('id', $request->header('id'))
                 ->with([
-                    'buyer:id,age,gender,address,description,state,country,user_id',
-                    'driver:id,price,user_id',
-                    'vendor:id,user_id',
-                    'transport:id,user_id'
+                    'buyer',
+                    'driver',
+                    'admin',
+                    'vendor',
+                    'transport'
                 ])
                 ->select(['id', 'name', 'image', 'public_id', 'user_type', 'email', 'phone', 'phone_verified_at', 'language', 'status'])
                 ->first();
@@ -515,6 +546,7 @@ class AuthController extends Controller
             $driver = $user->driver;
             $vendor = $user->vendor;
             $transport = $user->transport;
+            $admin = $user->admin;
             $uploadedFile = null;
             if ($request->hasFile('image')) {
                 $request->validate([
@@ -588,6 +620,23 @@ class AuthController extends Controller
                     $driver->update([
                         "price" => $request->input('price', $driver->price),
                     ]);
+                    break;
+                case 'admin':
+                    $user->update([
+                        "name" => $request->input('name', $user->name),
+                        "language" => $request->input('language', $user->language)
+                    ]);
+                    if ($admin) {
+                        $admin->update([
+                            "role" => $request->input('role', $admin->role),
+                            'date_of_birth'      => $request->input('date_of_birth', $admin->date_of_birth),
+                            'present_address'    => $request->input('present_address', $admin->present_address),
+                            'permanent_address'  => $request->input('permanent_address', $admin->permanent_address),
+                            'city'               => $request->input('city', $admin->city),
+                            'postal_code'        => $request->input('postal_code', $admin->postal_code),
+                            'country'            => $request->input('country', $admin->country)
+                        ]);
+                    }
                     break;
                 default:
                     break;

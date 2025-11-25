@@ -229,7 +229,7 @@ class InvoiceController extends Controller
             $transactionId = $request->input('transaction_id');
             $tax = $request->input('tx_ref');
             $status = $request->input('status'); // Flutter wave response status
-            $payment = Invoice::where('tax_ref', $tax)->with('items')->first();
+            $payment = Invoice::where('tax_ref', $tax)->with(['items','user'])->first();
             if (!$payment) {
                 return ResponseHelper::Out('failed', 'Transaction not found', $payment->getMessage(), 404);
             }

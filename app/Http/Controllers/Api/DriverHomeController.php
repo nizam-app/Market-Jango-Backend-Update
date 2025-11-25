@@ -168,7 +168,7 @@ class DriverHomeController extends Controller
             return ResponseHelper::Out('success', 'No driver found for this route', null, 200);
         }
         // Route match driver
-        $drivers = Driver::whereIn('route_id', $commonRoutes)->get();
+        $drivers = Driver::whereIn('route_id', $commonRoutes)->with('user')->get();
         return ResponseHelper::Out('success', 'Driver fetched successfully', $drivers, 200);
     }
 

@@ -16,10 +16,10 @@ class DriverController extends Controller
     {
         try {
             $drivers = Driver::with([
-                    'user:id,name,email,phone,status',
+                    'user',
                     'images:id,user_id,user_type,image_path,file_type,public_id'
                 ])
-                ->select('id','car_name','car_model','location','price','rating','route_id','user_id')
+//                ->select('id','car_name','car_model','location','price','rating','route_id','user_id')
                 ->paginate(10);
             if($drivers->isEmpty()){
                 return ResponseHelper::Out('success', 'Driver not found', null, 200);

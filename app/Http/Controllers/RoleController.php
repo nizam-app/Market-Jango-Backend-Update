@@ -2,63 +2,71 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\ResponseHelper;
+use App\Http\Requests\RoleRequest;
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
+
+use App\Http\Controllers\Controller;
+use App\Services\RoleService;
 
 class RoleController extends Controller
 {
     public function index()
     {
-        $roles = Role::with('permissions')->get();
-        return ResponseHelper::Out('success', 'Roles retrieved successfully', $roles, 200);
+        return Role::with(['permissions','users'])->get();
     }
+
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|unique:roles,name',
-            'permissions' => 'array',
-            'permissions.*' => 'integer|exists:permissions,id',
-        ]);
+        $request->validate(['name' => 'required']);
 
         $role = Role::create(['name' => $request->name]);
 
-        if ($request->has('permissions') && count($request->permissions) > 0) {
-            $role->syncPermissions($request->permissions);
-        }
-
-        $role->load('permissions');
-        return ResponseHelper::Out('success', 'Roles created successfully', $role, 201);
-    }
-    public function show(Role $role)
-    {
-        $role->load('permissions');
-        return ResponseHelper::Out('success', 'Roles retrieved successfully', $role, 200);
-    }
-    public function update(Request $request, Role $role)
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Role created successfully',
+            'data' => $role
+        ]);
+    }  //Update role
+    public function updateRoles(Request $request, $id)
     {
         $request->validate([
-            'name' => 'string|unique:roles,name,' . $role->id,
-            'permissions' => 'array',
-            'permissions.*' => 'integer|exists:permissions,id',
+            'name' => 'required|string|unique:roles,name,' . $id,
         ]);
 
-        if ($request->has('name')) {
-            $role->update(['name' => $request->name]);
-        }
-
-        if ($request->has('permissions')) {
-            $role->syncPermissions($request->permissions);
-        }
-
-        $role->load('permissions');
-
-        return ResponseHelper::Out('success', 'Roles update successfully', $role, 200);
-
+        $role = Role::findOrFail($id);
+        $role->update(['name' => $request->name]);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Role updated successfully',
+            'data' => $role
+        ]);
     }
-    public function destroy(Role $role)
+
+    // Delete role
+    public function destroyRoles($id)
     {
+        $role = Role::findOrFail($id);
+        $role->users()->detach();
         $role->delete();
-        return ResponseHelper::Out('success', 'Roles deleted successfully', $role, 200);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Role deleted successfully'
+        ]);
+    }
+    public function assignPermissions(Request $request, $role_id)
+    {
+        $request->validate(['permissions' => 'required|array']);
+
+        $role = Role::findOrFail($role_id);
+
+        $role->permissions()->sync($request->permissions);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Permissions assigned successfully',
+            'data' => $role->permissions
+        ]);
     }
 }
