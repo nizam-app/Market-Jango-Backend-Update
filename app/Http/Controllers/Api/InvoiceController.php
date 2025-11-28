@@ -110,12 +110,13 @@ class InvoiceController extends Controller
             }
             // get cart data by login buyer
             $invoices = InvoiceItem::where('user_id', $user_id)
-                ->with(['invoice'])
-                ->paginate(10);
+                ->with(['invoice','product'])
+                ->get();
+//                ->paginate(10);
             if ($invoices->isEmpty()) {
                 return ResponseHelper::Out('success', 'order not found', null, 200);
             }
-            return ResponseHelper::Out('success', 'All order successfully fetched', $invoices, 200);
+            return ResponseHelper::Out('success', 'All order successfully fetched', ['data'=>$invoices], 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }

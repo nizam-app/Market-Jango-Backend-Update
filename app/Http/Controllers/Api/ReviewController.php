@@ -21,13 +21,12 @@ use Illuminate\Validation\ValidationException;
 class ReviewController extends Controller
 {
     // Get All reviews for Logged-in Buyer
-    public function buyerReview(Request $request): JsonResponse
+    public function vendorReview(Request $request, $id): JsonResponse
     {
         try {
-            $user_id = $request->header('id');
-            $reviews = Review::where('user_id', $user_id)
+            $reviews = Review::where('vendor_id', $id)
                 ->with([
-                  'product','vendor','driver'
+                  'product','user','driver'
                 ])
                 ->paginate(10);
             if ($reviews->isEmpty()) {

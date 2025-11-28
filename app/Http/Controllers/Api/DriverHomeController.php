@@ -25,8 +25,35 @@ class DriverHomeController extends Controller
             if (!$driver) {
                 return ResponseHelper::Out('failed', 'Driver not found', null, 404);
             }
-            // get cart data by login buyer
-            return ResponseHelper::Out('success', 'All order successfully fetched', $driver, 200);
+            $invoices = InvoiceItem::where('driver_id', $user_id)
+                ->with(['invoice','product'])
+                ->get();
+            if ($invoices->isEmpty()) {
+                return ResponseHelper::Out('success', 'order not found', null, 200);
+            }
+            return ResponseHelper::Out('success', 'All order successfully fetched', ['data'=>$driver], 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    //new orders Driver
+    public function newOrdersDriver(Request $request): JsonResponse
+    {
+        try {
+            // get login buyer
+            $user_id = $request->header('id');
+            $driver = Driver::where('user_id', $user_id)->first();
+            if (!$driver) {
+                return ResponseHelper::Out('failed', 'Driver not found', null, 404);
+            }
+            $invoices = InvoiceItem::where('driver_id', $driver->id)
+                ->where('status',  'AssignedOrder')
+                ->with(['invoice','product'])
+                ->get();
+            if ($invoices->isEmpty()) {
+                return ResponseHelper::Out('success', 'order not found', null, 200);
+            }
+            return ResponseHelper::Out('success', 'All order successfully fetched', ['data'=>$invoices], 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }

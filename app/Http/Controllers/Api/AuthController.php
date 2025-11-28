@@ -611,6 +611,7 @@ class AuthController extends Controller
                         "longitude" => $request->input('longitude', $user->longitude),
                         "latitude" => $request->input('latitude', $user->latitude),
                     ]);
+                    break;
                 case 'driver':
                     $user->update([
                         "name" => $request->input('name', $user->name),

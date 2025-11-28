@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Driver;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Vendor;
@@ -220,6 +221,27 @@ class VendorHomePageController extends Controller
         catch (Exception $e) {
             DB::rollBack();
             return ResponseHelper::Out('fail', 'Something went wrong', $e->getMessage(), 200);
+        }
+    }
+
+    public function vendorIncome(Request $request): JsonResponse
+    {
+        try {
+            $user_id = $request->header('id');
+            $user_email = $request->header('email');
+            $vendor = Vendor::where('id', '=', $user_id)->with('user')->first();
+            if (!$vendor) {
+                return ResponseHelper::Out('failed', 'User not found', null, 404);
+            }
+            $totalIncome = OrderItem::where('vendor_id',$user_id )->where('status',  'Complete')
+                ->sum('sale_price');
+
+            return ResponseHelper::Out('success', 'Total income calculated', [
+                'total_income' => (float) $totalIncome
+            ], 200
+            );
+        } catch (\Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
 }

@@ -57,7 +57,7 @@ class AdminController extends Controller
                 'country' => 'nullable|string',
             ]);
 
-            $role = $request->role;
+            $role = $request->role_id;
 
             // Create the user
             $user = User::create([

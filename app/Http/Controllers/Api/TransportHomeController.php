@@ -210,11 +210,13 @@ class TransportHomeController extends Controller
             $invoices = Invoice::where('user_id', $user_id)
                 ->with(['items', 'items.driver'])
                 ->withCount('items')
-                ->paginate(10);
+//                ->paginate(10);
+                ->get();
+
             if ($invoices->isEmpty()) {
                 return ResponseHelper::Out('success', 'order not found', null, 200);
             }
-            return ResponseHelper::Out('success', 'All order successfully fetched', $invoices, 200);
+            return ResponseHelper::Out('success', 'All order successfully fetched',  ['data'=>$invoices], 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }

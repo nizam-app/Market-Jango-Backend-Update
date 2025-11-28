@@ -62,7 +62,7 @@ Route::middleware(['tokenVerify'])->group(function () {
     Route::post('/user/{id}/status', [AuthController::class, 'getstatus']);
 
     Route::prefix('review')->group(function () {
-        Route::get("/buyer", [ReviewController::class, 'buyerReview']);
+        Route::get("/vendor/{id}", [ReviewController::class, 'vendorReview']);
         Route::post('/create/buyer/{id}', [ReviewController::class, 'createBuyerReview']);
     });
 
@@ -113,6 +113,7 @@ Route::middleware(['tokenVerify'])->group(function () {
     Route::get("/buyer/all-order", [InvoiceController::class, 'allOrders']);
     Route::get("/all-order/transport", [TransportHomeController::class, 'allOrdersTransport']);
     Route::get("/all-order/driver", [DriverHomeController::class, 'allOrdersDriver']);
+    Route::get("/new-order/driver", [DriverHomeController::class, 'newOrdersDriver']);
     Route::post("/invoice/create", [InvoiceController::class, 'InvoiceCreate']);
     Route::get("/InvoiceProductList/{invoice_id}", [InvoiceController::class, 'InvoiceProductList']);
 
@@ -177,6 +178,7 @@ Route::middleware(['tokenVerify'])->group(function () {
 
             //vendor routes
             Route::prefix('vendor')->group(function () {
+                Route::get('/income', [VendorHomePageController::class, 'vendorIncome']);       //pending
                 Route::get('/product', [VendorHomePageController::class, 'vendorProduct']);
                 Route::get('/search-by-vendor', [VendorHomePageController::class, 'productSearchByVendor']);
                 Route::post('/image/destroy/{id}', [ProductController::class, 'vendorProductImageDestroy']);
@@ -289,6 +291,7 @@ Route::middleware(['tokenVerify'])->group(function () {
     //search
     Route::get('/search/product', [BuyerHomeController::class, 'productSearchByBuyer']);
     Route::get('/vendor/details/{id}', [TransportHomeController::class, 'driverDetails']);
+
     Route::get('/transport/invoice/tracking/{id}', [TransportHomeController::class, 'showTransportTracking']);
     Route::get('/transport/successful/invoice/details/{id}', [TransportHomeController::class, 'showSuccessfulTransportTracking']);
     Route::get('/transport/cancel/invoice/tracking/{id}', [TransportHomeController::class, 'showCancelTransportTracking']);
