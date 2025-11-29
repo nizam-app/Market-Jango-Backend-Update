@@ -144,4 +144,21 @@ return [
     'assign_order_driver' => "Giao đơn cho tài xế Murphy",
     'search_orders' => "Tìm đơn hàng",
     'cancelled' => "Đã hủy",
+    'no_data'=> "Không có dữ liệu",
+    'loading' => "Đang tải...",
+    'error' => "Lỗi",
+    't_shirt' => "Áo phông",
+    'something_went_wrong' => "Có gì đó không ổn'",
+    'no_top_products' => "Không có sản phẩm hàng đầu",
+    'no_popular_products_found' => "Không tìm thấy sản phẩm phổ biến nào",
+    'all_categories' => "Tất cả các danh mục",
+    'trend_Loop' => "Vòng lặp xu hướng",
+    'no_vendors' => "Không có nhà cung cấp",
+    'please_add_the_cart_product' => "vui lòng thêm sản phẩm vào giỏ hàng",
+    'updating' => "Đang cập nhật...",
+    'shipping_address_updated' => "Địa chỉ giao hàng đã được cập nhật",
+    'no_completed_orders_yet' => "Chưa có đơn hàng nào hoàn thành",
+    'ncontactInformation' => "Thông tin liên hệ",
+
+
 ];

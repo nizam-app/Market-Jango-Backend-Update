@@ -28,6 +28,10 @@ return new class extends Migration
             $table->boolean('is_active')->default(false);
             $table->enum('status', ['Pending','Approved','Rejected'])->default('Pending');
             $table->timestamp('expires_at')->nullable();
+            // invite flow er jonno
+            $table->string('invite_token')->nullable()->unique();
+            // first time password set/change flag (optional but useful)
+            $table->boolean('must_change_password')->default(false);
             $table->rememberToken();
             $table->index('is_active');
             $table->index('user_type');

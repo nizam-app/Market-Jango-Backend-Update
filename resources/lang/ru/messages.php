@@ -144,4 +144,21 @@ return [
     'assign_order_driver' => "Назначить заказ водителю Murphy",
     'search_orders' => "Поиск заказов",
     'cancelled' => "Отменено",
+    'no_data'=> "Нет данных",
+    'loading' => "Загрузка...",
+    'error' => "Ошибка",
+    't_shirt' => "Футболка",
+    'something_went_wrong' => "Что-то пошло не так",
+    'no_top_products' => "Нет лучших продуктов",
+    'no_popular_products_found' => "Популярные товары не найдены",
+    'all_categories' => "Все категории",
+    'trend_Loop' => "Цикл тренда",
+    'no_vendors' => "Нет_поставщиков",
+    'please_add_the_cart_product' => "пожалуйста, добавьте товар в корзину",
+    'updating' => "Обновление...",
+    'shipping_address_updated' => "Адрес доставки обновлен",
+    'no_completed_orders_yet' => "Еще не выполненные заказы",
+    'ncontactInformation' => "Контактная информация",
+
+
 ];

@@ -166,6 +166,24 @@ return [
     'assign_order_to_driver' => "Assign order to driver Murphy",
     'search_orders' => "Search orders",
     'cancelled'=> "Cancelled",
+    'no_data'=> "No data",
+    'loading' => "Loading...",
+    'error' => "Error",
+    't_shirt' => "T shirt",
+    'something_went_wrong' => "Something went wrong",
+    'no_top_products' => "No top products",
+    'no_popular_products_found' => "No popular products found",
+    'all_categories' => "All Categories",
+    'trend_Loop' => "Trend Loop",
+    'no_vendors' => "no_vendors",
+    'please_add_the_cart_product' => "please add the cart product",
+    'updating' => "Updating...",
+    'shipping_address_updated' => "Shipping address updated",
+    'no_completed_orders_yet' => "No completed orders yet",
+    'ncontactInformation' => "Contact Information",
+
+
+
 
 
 

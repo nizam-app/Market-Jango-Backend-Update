@@ -207,10 +207,8 @@ class TransportHomeController extends Controller
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
             // get cart data by login buyer
-            $invoices = Invoice::where('user_id', $user_id)
-                ->with(['items', 'items.driver'])
-                ->withCount('items')
-//                ->paginate(10);
+            $invoices = InvoiceItem::where('user_id', $user_id)
+                ->with(['invoice', 'driver','driver.user'])
                 ->get();
 
             if ($invoices->isEmpty()) {

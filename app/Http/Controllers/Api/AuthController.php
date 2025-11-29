@@ -445,7 +445,7 @@ class AuthController extends Controller
             // set token
             $token = JWTToken::loginToken($user->email, $user->id);
             $sendToken = 'Bearer ' . $token;
-            return ResponseHelper::Out('success', 'Login successful',['uer'=>$user, 'token'=> $sendToken], 200)->cookie('token', $sendToken, 525600);
+            return ResponseHelper::Out('success', 'Login successful',['user'=>$user, 'token'=> $sendToken], 200)->cookie('token', $sendToken, 525600);
         } catch (ValidationException $e) {
             return ResponseHelper::Out('error','Validation Failed',$e->errors(),422);
         } catch (Exception $e) {
@@ -593,12 +593,14 @@ class AuthController extends Controller
                         "language" => $request->input('language', $user->language)
                     ]);
                 $vendor->update([
-                        "country" => $request->input('country', $user->country),
-                        "address" => $request->input('address', $user->address),
-                        "business_name" => $request->input('business_name', $user->business_name),
-                        "longitude" => $request->input('longitude', $user->longitude),
-                        "latitude" => $request->input('latitude', $user->latitude),
-                        "business_type" => $request->input('business_type', $user->business_type)
+                        "country" => $request->input('country', $vendor->country),
+                        "address" => $request->input('address', $vendor->address),
+                        "open_time" => $request->input('open_time', $vendor->open_time),
+                        "close_time" => $request->input('close_time', $vendor->close_time),
+                        "business_name" => $request->input('business_name', $vendor->business_name),
+                        "longitude" => $request->input('longitude', $vendor->longitude),
+                        "latitude" => $request->input('latitude', $vendor->latitude),
+                        "business_type" => $request->input('business_type', $vendor->business_type)
                     ]);
                     break;
                 case 'transport':
@@ -627,17 +629,17 @@ class AuthController extends Controller
                         "name" => $request->input('name', $user->name),
                         "language" => $request->input('language', $user->language)
                     ]);
-                    if ($admin) {
-                        $admin->update([
-                            "role" => $request->input('role', $admin->role),
-                            'date_of_birth'      => $request->input('date_of_birth', $admin->date_of_birth),
-                            'present_address'    => $request->input('present_address', $admin->present_address),
-                            'permanent_address'  => $request->input('permanent_address', $admin->permanent_address),
-                            'city'               => $request->input('city', $admin->city),
-                            'postal_code'        => $request->input('postal_code', $admin->postal_code),
-                            'country'            => $request->input('country', $admin->country)
-                        ]);
-                    }
+//                    if ($admin) {
+//                        $admin->update([
+//                            "role" => $request->input('role', $admin->role),
+//                            'date_of_birth'      => $request->input('date_of_birth', $admin->date_of_birth),
+//                            'present_address'    => $request->input('present_address', $admin->present_address),
+//                            'permanent_address'  => $request->input('permanent_address', $admin->permanent_address),
+//                            'city'               => $request->input('city', $admin->city),
+//                            'postal_code'        => $request->input('postal_code', $admin->postal_code),
+//                            'country'            => $request->input('country', $admin->country)
+//                        ]);
+//                    }
                     break;
                 default:
                     break;

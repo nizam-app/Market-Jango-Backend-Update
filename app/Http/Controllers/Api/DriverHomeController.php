@@ -25,13 +25,13 @@ class DriverHomeController extends Controller
             if (!$driver) {
                 return ResponseHelper::Out('failed', 'Driver not found', null, 404);
             }
-            $invoices = InvoiceItem::where('driver_id', $user_id)
+            $invoices = InvoiceItem::where('driver_id', $driver->id)
                 ->with(['invoice','product'])
                 ->get();
             if ($invoices->isEmpty()) {
                 return ResponseHelper::Out('success', 'order not found', null, 200);
             }
-            return ResponseHelper::Out('success', 'All order successfully fetched', ['data'=>$driver], 200);
+            return ResponseHelper::Out('success', 'All order successfully fetched', ['data'=>$invoices], 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
@@ -104,7 +104,7 @@ class DriverHomeController extends Controller
             }
             $invoice = InvoiceItem::where('driver_id', $driver->id)
                 ->where('id', $invoiceId)
-                ->with(['invoice','invoice.statusLogTransports'])->first();
+                ->with(['invoice'])->first();
             if (!$invoice) {
                 return ResponseHelper::Out('success', 'order not found', null, 200);
             }
@@ -132,7 +132,7 @@ class DriverHomeController extends Controller
 
             $invoice = InvoiceItem::where('driver_id', $driver->id)
                 ->where('id', $invoiceId)
-                ->with(['invoice','invoice.statusLogTransports'])->first();
+                ->with(['invoice'])->first();
             if (!$invoice) {
                 return ResponseHelper::Out('success', 'order not found', null, 200);
             }

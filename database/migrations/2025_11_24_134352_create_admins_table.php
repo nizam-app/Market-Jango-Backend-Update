@@ -14,12 +14,7 @@ return new class extends Migration
         Schema::create('admins', function (Blueprint $table) {
             $table->id();
             $table->string('role', 20)->nullable();
-            $table->date('date_of_birth')->nullable();
-            $table->string('present_address')->nullable();
-            $table->string('permanent_address')->nullable();
-            $table->string('city')->nullable();
-            $table->string('postal_code')->nullable();
-            $table->string('country')->nullable();
+            $table->string('status', 20)->nullable();
             $table->foreignId('user_id')->unique()->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
         });

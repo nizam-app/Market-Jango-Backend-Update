@@ -118,7 +118,7 @@ Route::middleware(['tokenVerify'])->group(function () {
     Route::get("/InvoiceProductList/{invoice_id}", [InvoiceController::class, 'InvoiceProductList']);
 
     //Home Buyer all routes
-    Route::get('/product/filter', [BuyerHomeController::class, 'productFilter']); // not complete
+    Route::get('/product/filter', [BuyerHomeController::class, 'productFilter']);
     Route::get('/category', [CategoryController::class, 'index']);
     Route::get('/driver', [DriverController::class, 'index']);
     Route::get('/user', [UserController::class, 'index']);
@@ -159,8 +159,8 @@ Route::middleware(['tokenVerify'])->group(function () {
     Route::prefix('chat')->group(function () {
         Route::get('/user', [ChatController::class, 'userInbox']);
         Route::get('/user/search', [ChatController::class, 'userSearch']);
-        Route::post('/send/{id}', [ChatController::class, 'sendMessage']); // not complete
-        Route::get('/history/{id}', [ChatController::class, 'getMessages']); // not complete
+        Route::post('/send/{id}', [ChatController::class, 'sendMessage']);
+        Route::get('/history/{id}', [ChatController::class, 'getMessages']);
     });
     // notifications routes
     Route::prefix('notification')->group(function () {
@@ -257,6 +257,7 @@ Route::middleware(['tokenVerify'])->group(function () {
     Route::middleware('userTypeVerify:admin')->group(function () {
         Route::post('/admin/invoice/create/{driver_id}/{order_item_id}', [AdminController::class, 'adminInvoice']);
         Route::post('/create-admin', [AdminController::class, 'createAdmin']);
+        Route::put('/update-admin/{id}', [AdminController::class, 'updateAdmin']);
         Route::get('/active/vendor', [AdminController::class, 'activeVendor']);
         Route::get('/pending/vendor', [AdminController::class, 'pendingVendor']);
         Route::get('/admin', [AdminController::class, 'index']);

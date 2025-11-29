@@ -31,7 +31,7 @@ class UserController extends Controller
         try {
             $userId = $request->input('id');
             $user = User::where('id', $userId)
-                ->with('vendor', 'buyer', 'driver', 'transport')
+                ->with('vendor.reviews', 'buyer', 'driver', 'transport')
                 ->first();
             $userType =  $user->user_type;
             switch ($userType) {
@@ -52,12 +52,12 @@ class UserController extends Controller
             if (!$user) {
                 return ResponseHelper::Out('failed', 'User not found', null, 404);
             }
+            $reviewCount = $user->vendor ? $user->vendor->reviews->count() : 0;
             $data = [
                 'user' => $user,
-                'images' => $userImages
+                'images' => $userImages,
+                 'review_count' => $reviewCount ?? 0
             ];
-
-
             return ResponseHelper::Out('success', 'User data fetched successfully', $data, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);

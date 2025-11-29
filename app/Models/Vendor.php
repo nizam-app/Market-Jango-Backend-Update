@@ -13,6 +13,8 @@ class Vendor extends Model
         'longitude',
         'business_name',
         'business_type',
+        'open_time',
+        'close_time',
         'user_id'
     ];
     public function categories()

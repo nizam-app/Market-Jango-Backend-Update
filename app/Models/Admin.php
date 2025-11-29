@@ -8,13 +8,8 @@ class Admin extends Model
 {
     protected $fillable = [
         'user_id',
-        'date_of_birth',
-        'present_address',
-        'permanent_address',
+        'status',
         'role',
-        'city',
-        'postal_code',
-        'country',
     ];
     public function user()
     {

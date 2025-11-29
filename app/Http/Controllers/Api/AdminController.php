@@ -6,6 +6,7 @@ use App\Helpers\CalculateDistance;
 use App\Helpers\PaymentSystem;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
+use App\Mail\AdminInviteMail;
 use App\Models\Admin;
 use App\Models\Driver;
 use App\Models\Invoice;
@@ -18,6 +19,9 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AdminController extends Controller
@@ -27,8 +31,8 @@ class AdminController extends Controller
     {
         try {
             $vendors = User::where('user_type', 'admin')
-            ->with(['admin','admin.role'])
-            ->paginate(10);
+                ->with(['admin'])
+                ->paginate(10);
             if($vendors->isEmpty()){
                 return ResponseHelper::Out('success', 'No approved vendor found', $vendors, 200);
             }
@@ -38,59 +42,111 @@ class AdminController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
+    //  NEW ADMIN CREATE
     public function createAdmin(Request $request)
     {
-        DB::beginTransaction();
         try {
-            // Validation
-            $request->validate([
-                'name' => 'required|string',
+            $validated = $request->validate([
+                'name'  => 'required|string|max:255',
                 'email' => 'required|email|unique:users,email',
-                'password' => 'required|min:6',
-                'role' => 'nullable',
-                'date_of_birth' => 'nullable|date',
-                'present_address' => 'nullable|string',
-                'permanent_address' => 'nullable|string',
-                'city' => 'nullable|string',
-                'postal_code' => 'nullable|string',
-                'country' => 'nullable|string',
+                'role'  => 'required|string',
             ]);
-
-            $role = $request->role_id;
-
-            // Create the user
+            $requestRole = $request->role;
+            $roleId = Role::where('name', $requestRole)->first();
+            // get login buyer
+            $owner = Admin::where('user_id', $request->header('id'))->where('role', 'Owner')->first();
+            if (!$owner) {
+                return ResponseHelper::Out('failed', 'Your are not owner', null, 404);
+            }
+            //invite token generate
+            $tempPassword = Str::random(10);
+            // user create
             $user = User::create([
-                'user_type' => 'admin',
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => bcrypt($request->password),
+                'name'                 => $validated['name'],
+                'email'                => $validated['email'],
+                'user_type'             => 'admin',
+                'status'             => 'Approved',
+                'password'             =>  Hash::make($tempPassword),
+                'must_change_password' => true,
             ]);
-
-            // Create admin in separate table
             $admin = Admin::create([
                 'user_id'           => $user->id,
-                'role'              => $role,
-                'date_of_birth'     => $request->input('date_of_birth'),
-                'present_address'   => $request->input('present_address'),
-                'permanent_address' => $request->input('permanent_address'),
-                'city'              => $request->input('city'),
-                'postal_code'       => $request->input('postal_code'),
-                'country'           => $request->input('country'),
+                'role'              => $requestRole
             ]);
-            $user->roles()->sync([$role]);
-            DB::commit();
-            return response()->json([
-                'message' => 'New admin created successfully',
-                'user' => $user,
-                'admin' => $admin
-            ]);
+            $user->roles()->sync([$roleId]);
+            Mail::to($user->email)->send(new AdminInviteMail($user, $tempPassword));
+            $data = [
+                'user'=>$user,
+                'admin'=>$admin
+            ];
+            return ResponseHelper::Out('success', 'Admin user created and invite sent.', $data, 200);
+        } catch (ValidationException $e) {
+            return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
         } catch (Exception $e) {
-            DB::rollBack();
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+    //UPDATE ADMIN
+    public function updateAdmin(Request $request, $id)
+    {
+        try {
+            // validate input
+            $validated = $request->validate([
+                'name'  => 'nullable|string|max:255',
+                'email' => 'nullable|email|unique:users,email,' . $id,
+                'role'  => 'nullable|string',
+                'status'  => 'nullable|string',
+            ]);
+            // check logged-in owner
+            $owner = Admin::where('user_id', $request->header('id'))
+                ->where('role', 'Owner')
+                ->first();
+            if (!$owner) {
+                return ResponseHelper::Out('failed', 'You are not owner', null, 403);
+            }
+            // find user
+            $user = User::where('id', $id)->where('user_type', 'admin')->first();
+            if (!$user) {
+                return ResponseHelper::Out('failed', 'Admin user not found', null, 404);
+            }
+            // get admin profile
+            $admin = Admin::where('user_id', $id)->first();
+            if (!$admin) {
+                return ResponseHelper::Out('failed', 'Admin profile not found', null, 404);
+            }
+            // update user basic info
+            $user->update([
+                'name'  => $validated['name']  ?? $user->name,
+                'email' => $validated['email'] ?? $user->email,
+            ]);
+            // update admin role
+            if (!empty($request->role)) {
 
+                // check role exists in spatie roles table
+                $roleId = Role::where('name', $request->role)->first();
+                if (!$roleId) {
+                    return ResponseHelper::Out('failed', 'Invalid role', null, 400);
+                }
+                // update admin table role
+                $admin->update([
+                    'role' => $request->role,
+                    'status' =>  $validated['status'] ?? $admin->status
+                ]);
+
+                // update spatie roles
+                $user->roles()->sync([$roleId->id]);
+            }
+            $data = [
+                'user'  => $user,
+                'admin' => $admin
+            ];
+            return ResponseHelper::Out('success', 'Admin updated successfully', $data, 200);
+        } catch (ValidationException $e) {
+            return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
     // Get All approved vendor
     public function activeVendor(): JsonResponse
     {
@@ -579,144 +635,5 @@ class AdminController extends Controller
             return ResponseHelper::Out('fail', 'Something went wrong', $e->getMessage(), 200);
         }
     }
-
-
-
-//    public function driverFilter(Request $request)
-//    {
-//        try {
-//            $request->validate([
-//                'q'               => 'nullable|string',
-//                'location'        => 'nullable|string',
-//                'status'          => 'nullable|in:online,offline,busy',
-//                'min_price'       => 'nullable|numeric',
-//                'max_price'       => 'nullable|numeric',
-//                'pickup_lat'      => 'nullable|numeric|between:-90,90',
-//                'pickup_lng'      => 'nullable|numeric|between:-180,180',
-//                'destination_lat' => 'nullable|numeric|between:-90,90',
-//                'destination_lng' => 'nullable|numeric|between:-180,180',
-//                'radius_km'       => 'nullable|numeric|min:0',
-//                'sort'            => 'nullable|in:distance,price,rating',
-//                'per_page'        => 'nullable|integer|min:1|max:100',
-//            ]);
-//
-//            $drivers = Driver::all();
-//
-//            // Search (name/phone/city)
-//            if ($request->filled('q')) {
-//                $term = $request->q;
-//                $drivers->where(function($x) use ($term) {
-//                    $x->where('name','LIKE',"%{$term}%")
-//                        ->orWhere('phone','LIKE',"%{$term}%")
-//                        ->orWhere('city','LIKE',"%{$term}%");
-//                });
-//            }
-//
-//            // Location LIKE
-//            if ($request->filled('location')) {
-//                $loc = $request->location;
-//                $drivers->where(function($x) use ($loc) {
-//                    $x->where('address','LIKE',"%{$loc}%")
-//                        ->orWhere('city','LIKE',"%{$loc}%");
-//                });
-//            }
-//
-//            // Status + price range
-//            if ($request->filled('status'))    $drivers->where('status', $request->status);
-//            if ($request->filled('min_price')) $drivers->where('price_per_km','>=',$request->min_price);
-//            if ($request->filled('max_price')) $drivers->where('price_per_km','<=',$request->max_price);
-//
-//            // Nearby from pickup (adds distance_km)
-//            if ($request->filled(['pickup_lat','pickup_lng'])) {
-//                $lat = (float)$request->pickup_lat;
-//                $lng = (float)$request->pickup_lng;
-//
-//                $drivers->addSelect(DB::raw("
-//                    6371 * acos(
-//                       cos(radians($lat)) * cos(radians(lat)) *
-//                       cos(radians(lng) - radians($lng)) +
-//                       sin(radians($lat)) * sin(radians(lat))
-//                    ) as distance_km
-//                "));
-//
-//                if ($request->filled('radius_km') && $request->radius_km > 0) {
-//                    $drivers->having('distance_km','<=',(float)$request->radius_km);
-//                }
-//            }
-//
-//            // Sorting
-//            switch ($request->input('sort')) {
-//                case 'distance':
-//                    if ($request->filled(['pickup_lat','pickup_lng'])) {
-//                        $drivers->orderBy('distance_km');
-//                    }
-//                    break;
-//                case 'price':  $drivers->orderBy('price_per_km'); break;
-//                case 'rating': $drivers->orderByDesc('rating');   break;
-//                default:       $drivers->latest('id');            break;
-//            }
-//
-//            $paginated = $drivers->paginate(10);
-//
-//            // Estimated fare (pickup -> destination distance)
-//            if ($request->filled(['pickup_lat','pickup_lng','destination_lat','destination_lng'])) {
-//                $tripKm = $this->haversine(
-//                    (float)$request->pickup_lat, (float)$request->pickup_lng,
-//                    (float)$request->destination_lat, (float)$request->destination_lng
-//                );
-//
-//                $paginated->getCollection()->transform(function ($d) use ($tripKm) {
-//                    if (isset($d->distance_km)) $d->distance_km = round($d->distance_km, 2);
-//                    $d->estimated_fare = round($d->base_fare + ($d->price_per_km * $tripKm), 2);
-//                    unset($d->lat, $d->lng); // চাইলে লুকানো
-//                    return $d;
-//                });
-//            } else {
-//                $paginated->getCollection()->transform(function ($d) {
-//                    if (isset($d->distance_km)) $d->distance_km = round($d->distance_km, 2);
-//                    unset($d->lat, $d->lng);
-//                    return $d;
-//                });
-//            }
-//
-//            // NOTE: total আইটেম জানতে চাইলে count() নয়, total() ইউজ করো।
-//            return ResponseHelper::Out('success', 'Drivers fetched successfully', [
-//                'total'      => $paginated->count(),     // current page count
-//                'pagination' => [
-//                    'current_page' => $paginated->currentPage(),
-//                    'per_page'     => $paginated->perPage(),
-//                    'last_page'    => $paginated->lastPage(),
-//                    'total'        => $paginated->total(), // all pages total
-//                ],
-//                'data'       => $paginated->items(),
-//            ], 200);
-//
-//        } catch (Exception $e) {
-//            return ResponseHelper::Out('failed', 'Error fetching drivers', $e->getMessage(), 500);
-//        }
-//    }
-//
-//    // GET /api/drivers/{id}
-//    public function driverDetails($id)
-//    {
-//        try {
-//            $driver = Driver::select([
-//                'id','name','phone','avatar_url as avatar',
-//                'status','is_available','price_per_km','base_fare',
-//                'rating','total_trips','city','address','lat','lng','created_at'
-//            ])->find($id);
-//
-//            if (!$driver) {
-//                return ResponseHelper::Out('success', 'Driver not found', null, 404);
-//            }
-//
-//            unset($driver->lat, $driver->lng); // চাইলে hide
-//
-//            return ResponseHelper::Out('success', 'Driver details', $driver, 200);
-//
-//        } catch (Exception $e) {
-//            return ResponseHelper::Out('failed', 'Error fetching driver details', $e->getMessage(), 500);
-//        }
-//    }
 
 }

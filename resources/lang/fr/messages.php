@@ -144,4 +144,21 @@ return [
     'assign_order_driver' => "Assigner la commande au chauffeur Murphy",
     'search_orders' => "Rechercher des commandes",
     'cancelled' => "Annulé",
+    'no_data' => "Aucune donnée",
+    'loading' => "Chargement...",
+    'error' => "Erreur",
+    't_shirt' => "T-shirt",
+    'something_went_wrong' => "Quelque chose a mal tourné",
+    'no_top_products' => "Aucun produit phare",
+    'no_popular_products_found' => "Aucun produit populaire trouvé",
+    'all_categories' => "Toutes les catégories",
+    'trend_Loop' => "Boucle de tendance",
+    'no_vendors' => "Aucun vendeur",
+    'please_add_the_cart_product' => "Veuillez ajouter le produit au panier",
+    'updating' => "Mise à jour en cours...",
+    'shipping_address_updated' => "Adresse de livraison mise à jour",
+    'no_completed_orders_yet' => "Aucune commande terminée pour le moment",
+    'ncontactInformation' => "Informations de contact",
+
+
 ];

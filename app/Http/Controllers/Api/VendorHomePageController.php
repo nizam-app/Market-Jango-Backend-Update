@@ -156,11 +156,12 @@ class VendorHomePageController extends Controller
             // get order item  data by login vendor
             $invoices = InvoiceItem::where('vendor_id', $vendor->id)
                 ->with(['invoice', 'product', 'driver', 'driver.user'])
-                ->paginate(10);
+//                ->paginate(10);
+            ->get();
             if ($invoices->isEmpty()) {
                 return ResponseHelper::Out('success', 'Complete order not found', null, 200);
             }
-            return ResponseHelper::Out('success', 'All complete order successfully fetched', $invoices, 200);
+            return ResponseHelper::Out('success', 'All complete order successfully fetched', ['data'=> $invoices], 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }

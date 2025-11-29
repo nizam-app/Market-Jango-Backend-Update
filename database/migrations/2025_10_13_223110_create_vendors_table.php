@@ -16,6 +16,8 @@ return new class extends Migration
             $table->string('country');
             $table->string('address', 50);
             $table->string('business_name', 100);
+            $table->time('open_time')->default('09:00');
+            $table->time('close_time')->default('18:00');
             $table->double('avg_rating',3, 1)->default(0);
             $table->decimal('longitude', 10,6)->nullable();
             $table->decimal('latitude', 10,6)->nullable();

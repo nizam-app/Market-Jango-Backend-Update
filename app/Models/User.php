@@ -23,6 +23,8 @@ class User extends Authenticatable
         'public_id',
         'is_read',
         'is_active',
+        'invite_token',
+        'must_change_password',
         'is_online',
         'status',
         'expires_at'
