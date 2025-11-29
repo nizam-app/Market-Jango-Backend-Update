@@ -50,16 +50,20 @@ class InvoiceController extends Controller
     public function updateStatus(Request $request, $invoiceId)
     {
         try {
-        $request->validate([
+        $validator = $request->validate([
             'status' => 'required|string',
-            'note' => 'required|string'
+            'note' => 'nullable|string',
+            'current_latitude' => 'nullable|string',
+            'current_longitude' => 'nullable|string',
+            'current_address' => 'nullable|string',
         ]);
         $user_id = $request->header('id');
-        $user = User::find($user_id);
         $driver = Driver::where('user_id', '=', $user_id)->first();
         if (!$driver) {
             return ResponseHelper::Out('failed', 'Driver not found', null, 404);
         }
+        $status = $request->input('status');
+
         $invoice = InvoiceItem::where('driver_id', $driver->id)
             ->where('id', $invoiceId)
             ->with(['invoice', 'product', 'driver', 'driver.user'])
@@ -67,8 +71,20 @@ class InvoiceController extends Controller
         if (!$invoice) {
             return ResponseHelper::Out('failed', 'Order not found', null, 404);
         }
+        if($status=='Not Deliver'){
+            $invoice->update([
+                'status' => $status,
+                'note' => $request->input('note') ?? $invoice->note,
+                'current_latitude' => $request->input('current_latitude') ?? $invoice->current_latitude,
+                'current_longitude' => $request->input('current_longitude') ?? $invoice->current_longitude,
+                'current_address' => $request->input('current_address') ?? $invoice->current_address,
+            ]);
+        }
         // Update status
-        $invoice->update(['status' =>$request->input('status')]);
+        $invoice->update([
+            'status' =>$status,
+            'note' =>$request->input('note')
+        ]);
         return ResponseHelper::Out('success', 'Status updated successfully', $invoice, 200);
         }catch (ValidationException $e) {
             return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);

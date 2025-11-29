@@ -13,11 +13,15 @@ class InvoiceItem extends Model
         'pickup_address',
         'ship_address',
         'ship_latitude',
+        'current_latitude',
+        'current_longitude',
+        'current_address',
         'ship_longitude',
         'delivery_charge',
         'user_id',
         'quantity',
         'distance',
+        'note',
         'sale_price',
         'status',
         'invoice_id',
@@ -49,6 +53,10 @@ class InvoiceItem extends Model
     public function rating()
     {
         return $this->hasOne(Review::class, 'invoice_item_id');
+    }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
 }

@@ -73,6 +73,10 @@ class User extends Authenticatable
     {
         return $this->hasOne(Review::class);
     }
+    public function item()
+    {
+        return $this->hasOne(InvoiceItem::class);
+    }
 
     public function sentNotifications()
     {

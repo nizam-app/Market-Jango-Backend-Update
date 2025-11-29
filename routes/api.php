@@ -72,8 +72,8 @@ Route::middleware(['tokenVerify'])->group(function () {
         Route::get('/{id}', [RoleController::class, 'show']);
         Route::put('/{id}', [RoleController::class, 'updateRoles']);
         Route::delete('/{id}', [RoleController::class, 'destroyRoles']);
-        Route::post('/{role_id}/permissions', [RoleController::class, 'assignPermissions']);
     });
+    Route::post('/roles/{role_id}/permissions', [RoleController::class, 'assignPermissions']);
     Route::prefix('permissions')->group(function () {
     Route::get('/', [PermissionController::class, 'index']);
     Route::post('/', [PermissionController::class, 'store']);
@@ -84,7 +84,6 @@ Route::middleware(['tokenVerify'])->group(function () {
     Route::post('/users/{user_id}/assign-role', [UserRoleController::class, 'assignRole']);
     Route::delete('/users/{user_id}/remove-role', [UserRoleController::class, 'removeRole']);
     Route::get('/users/{user_id}/permissions', [UserRoleController::class, 'getUserPermissions']);
-
     Route::post('/register-name', [AuthController::class, 'registerName']);
     Route::post('/register-phone', [AuthController::class, 'registerPhone']); // not complete
     Route::post('/user-verify-otp', [AuthController::class, 'verifyOtp']);
@@ -285,14 +284,11 @@ Route::middleware(['tokenVerify'])->group(function () {
         Route::get('/drivers/search/location', [DriverHomeController::class, 'driverSearchByLocation']);
 
     Route::middleware('userTypeVerify:transport')->group(function () {
-
     });
-
     Route::post("/transport/invoice/create/{driver_id}", [TransportHomeController::class, 'InvoiceCreateTransport']);
     //search
     Route::get('/search/product', [BuyerHomeController::class, 'productSearchByBuyer']);
     Route::get('/vendor/details/{id}', [TransportHomeController::class, 'driverDetails']);
-
     Route::get('/transport/invoice/tracking/{id}', [TransportHomeController::class, 'showTransportTracking']);
     Route::get('/transport/successful/invoice/details/{id}', [TransportHomeController::class, 'showSuccessfulTransportTracking']);
     Route::get('/transport/cancel/invoice/tracking/{id}', [TransportHomeController::class, 'showCancelTransportTracking']);
@@ -300,9 +296,8 @@ Route::middleware(['tokenVerify'])->group(function () {
     Route::get('/driver/invoice/tracking/{id}', [DriverHomeController::class, 'DriverTracking']);
     Route::get('/driver/successful/invoice/tracking/{id}', [DriverHomeController::class, 'showSuccessfulDriverTracking']);
     Route::get('/driver/cancel/invoice/tracking/{id}', [DriverHomeController::class, 'showCancelDriverTracking']);
-
     Route::get('/buyer/invoice/tracking/details/{id}', [InvoiceController::class, 'showTrackingBuyerDetails']);
-    Route::put('/invoice/update-status/{id}', [InvoiceController::class, 'updateStatus']);
+    Route::put('/driver/invoice/update-status/{id}', [InvoiceController::class, 'updateStatus']);
 
     Route::prefix('driver')->group(function () {
         Route::get('/show', [AdminController::class, 'driverDetails']);

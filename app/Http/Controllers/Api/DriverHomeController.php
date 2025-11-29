@@ -58,7 +58,6 @@ class DriverHomeController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
     public function driverHomeStats(Request $request)
     {
         try {
@@ -75,10 +74,6 @@ class DriverHomeController extends Controller
 
             // Pending Deliveries (picked but not delivered today) // not complete
             $pendingDeliveries = InvoiceItem::where('status', 'On The Way')
-//                ->where(function($q){
-//                    $q->whereNull('created_at')
-//                        ->orWhereDate('created_at', '!=', today());
-//                })
                 ->where('driver_id', $request->header('id'))
                 ->count();
             return ResponseHelper::Out('success', 'Driver Order all Status', [ 'data' => [
@@ -91,8 +86,6 @@ class DriverHomeController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
-
     public function showDriverTracking(Request $request, $invoiceId)
     {
         try {
@@ -104,7 +97,7 @@ class DriverHomeController extends Controller
             }
             $invoice = InvoiceItem::where('driver_id', $driver->id)
                 ->where('id', $invoiceId)
-                ->with(['invoice'])->first();
+                ->with(['invoice', 'user', 'driver'])->first();
             if (!$invoice) {
                 return ResponseHelper::Out('success', 'order not found', null, 200);
             }
@@ -123,13 +116,6 @@ class DriverHomeController extends Controller
             if (!$driver) {
                 return ResponseHelper::Out('failed', 'Driver not found', null, 404);
             }
-//            $invoice = InvoiceItem::where('driver_id', $driver->id)
-//                ->whereHas('invoice', function ($q) use ($invoiceId) {
-//                    $q->where('tax_ref', $invoiceId);
-//                })
-//                ->with(['invoice', 'invoice.statusLogTransports'])
-//                ->first();
-
             $invoice = InvoiceItem::where('driver_id', $driver->id)
                 ->where('id', $invoiceId)
                 ->with(['invoice'])->first();
@@ -179,7 +165,6 @@ class DriverHomeController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
     // DRIVER SEARCH BY DRIVER ROUTE
     public function driverSearchByLocation(Request $request)
     {
