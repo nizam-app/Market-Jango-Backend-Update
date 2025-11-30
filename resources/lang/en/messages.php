@@ -194,6 +194,16 @@ return [
     'see_details' => "See Details",
     'track_order' => "Track Order",
     'bottomName' => "bottomName",
+    'pickup_address' => "Pickup Address",
+    'drop_off_address' => "Drop off address",
+    'customer_details' => "Customer details",
+    'message_now' => "Message Now",
+    'start_delivery' => "Start Delivery",
+    'pick_up_location ' => "Pick up location",
+    'destination ' => "Destination",
+    'delivered' => "delivered",
+    'enter_your_current_location' => "Enter your current location",
+    'my_bookings' => "My bookings",
 
 
 ];

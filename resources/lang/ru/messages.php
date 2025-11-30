@@ -172,6 +172,16 @@ return [
     'see_details' => "См. подробности",
     'track_order' => "Порядок отслеживания",
     'bottomName' => "bottomName",
+    'pickup_address' => "Адрес для забора",
+    'drop_off_address' => "Адрес высадки",
+    'customer_details' => "Данные клиента",
+    'message_now' => "Отправить сообщение сейчас",
+    'start_delivery' => "Начать доставку",
+    'pick_up_location' => "Место получения",
+    'destination' => "Назначение",
+    'delivered' => "доставлено",
+    'enter_your_current_location' => "Введите ваше текущее местоположение",
+    'my_bookings' => "Мои бронирования",
 
 
 ];

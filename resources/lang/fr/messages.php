@@ -173,6 +173,16 @@ return [
     'see_details' => "Voir les détails",
     'track_order' => "Suivi de commande",
     'bottomName' => "bottomName",
+    'pickup_address' => "Adresse de retrait",
+    'drop_off_address' => "Adresse de dépôt",
+    'customer_details' => "Détails du client",
+    'message_now' => "Envoyer un message maintenant",
+    'start_delivery' => "Démarrer la livraison",
+    'pick_up_location' => "Lieu de prise en charge",
+    'destination' => "Destination",
+    'delivered' => "livré",
+    'enter_your_current_location' => "Entrez votre position actuelle",
+    'my_bookings' => "Mes réservations",
 
 
 ];

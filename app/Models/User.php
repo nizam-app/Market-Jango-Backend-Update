@@ -112,14 +112,14 @@ class User extends Authenticatable
     // -----------------------
     // Manual Role-Permission Relations
     // -----------------------
-//    public function roles()
-//    {
-//        return $this->belongsToMany(Role::class, 'user_roles');
-//    }
     public function roles()
     {
-        return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id');
+        return $this->belongsToMany(Role::class, 'user_roles');
     }
+//    public function roles()
+//    {
+//        return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id');
+//    }
 
     /**
      * Get all permissions of the user via roles
