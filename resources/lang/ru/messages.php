@@ -159,6 +159,19 @@ return [
     'shipping_address_updated' => "Адрес доставки обновлен",
     'no_completed_orders_yet' => "Еще не выполненные заказы",
     'ncontactInformation' => "Контактная информация",
+    // Add a New Item added by Palash
+    'color' => "цвет",
+    'sizes' => "Размер",
+    'specifications' => "Спецификации",
+    'buyNow' => "Купить сейчас",
+    'new_order' => "Новый заказ",
+    'total_active_order' => "Общий активный заказ",
+    'picked' => "Выбрано",
+    'pending_deliveries' => "Ожидаемые доставки",
+    'delivered_today' => "Доставлено сегодня",
+    'see_details' => "См. подробности",
+    'track_order' => "Порядок отслеживания",
+    'bottomName' => "bottomName",
 
 
 ];

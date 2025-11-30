@@ -159,6 +159,17 @@ return [
     'shipping_address_updated' => "Địa chỉ giao hàng đã được cập nhật",
     'no_completed_orders_yet' => "Chưa có đơn hàng nào hoàn thành",
     'ncontactInformation' => "Thông tin liên hệ",
-
-
+    // Add a New Item added by Palash
+    'color' => "màu sắc",
+    'sizes' => "Kích thước",
+    'specifications' => "Thông số kỹ thuật",
+    'buyNow' => "Mua ngay",
+    'new_order' => "Đơn hàng mới",
+    'total_active_order' => "Tổng số đơn hàng đang hoạt động",
+    'picked' => "Đã chọn",
+    'pending_deliveries' => "Đang chờ giao hàng",
+    'delivered_today' => "Đã giao hàng hôm nay",
+    'see_details' => "Xem chi tiết",
+    'track_order' => "Theo dõi đơn hàng",
+    'bottomName' => "bottomName",
 ];

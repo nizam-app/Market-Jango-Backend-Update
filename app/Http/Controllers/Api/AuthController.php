@@ -435,7 +435,7 @@ class AuthController extends Controller
                 'email' => 'required|email',
                 'password' => 'required|min:8',
             ]);
-            $user = User::where('email', $request->input('email'))->first();
+            $user = User::where('email', $request->input('email'))->with('admin')->first();
             if (!$user || !Hash::check($request->input('password'), $user->password)) {
                 return ResponseHelper::Out('failed','Invalid email or password',null,401);
             }
@@ -684,5 +684,35 @@ class AuthController extends Controller
             'is_online' => $user->is_online,
             'last_seen' => $user->last_seen,
         ]);
+    }
+    // ADMIN SET PASSWORD
+    public function adminResetPassword(Request $request)
+    {
+        try {
+
+            $request->validate([
+                'old_password' => 'required|string|min:8',
+                'email' => 'required',
+                'password' => 'required|string|min:8',
+            ]);
+            $user = User::where('email', $request->input('email'))->first();
+            if (!$user || !Hash::check($request->input('old_password'), $user->password)) {
+                return ResponseHelper::Out('failed','Invalid email or password',null,401);
+            }
+            //update password
+            $user->update([
+                'password' => Hash::make($request->input('password'))
+            ]);
+            return ResponseHelper::Out('success', 'Password set successful!',$user,200);
+        }  catch (ValidationException $e) {
+            return ResponseHelper::Out('error','Validation Failed',$e->errors(),422);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed','Something went wrong',$e->getMessage(),500);
+        }
+    }
+    //USER LOGOUT
+    public function logout(Request $request)
+    {
+        return ResponseHelper::Out('success', 'Logout successful', null, 200);
     }
 }

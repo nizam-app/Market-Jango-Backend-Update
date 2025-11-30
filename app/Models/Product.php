@@ -59,6 +59,11 @@ class Product extends Model
     {
         return $this->hasMany(InvoiceItem::class, 'product_id', 'id');
     }
+    public function clicks()
+    {
+        return $this->hasMany(ProductClickLog::class, 'product_id');
+    }
+
     public function scopeBestSellersByVendorFromInvoice(
         Builder $query,
         int $vendorId,

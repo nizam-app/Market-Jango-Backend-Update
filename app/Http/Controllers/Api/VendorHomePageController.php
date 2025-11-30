@@ -10,6 +10,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\ProductClickLog;
 use App\Models\User;
 use App\Models\Vendor;
 use Exception;
@@ -234,15 +235,225 @@ class VendorHomePageController extends Controller
             if (!$vendor) {
                 return ResponseHelper::Out('failed', 'User not found', null, 404);
             }
-            $totalIncome = OrderItem::where('vendor_id',$user_id )->where('status',  'Complete')
+            $totalIncome = InvoiceItem::where('vendor_id',$user_id )->where('status',  'Complete')
                 ->sum('sale_price');
 
             return ResponseHelper::Out('success', 'Total income calculated', [
                 'total_income' => (float) $totalIncome
-            ], 200
-            );
+            ], 200);
         } catch (\Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+
+    //total income history
+    public function vendorIncomeUpdate(Request $request): JsonResponse
+    {
+        try {
+            $vendorId = $request->header('id');
+            $vendor = Vendor::where('user_id', $vendorId)->with('user')->first();
+            if (!$vendor) {
+                return ResponseHelper::Out('failed', 'User not found', null, 404);
+            }
+            $days = $request->input('days', 30);
+            $startDate = now()->subDays($days)->startOfDay();
+            $endDate = now()->endOfDay();
+            // ---------- Orders ----------
+            $orders = InvoiceItem::where('vendor_id', $vendor->id)
+                ->where('status', 'Complete')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->get();
+            $totalRevenue = $orders->sum('sale_price');
+            $totalOrders = $orders->count();
+
+            // ---------- Clicks ----------
+            $totalClicks = ProductClickLog::where('vendor_id', $vendorId)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count();
+
+            // ---------- Conversion Rate ----------
+            $conversionRate = $totalClicks > 0
+                ? round(($totalOrders / $totalClicks) * 100, 2)
+                : 0;
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'total_days'      => $days,
+                    'total_revenue'   => $totalRevenue,
+                    'total_orders'    => $totalOrders,
+                    'total_clicks'    => $totalClicks,
+                    'conversion_rate' => $conversionRate, // %
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    //get top 10 products
+    public function vendorTopProduct(Request $request): JsonResponse
+    {
+        try {
+            // Vendor User ID from header
+            $vendorUserId = $request->header('id');
+
+            // Vendor বের করা
+            $vendor = Vendor::where('user_id', $vendorUserId)->first();
+            if (!$vendor) {
+                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+            }
+
+            $vendorId = $vendor->id;
+
+            // ---------- Top 10 Selling Products (Lifetime) ----------
+            $topProducts = InvoiceItem::where('vendor_id', $vendorId)
+                ->select(
+                    'product_id',
+                    DB::raw('SUM(quantity) as total_quantity'),
+                    DB::raw('SUM(sale_price) as total_revenue')
+                )
+                ->groupBy('product_id')
+                ->orderByDesc('total_quantity')
+                ->limit(10)
+                ->get();
+
+            if ($topProducts->isEmpty()) {
+                return ResponseHelper::Out('success', 'No sales found', [
+                    'products' => []
+                ], 200);
+            }
+
+            // product details attach
+            $result = $topProducts->map(function ($item) {
+                $product = Product::find($item->product_id);
+
+                return [
+                    'product_id'     => $item->product_id,
+                    'name'           => $product->name ?? 'Unknown',
+                    'total_quantity' => (int) $item->total_quantity,
+                    'total_revenue'  => (float) $item->total_revenue,
+            ];
+        });
+
+            return ResponseHelper::Out('success', 'Top 10 products fetched', [
+                'products' => $result
+            ],200);
+
+        } catch (\Exception $e) {
+            return ResponseHelper::Out('failed', 'Error occurred', $e->getMessage(), 500);
+        }
+    }
+
+    //weakly sell
+    public function weeklySalesChart(Request $request): JsonResponse
+    {
+        try {
+            $vendorUserId = $request->header('id');
+            $vendorId = Vendor::where('user_id', $vendorUserId)->value('id');
+
+            if (!$vendorId) {
+                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+            }
+
+            // Current Week
+            $currentStart = now()->startOfWeek();
+            $currentEnd = now()->endOfWeek();
+
+            // Previous Week
+            $previousStart = now()->subWeek()->startOfWeek();
+            $previousEnd = now()->subWeek()->endOfWeek();
+
+            // ---------- Current Week ----------
+            $current = InvoiceItem::where('vendor_id', $vendorId)
+                ->where('status', 'Complete')
+                ->whereBetween('created_at', [$currentStart, $currentEnd])
+                ->select(
+                    DB::raw("DATE(created_at) as date"),
+                    DB::raw("SUM(sale_price) as total")
+                )
+                ->groupBy('date')
+                ->pluck('total', 'date');
+
+            // ---------- Previous Week ----------
+            $previous = InvoiceItem::where('vendor_id', $vendorId)
+                ->where('status', 'Complete')
+                ->whereBetween('created_at', [$previousStart, $previousEnd])
+                ->select(
+                    DB::raw("DATE(created_at) as date"),
+                    DB::raw("SUM(sale_price) as total")
+                )
+                ->groupBy('date')
+                ->pluck('total', 'date');
+
+            // Prepare final weekly array
+            $days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+            $currentData = [];
+            $previousData = [];
+
+            foreach (range(0, 6) as $i) {
+                $cDate = $currentStart->copy()->addDays($i)->toDateString();
+                $pDate = $previousStart->copy()->addDays($i)->toDateString();
+
+                $currentData[] = $current[$cDate] ?? 0;
+                $previousData[] = $previous[$pDate] ?? 0;
+            }
+            return ResponseHelper::Out('success', 'Total income calculated', ['data' => [
+                'days'           => $days,
+                'current_period' => $currentData,
+                'previous_period'=> $previousData,
+            ]], 200);
+        } catch (\Exception $e) {
+            return ResponseHelper::Out('failed', 'Error occurred', $e->getMessage(), 500);
+        }
+    }
+
+
+//    public function vendorTopProduct(Request $request): JsonResponse
+//    {
+//        try {
+//            // Vendor User ID
+//            $vendorUserId = $request->header('id');
+//
+//            // Vendor বের করা
+//            $vendor = Vendor::where('user_id', $vendorUserId)->first();
+//            if (!$vendor) {
+//                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+//            }
+//
+//            $vendorId = $vendor->id;
+//
+//            // ---------- Top Selling Product (Lifetime) ----------
+//            $topProduct = InvoiceItem::where('vendor_id', $vendorId)
+//                ->select(
+//                    'product_id',
+//                    DB::raw('SUM(quantity) as total_quantity'),
+//                    DB::raw('SUM(sale_price) as total_revenue')
+//                )
+//                ->groupBy('product_id')
+//                ->orderByDesc('total_quantity')
+//                ->first();
+//
+//            if (!$topProduct) {
+//                return ResponseHelper::Out('success', 'No sales found', [
+//                    'product' => null
+//                ], 200);
+//            }
+//
+//            // product info
+//            $product = Product::find($topProduct->product_id);
+//
+//            return ResponseHelper::Out('success', 'Top product fetched', [
+//                'product' => [
+//                    'product_id'     => $topProduct->product_id,
+//                    'name'           => $product->name ?? 'Unknown',
+//                    'total_quantity' => (int) $topProduct->total_quantity,
+//                    'total_revenue'  => (float) $topProduct->total_revenue,
+//                ]
+//            ],200);
+//
+//        } catch (\Exception $e) {
+//            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+//        }
+//    }
+
+
 }

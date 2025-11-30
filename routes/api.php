@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\DriverHomeController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\ProductClickController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductVariantController;
 use App\Http\Controllers\Api\ReviewController;
@@ -39,10 +40,11 @@ Route::post('/forget-password', [AuthController::class, 'forgetPassword']);
 Route::get('/business-type', [AuthController::class, 'businessType']);
 Route::post('/verify-mail-otp', [AuthController::class, 'verifyMailOtp']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout']);
+Route::post('/product/click', [ProductClickController::class, 'productClick']);
 // Payment callback routes
 Route::get("/payment/response", [InvoiceController::class, 'handleFlutterWaveResponse']);
-
-
+Route::put('/admin-reset-password', [AuthController::class, 'adminResetPassword']);
 
 //Authentication for all users
 Route::middleware(['tokenVerify'])->group(function () {
@@ -164,7 +166,7 @@ Route::middleware(['tokenVerify'])->group(function () {
     // notifications routes
     Route::prefix('notification')->group(function () {
         Route::get('/', [NotificationController::class, 'myNotifications']);
-        Route::get('/read/{id}', [NotificationController::class, 'markAsRead']);
+        Route::put('/read/{id}', [NotificationController::class, 'markAsRead']);
     });
     //vendor routes
     Route::middleware('userTypeVerify:vendor')->group(function () {
@@ -178,6 +180,9 @@ Route::middleware(['tokenVerify'])->group(function () {
             //vendor routes
             Route::prefix('vendor')->group(function () {
                 Route::get('/income', [VendorHomePageController::class, 'vendorIncome']);       //pending
+                Route::get('/sell-top-product', [VendorHomePageController::class, 'vendorTopProduct']);       //pending
+                Route::get('/weekly-sell', [VendorHomePageController::class, 'weeklySalesChart']);       //pending
+                Route::get('/income/update', [VendorHomePageController::class, 'vendorIncomeUpdate']);       //pending
                 Route::get('/product', [VendorHomePageController::class, 'vendorProduct']);
                 Route::get('/search-by-vendor', [VendorHomePageController::class, 'productSearchByVendor']);
                 Route::post('/image/destroy/{id}', [ProductController::class, 'vendorProductImageDestroy']);

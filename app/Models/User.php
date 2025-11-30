@@ -87,6 +87,11 @@ class User extends Authenticatable
     {
         return $this->hasMany(Notification::class, 'receiver_id');
     }
+    public function clicks()
+    {
+        return $this->hasMany(ProductClickLog::class, 'user_id');
+    }
+
 
     // -----------------------
     // Dynamic Attributes
@@ -107,9 +112,13 @@ class User extends Authenticatable
     // -----------------------
     // Manual Role-Permission Relations
     // -----------------------
+//    public function roles()
+//    {
+//        return $this->belongsToMany(Role::class, 'user_roles');
+//    }
     public function roles()
     {
-        return $this->belongsToMany(Role::class, 'user_roles');
+        return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id');
     }
 
     /**

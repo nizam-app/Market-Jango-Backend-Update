@@ -122,6 +122,6 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
-    'frontend_url' => env('APP_FRONTEND_URL', 'http://localhost:5173'),
+    'frontend_url' => env('APP_FRONTEND_URL', 'http://103.208.183.253:8000/'),
 
 ];

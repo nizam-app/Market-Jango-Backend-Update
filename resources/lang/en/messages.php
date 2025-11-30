@@ -181,6 +181,19 @@ return [
     'shipping_address_updated' => "Shipping address updated",
     'no_completed_orders_yet' => "No completed orders yet",
     'ncontactInformation' => "Contact Information",
+    // Add a New Item added by Palash
+    'color' => "color",
+    'sizes' => "Size",
+    'specifications' => "Specifications",
+    'buyNow' => "Buy Now",
+    'new_order' => "New Order",
+    'total_active_order' => "Total Active Order",
+    'picked' => "Picked",
+    'pending_deliveries' => "Pending Deliveries",
+    'delivered_today' => "Delivered Today",
+    'see_details' => "See Details",
+    'track_order' => "Track Order",
+    'bottomName' => "bottomName",
 
 
 ];

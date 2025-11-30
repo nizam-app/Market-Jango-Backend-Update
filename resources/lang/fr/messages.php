@@ -159,6 +159,20 @@ return [
     'shipping_address_updated' => "Adresse de livraison mise à jour",
     'no_completed_orders_yet' => "Aucune commande terminée pour le moment",
     'ncontactInformation' => "Informations de contact",
+    // Add a New Item added by Palash
+    'color' => "couleur",
+    'sizes' => "Taille",
+    'specifications' => "Spécifications",
+    'buyNow' => "Acheter maintenant",
+    //Added to Driver item;
+    'new_order' => "Nouvelle commande",
+    'total_active_order' => "Nombre total de commandes actives",
+    'picked' => "Cueilli",
+    'pending_deliveries' => "Livraisons en attente",
+    'delivered_today' => "Livré aujourd'hui",
+    'see_details' => "Voir les détails",
+    'track_order' => "Suivi de commande",
+    'bottomName' => "bottomName",
 
 
 ];

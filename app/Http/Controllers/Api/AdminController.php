@@ -130,13 +130,14 @@ class AdminController extends Controller
                 }
                 // update admin table role
                 $admin->update([
-                    'role' => $request->role,
-                    'status' =>  $validated['status'] ?? $admin->status
+                    'role' => $request->role
                 ]);
-
                 // update spatie roles
                 $user->roles()->sync([$roleId->id]);
             }
+            $admin->update([
+                'status' =>  $validated['status'] ?? $admin->status
+            ]);
             $data = [
                 'user'  => $user,
                 'admin' => $admin
@@ -600,8 +601,8 @@ class AdminController extends Controller
                 'user_id' => $user_id
             ]);
             $invoiceStatusLogs = InvoiceStatusLog::create([
-                'status'=> $payment_status,
                 'driver_id'=> $driver_id,
+                'invoice_id'=> $invoice->id,
                 'invoice_item_id'=> $orderItem->id
             ]);
             $paymentMethod = PaymentSystem::InitiatePayment($invoice);

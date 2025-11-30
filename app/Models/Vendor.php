@@ -40,5 +40,10 @@ class Vendor extends Model
     {
         return $this->hasMany(InvoiceItem::class);
     }
+    public function clicks()
+    {
+        return $this->hasMany(ProductClickLog::class, 'vendor_id');
+    }
+
 
 }

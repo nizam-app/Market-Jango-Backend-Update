@@ -80,6 +80,13 @@ class InvoiceController extends Controller
                 'current_address' => $request->input('current_address') ?? $invoice->current_address,
             ]);
         }
+        if($status=='Ready for delivery' && $invoice->payment_method == 'OPU'){
+            $invoice->update([
+                'status' => $status,
+                'note' => $request->input('note') ?? $invoice->note,
+                'payment_proof_id' => $request->input('payment_proof_id') ?? $invoice->payment_proof_id,
+            ]);
+        }
         // Update status
         $invoice->update([
             'status' =>$status,
@@ -206,9 +213,12 @@ class InvoiceController extends Controller
                     'status' => $delivery_status,
                     'delivery_charge' => $EachProduct['delivery_charge'],
                     'sale_price' => $EachProduct['price'],
+                    'total_pay' => $EachProduct['price'] + $EachProduct['delivery_charge'],
                     'tran_id' => $tran_id,
                     'user_id' => $user_id,
                     'invoice_id' => $invoiceID,
+                    'payment_proof_id' => null,
+                    'payment_method' => $paymentMethod,
                     'product_id' => $EachProduct['product_id'],
                     'vendor_id' => $vendorId,
                     'driver_id' => null,
@@ -217,7 +227,7 @@ class InvoiceController extends Controller
             if ($paymentMethod == 'OPU') {
                 DB::commit();
                 return ResponseHelper::Out('success', 'Order placed with Cash On Delivery', [
-                    'paymentMethod' => 'OPU',
+                    'paymentMethod' => $invoice,
                     'payable' => $payable,
                     'vat' => $vat,
                     'total' => $total
@@ -289,12 +299,21 @@ class InvoiceController extends Controller
             $payment->transaction_id = $transactionId;
             $payment->save();
             if ($status === 'successful') {
+                $invoiceStatusLog = InvoiceStatusLog::where('invoice_id',$payment->id )->first();
+                $invoiceItem = InvoiceItem::where('id',$invoiceStatusLog->invoice_item_id )->first();
+                $invoiceItem->update([
+                    'status'=>'AssignedOrder',
+                    'driver_id'=>$invoiceStatusLog->driver_id,
+                ]);
                 foreach ($payment->items as $item) {
                     $item->status = 'Pending';
                     $item->save();
                 }
             }
-            return ResponseHelper::Out('success', 'Payment status updated', $payment, 200);
+            $frontBase = config('app.frontend_url', 'http://103.208.183.253:8000');
+            $redirectUrl = $frontBase.'track-order';
+            return redirect()->away($redirectUrl);
+//            return ResponseHelper::Out('success', 'Payment status updated', $payment, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }

@@ -13,6 +13,18 @@ class CheckPermissionMiddleware
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
+//    public function handle($request, Closure $next, $permission)
+//    {
+//        $user = auth()->user();
+//
+//        foreach ($user->roles as $role) {
+//            if ($role->permissions->contains('name', $permission)) {
+//                return $next($request);
+//            }
+//        }
+//
+//        return response()->json(['message' => 'Unauthorized'], 403);
+//    }
     public function handle($request, Closure $next, $permission)
     {
         $user = auth()->user();
@@ -25,4 +37,5 @@ class CheckPermissionMiddleware
 
         return response()->json(['message' => 'Unauthorized'], 403);
     }
+
 }

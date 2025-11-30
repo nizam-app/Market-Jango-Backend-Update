@@ -10,7 +10,7 @@ class InvoiceStatusLog extends Model
 
     use HasFactory;
 
-    protected $fillable = ['invoice_id', 'status', 'note','is_active'];
+    protected $fillable = ['invoice_id', 'status', 'note','is_active','invoice_item_id','driver_id'];
 
     public function invoice()
     {

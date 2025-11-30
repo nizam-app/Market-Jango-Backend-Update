@@ -21,12 +21,12 @@
     Please log in using this temporary password and change it immediately after your first login.
 </p>
 
-{{--@if(!empty($loginUrl))--}}
-{{--    <p>--}}
-{{--        You can log in here:--}}
-{{--        <a href="{{ $loginUrl }}">{{ $loginUrl }}</a>--}}
-{{--    </p>--}}
-{{--@endif--}}
+@if(!empty($loginUrl))
+    <p>
+        You can log in here:
+        <a href="{{ $loginUrl }}">{{ $loginUrl }}</a>
+    </p>
+@endif
 
 <p>If you did not expect this email, please contact the system administrator.</p>
 
