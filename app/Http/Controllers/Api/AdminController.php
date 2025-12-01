@@ -8,6 +8,7 @@ use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Mail\AdminInviteMail;
 use App\Models\Admin;
+use App\Models\Category;
 use App\Models\Driver;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
@@ -615,6 +616,27 @@ class AdminController extends Controller
         catch (Exception $e) {
             DB::rollBack();
             return ResponseHelper::Out('fail', 'Something went wrong', $e->getMessage(), 200);
+        }
+    }
+    //GET TOP CATEGORY
+    public function getTopCategory(Request $request): JsonResponse
+    {
+        try {
+            //Get All Category But New Product First
+            $products = Category::where('status','Active')->where('is_top_category',1)->with([
+                'products',
+                'vendor.user:id,name',
+                'vendor.reviews:id,vendor_id,review,rating',
+                'categoryImages:id,image_path,public_id,category_id'
+            ])
+                ->latest()
+                ->paginate(20);
+            if ($products->isEmpty()) {
+                return ResponseHelper::Out('success', 'You have no top products', [], 200);
+            }
+            return ResponseHelper::Out('success', 'All products successfully fetched', $products, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
 

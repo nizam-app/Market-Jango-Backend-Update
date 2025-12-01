@@ -84,7 +84,8 @@ class ProductController extends Controller
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
-    }public function getNewItem(Request $request): JsonResponse
+    }
+    public function getNewItem(Request $request): JsonResponse
     {
         try {
             //Get All Product But New Product First
@@ -104,7 +105,8 @@ class ProductController extends Controller
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
-    }public function getJustForYou(Request $request): JsonResponse
+    }
+    public function getJustForYou(Request $request): JsonResponse
     {
         try {
             //Get All Product But New Product First

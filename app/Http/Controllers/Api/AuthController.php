@@ -592,6 +592,23 @@ class AuthController extends Controller
                         "name" => $request->input('name', $user->name),
                         "language" => $request->input('language', $user->language)
                     ]);
+                    $vendorUploadedFile = null;
+                    if ($request->hasFile('cover_image')) {
+                        $request->validate([
+                            'cover_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
+                        ]);
+                        // Delete old image if exists
+                        if (!empty($vendor->public_id)) {
+                            FileHelper::delete($vendor->public_id);
+                        }
+                        $path = $userType.'/cover_image';
+                        //Upload new image
+                        $file = $request->file('cover_image');
+                        $vendorUploadedFile = FileHelper::upload($file, $path);
+                        $vendor->cover_image = $vendorUploadedFile[0]['url'];
+                        $vendor->public_id = $vendorUploadedFile[0]['public_id'];
+                        $vendor->save();
+                    }
                 $vendor->update([
                         "country" => $request->input('country', $vendor->country),
                         "address" => $request->input('address', $vendor->address),

@@ -27,7 +27,8 @@ class User extends Authenticatable
         'must_change_password',
         'is_online',
         'status',
-        'expires_at'
+        'expires_at',
+        'fcm_token'
     ];
 
     protected $hidden = [

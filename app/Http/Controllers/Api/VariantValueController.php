@@ -24,12 +24,12 @@ class VariantValueController extends Controller
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
             $attributeValue = AttributeValue::where('vendor_id', $vendor->id)->with(['productAttribute:id,name'])->select('id', 'name','product_attribute_id' )->get();
-            return ResponseHelper::Out('success', 'All variant values successfully fetched', $attributeValue, 200);
+            return ResponseHelper::Out('success', 'All attribute values successfully fetched', $attributeValue, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-    // Store Variant Value
+    // CREATE ATTRIBUTE VALUE
     public function store(Request $request): JsonResponse
     {
         try {
@@ -54,12 +54,13 @@ class VariantValueController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-    // Update Variant Value
+    // UPDATE ATTRIBUTE VALUE
     public function update(Request $request, $id): JsonResponse
     {
         try {
             $request->validate([
-                'name' => 'required|string|max:20',
+                'name' => 'nullable|string|max:20',
+                'product_attribute_id' => 'nullable'
             ]);
             // authentication vendor
             $vendor = Vendor::where('user_id', $request->header('id'))->select(['id'])->first();
@@ -67,16 +68,17 @@ class VariantValueController extends Controller
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
             // Find variant value with ownership check
-            $value = AttributeValue::where('id', $id)
+            $attributeValue = AttributeValue::where('id', $id)
                 ->where('vendor_id', $vendor->id)
                 ->first();
-            if (!$value) {
-                return ResponseHelper::Out('failed', 'Variant value not found or not owned by vendor', null, 404);
+            if (!$attributeValue) {
+                return ResponseHelper::Out('failed', 'Attribute value not found or not owned by vendor', null, 404);
             }
-            $value->update([
-                'name' => $request->input('name'),
+            $attributeValue->update([
+                'name' => $request->input('name')?? $attributeValue->name,
+                'product_attribute_id' => $request->input('product_attribute_id')?? $attributeValue->product_attribute_id,
             ]);
-            return ResponseHelper::Out('success', 'Variant value successfully updated', $value, 200);
+            return ResponseHelper::Out('success', 'Attribute value successfully updated', $attributeValue, 200);
         } catch (ValidationException $e) {
             return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
         } catch (Exception $e) {
@@ -84,7 +86,7 @@ class VariantValueController extends Controller
         }
     }
 
-    // Delete Variant Value
+    // DELETE ATTRIBUTE VALUE
     public function destroy(Request $request, $id): JsonResponse
     {
         try {
@@ -98,10 +100,10 @@ class VariantValueController extends Controller
                 ->where('vendor_id', $vendor->id)
                 ->first();
             if (!$value) {
-                return ResponseHelper::Out('failed', 'Variant value not found', null, 404);
+                return ResponseHelper::Out('failed', 'Attribute value not found', null, 404);
             }
             $value->delete();
-            return ResponseHelper::Out('success', 'Variant value successfully deleted', null, 200);
+            return ResponseHelper::Out('success', 'Attribute value successfully deleted', null, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }

@@ -16,7 +16,6 @@ use Illuminate\Validation\ValidationException;
 
 class VendorController extends Controller
 {
-
     //face all vendor
     public function index():JsonResponse
     {

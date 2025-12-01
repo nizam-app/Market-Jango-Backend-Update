@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Driver;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\InvoiceStatusLog;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductClickLog;
@@ -209,9 +210,10 @@ class VendorHomePageController extends Controller
                 'status' => $payment_status,
                 'user_id' => $user_id
             ]);
-            $orderItem->update([
+            $invoiceStatusLogs = InvoiceStatusLog::create([
                 'driver_id'=> $driver_id,
-                'status'=> "AssignedOrder",
+                'invoice_id'=> $invoice->id,
+                'invoice_item_id'=> $orderItem->id
             ]);
             $paymentMethod = PaymentSystem::InitiatePayment($invoice);
             DB::commit();

@@ -1,4 +1,6 @@
 <?php
+
+
 namespace App\Events;
 
 use App\Models\Chat;
@@ -13,42 +15,49 @@ class MessageSent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $message;
+    public Chat $message;
 
     public function __construct(Chat $message)
     {
+        // offer relation load kore nicchi jeno realtime e send hoy
+        $message->load('offer');
+
         $this->message = $message;
-        Log::info('MessageSent event created', [
-            'message_id' => $message->id,
-            'message'  => $message->message,
-            'image'  => $message->public_id?? null,
-            'sender_id'  => $message->sender_id,
-            'receiver_id'=> $message->receiver_id,
-        ]);
     }
 
-    // Broadcast to the receiver's private channel
-    public function broadcastOn()
+    public function broadcastOn(): Channel
     {
         return new Channel('chat.' . $this->message->receiver_id);
     }
 
-//    public function broadcastWith(): array
-//    {
-//        return [
-//            'id' => $this->message->id,
-//            'sender_id' => $this->message->sender_id,
-//            'receiver_id' => $this->message->receiver_id,
-//            'type' => $this->message->type,
-//            'message' => $this->message->message,
-//            'image_path' => $this->message->image_path,
-//            'reply_to' => $this->message->reply_to,
-//            'created_at' => $this->message->created_at->toDateTimeString(),
-//        ];
-//    }
-
     public function broadcastAs(): string
     {
+        Log::info("MessageSent broadcast fired", [
+            'message_id' => $this->message->id,
+            'sender' => $this->message->sender_id,
+            'receiver' => $this->message->receiver_id,
+        ]);
         return 'message.sent';
+    }
+
+    public function broadcastWith(): array
+    {
+        Log::info('MessageSent broadcastWith fired', [
+            'message_id' => $this->message->id,
+            'receiver' => $this->message->receiver_id,
+        ]);
+        // flutter e parse korar jonno ekta clean array pathacchi
+        return [
+            'id' => $this->message->id,
+            'sender_id' => $this->message->sender_id,
+            'receiver_id' => $this->message->receiver_id,
+            'message' => $this->message->message,
+            'image' => $this->message->image,
+            'public_id' => $this->message->public_id,
+            'is_read' => (bool)$this->message->is_read,
+            'is_offer' => (bool)$this->message->is_offer,
+            'offer' => $this->message->offer, // Offer model -> JSON
+            'created_at' => optional($this->message->created_at)->toIso8601String(),
+        ];
     }
 }

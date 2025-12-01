@@ -63,18 +63,19 @@ class ProductVariantController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-    // Store Product attribute
+    // CREATE ATTRIBUTE
     public function store(Request $request): JsonResponse
     {
         try {
             $request->validate([
                 'name' => 'required|string|max:20'
             ]);
-            // Auth user with vendor
+            // GET VENDOR WITH USER
             $vendor = Vendor::where('user_id', $request->header('id'))->select(['id'])->first();
             if (!$vendor) {
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
+            //CREATE ATTRIBUTE AND FIX VENDOR
             $attribute = ProductAttribute::create([
                 'name'       => $request->input('name'),
                 'vendor_id' => $vendor->id,
@@ -86,12 +87,12 @@ class ProductVariantController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-    // Update Product attribute
+    // UPDATE PRODUCT ATTRIBUTE
     public function update(Request $request, $id): JsonResponse
     {
         try {
             $request->validate([
-                'name' => 'required|string|max:20',
+                'name' => 'nullable|string|max:20',
             ]);
             // Auth user with vendor
             $vendor = Vendor::where('user_id', $request->header('id'))->select(['id'])->first();
@@ -99,16 +100,16 @@ class ProductVariantController extends Controller
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
             // Find attribute check vendor
-            $variant = ProductAttribute::where('id', $id)
+            $attribute = ProductAttribute::where('id', $id)
                ->where('vendor_id', $vendor->id)
                 ->first();
-            if (!$variant) {
+            if (!$attribute) {
                 return ResponseHelper::Out('failed', 'Product variant not found', null, 404);
             }
-            $variant->update([
-                'name' => $request->input('name'),
+            $attribute->update([
+                'name' => $request->input('name') ?? $attribute->name,
             ]);
-            return ResponseHelper::Out('success', 'Product variant successfully updated', $variant, 200);
+            return ResponseHelper::Out('success', 'Product variant successfully updated', $attribute, 200);
         } catch (ValidationException $e) {
             return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
         } catch (Exception $e) {

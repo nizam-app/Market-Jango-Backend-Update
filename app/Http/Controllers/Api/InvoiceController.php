@@ -223,6 +223,7 @@ class InvoiceController extends Controller
                     'vendor_id' => $vendorId,
                     'driver_id' => null,
                 ]);
+//                $EachProduct->delete();
             }
             if ($paymentMethod == 'OPU') {
                 DB::commit();

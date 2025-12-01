@@ -23,6 +23,8 @@ return new class extends Migration
             $table->decimal('latitude', 10,6)->nullable();
             $table->enum('business_type', ['Restaurant','Grocery','Pharmacy','Electronics','Clothing','Hardware'])->default('Restaurant');
             $table->foreignId('user_id')->unique()->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();
+            $table->string('cover_image',200)->nullable();
+            $table->string('public_id')->nullable();
             $table->timestamps();
         });
     }

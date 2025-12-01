@@ -15,7 +15,9 @@ class Vendor extends Model
         'business_type',
         'open_time',
         'close_time',
-        'user_id'
+        'user_id',
+        'cover_image',
+        'public_id'
     ];
     public function categories()
     {

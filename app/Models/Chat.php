@@ -10,12 +10,15 @@ class Chat extends Model
     use HasFactory;
 
     protected $fillable = [
-        'sender_id',
-        'receiver_id',
         'message',
         'image',
         'public_id',
-        'is_read'
+        'is_read',
+        'reply_to',
+        'sender_id',
+        'receiver_id',
+        'is_offer',
+        'offer_id',
     ];
     // Optional: sender and receiver relationships
     public function sender() {
@@ -28,5 +31,9 @@ class Chat extends Model
 
     public function replyTo() {
         return $this->belongsTo(Chat::class, 'reply_to');
+    }
+    public function offer()
+    {
+        return $this->belongsTo(Offer::class);
     }
 }

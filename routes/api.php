@@ -48,6 +48,24 @@ Route::put('/admin-reset-password', [AuthController::class, 'adminResetPassword'
 
 //Authentication for all users
 Route::middleware(['tokenVerify'])->group(function () {
+
+    Route::post('/save-fcm', function (Request $request) {
+        $user = User::where('id', $request->header('id'))->first();
+        if (!$user) {
+            return ResponseHelper::Out('failed', 'User not found', null, 404);
+        }
+        $user->update(['fcm_token' => $request->token]);
+        return response()->json($user);
+    });
+    //chat routes
+    Route::prefix('chat')->group(function () {
+        Route::get('/user', [ChatController::class, 'userInbox']);
+        Route::get('/user/search', [ChatController::class, 'userSearch']);
+        Route::post('/send/{id}', [ChatController::class, 'sendMessage']);
+        Route::get('/history/{id}', [ChatController::class, 'getMessages']);
+        //create offer
+        Route::post('/offer/{id}', [ChatController::class, 'createOffer']);
+    });
     Route::get('/translations', function (Request $request) {
         $user_id = $request->header('id');
 
@@ -100,7 +118,7 @@ Route::middleware(['tokenVerify'])->group(function () {
 //    Route::get('/drivers/{id}',   [AdminController::class, 'driverDetails']);
     // Fetch all buyer home page products
     Route::prefix('admin-selects')->group(function () {
-        Route::get('top-categories', [AdminSelectController::class, 'getTopCategory']);
+        Route::get('top-categories', [AdminController::class, 'getTopCategory']);
         Route::get('top-products', [ProductController::class, 'getTopProduct']);
         Route::get('new-items', [ProductController::class, 'getNewItem']);
         Route::get('just-for-you', [ProductController::class, 'getJustForYou']);
@@ -156,13 +174,7 @@ Route::middleware(['tokenVerify'])->group(function () {
         Route::post('/update/{id}', [BannerController::class, 'update']);
         Route::delete('/destroy/{id}', [BannerController::class, 'destroy']);
     });
-    //chat routes
-    Route::prefix('chat')->group(function () {
-        Route::get('/user', [ChatController::class, 'userInbox']);
-        Route::get('/user/search', [ChatController::class, 'userSearch']);
-        Route::post('/send/{id}', [ChatController::class, 'sendMessage']);
-        Route::get('/history/{id}', [ChatController::class, 'getMessages']);
-    });
+
     // notifications routes
     Route::prefix('notification')->group(function () {
         Route::get('/', [NotificationController::class, 'myNotifications']);
@@ -203,15 +215,15 @@ Route::middleware(['tokenVerify'])->group(function () {
                 Route::get('/vendor', [ProductVariantController::class, 'allAttributes']);
                 Route::get('/vendor/show', [ProductVariantController::class, 'show']);
                 Route::post('/create', [ProductVariantController::class, 'store']);
-                Route::post('/update/{id}', [ProductVariantController::class, 'update']);
-                Route::post('/destroy/{id}', [ProductVariantController::class, 'destroy']);
+                Route::put('/update/{attribute_id}', [ProductVariantController::class, 'update']);
+                Route::delete('/destroy/{id}', [ProductVariantController::class, 'destroy']);
             });
             // Variant Value routes
             Route::prefix('attribute-value')->group(function () {
                 Route::get('/vendor', [VariantValueController::class, 'allAttributeValues']);
                 Route::post('/create', [VariantValueController::class, 'store']);
-                Route::post('/update/{id}', [VariantValueController::class, 'update']);
-                Route::post('/destroy/{id}', [VariantValueController::class, 'destroy']);
+                Route::put('/update/{attribute_value_id}', [VariantValueController::class, 'update']);
+                Route::delete('/destroy/{id}', [VariantValueController::class, 'destroy']);
             });
             //product Variant routes
             Route::prefix('delivery-charge')->group(function () {
@@ -237,6 +249,7 @@ Route::middleware(['tokenVerify'])->group(function () {
             Route::get('/', [CartController::class, 'index']);
             Route::post('/create', [CartController::class, 'store']);
             Route::post('/checkout', [CartController::class, 'checkout']);
+            Route::post('/offer/{offerId}/add', [CartController::class, 'addOfferToCart']);
         });
         // wish-list routes
         Route::prefix('wish-list')->group(function () {

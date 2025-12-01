@@ -18,6 +18,9 @@ return new class extends Migration
             $table->string('public_id')->nullable();
             $table->boolean('is_read')->default(false);
             $table->unsignedBigInteger('reply_to')->nullable();
+            $table->boolean('is_offer')->default(false);
+            $table->unsignedBigInteger('offer_id')->nullable();
+            $table->foreign('offer_id')->references('id')->on('offers')->nullOnDelete();
             $table->foreignId('sender_id')->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('receiver_id')->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
