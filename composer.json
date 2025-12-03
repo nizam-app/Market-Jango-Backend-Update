@@ -19,6 +19,7 @@
         "phiki/phiki": "^2.0",
         "pusher/pusher-php-server": "^7.2",
         "rap2hpoutre/laravel-log-viewer": "^2.5",
+        "spatie/async": "^1.8",
         "twilio/sdk": "^8.8"
     },
     "require-dev": {

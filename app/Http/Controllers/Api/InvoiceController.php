@@ -311,10 +311,10 @@ class InvoiceController extends Controller
                     $item->save();
                 }
             }
-            $frontBase = config('app.frontend_url', 'http://103.208.183.253:8000');
-            $redirectUrl = $frontBase.'track-order';
-            return redirect()->away($redirectUrl);
-//            return ResponseHelper::Out('success', 'Payment status updated', $payment, 200);
+//            $frontBase = config('app.frontend_url', 'http://103.208.183.253:8000');
+//            $redirectUrl = $frontBase.'track-order';
+//            return redirect()->away($redirectUrl);
+            return ResponseHelper::Out('success', 'Payment status updated', $payment, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }

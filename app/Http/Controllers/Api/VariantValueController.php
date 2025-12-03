@@ -59,8 +59,7 @@ class VariantValueController extends Controller
     {
         try {
             $request->validate([
-                'name' => 'nullable|string|max:20',
-                'product_attribute_id' => 'nullable'
+                'name' => 'nullable|string|max:20'
             ]);
             // authentication vendor
             $vendor = Vendor::where('user_id', $request->header('id'))->select(['id'])->first();
@@ -75,8 +74,7 @@ class VariantValueController extends Controller
                 return ResponseHelper::Out('failed', 'Attribute value not found or not owned by vendor', null, 404);
             }
             $attributeValue->update([
-                'name' => $request->input('name')?? $attributeValue->name,
-                'product_attribute_id' => $request->input('product_attribute_id')?? $attributeValue->product_attribute_id,
+                'name' => $request->input('name')?? $attributeValue->name
             ]);
             return ResponseHelper::Out('success', 'Attribute value successfully updated', $attributeValue, 200);
         } catch (ValidationException $e) {
