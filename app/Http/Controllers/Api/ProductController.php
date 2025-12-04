@@ -165,7 +165,8 @@ class ProductController extends Controller
                 'color.*' => 'string',
                 'size' => 'required|array',
                 'size.*' => 'string',
-                'category_id' => 'nullable|exists:categories,id'
+                'category_id' => 'nullable|exists:categories,id',
+                'stock' => 'nullable|integer|min:0',
             ]);
             $userId = $request->header('id');
             $userEmail = $request->header('email');
@@ -187,7 +188,8 @@ class ProductController extends Controller
                 'image' => $imagePath['url'],
                 'public_id' => $imagePath['public_id'],
                 'vendor_id' => $user->vendor->id,
-                'category_id' => $request->input('category_id')
+                'category_id' => $request->input('category_id'),
+                'stock' => $request->input('stock')
             ]);
             if ($request->hasFile('files')) {
                 $files = $request->file('files');
@@ -262,6 +264,7 @@ class ProductController extends Controller
                 'color' => isset($request->color) ? $request->input('color') : $product->color,
                 'size' => isset($request->size) ? $request->input('size') : $product->size,
                 'category_id' => $request->input('category_id', $product->category_id),
+                'stock' => $request->input('stock')
             ]);
             // Handle additional files
             if ($request->hasFile('files')) {

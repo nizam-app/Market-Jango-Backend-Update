@@ -24,7 +24,8 @@ class Product extends Model
         'new_item',
         'just_for_you',
         'top_product',
-        'category_id'
+        'category_id',
+        'stock'
     ];
     protected $casts = [
         'color' => 'array',

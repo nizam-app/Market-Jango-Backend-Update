@@ -12,6 +12,7 @@ use App\Models\Driver;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoiceStatusLog;
+use App\Models\Product;
 use App\Models\User;
 use App\Models\Vendor;
 use Exception;
@@ -145,111 +146,215 @@ class InvoiceController extends Controller
         }
     }
     //create order
-    function InvoiceCreate(Request $request)
+    public function InvoiceCreate(Request $request)
     {
         DB::beginTransaction();
         try {
             $user_id = $request->header('id');
             $user_email = $request->header('email');
-            $Profile = User::where('id', '=', $user_id)->with('buyer')->first();
+
+            $Profile = User::where('id', $user_id)->with('buyer')->first();
             if (!$Profile) {
                 return ResponseHelper::Out('failed', 'User not found', null, 404);
             }
-            $tran_id = uniqid();
-            $currency = "USD";
-            $delivery_status = 'Pending';
-            $payment_status = 'Pending';
+
             $buyer = $Profile->buyer;
             $buyerId = $buyer->id;
-            $drop_lat = $buyer->ship_latitude;
-            $drop_long = $buyer->ship_longitude;
-            $cus_name = $Profile->name;
-            $cus_phone = $Profile->phone;
-            $ship_address = $buyer->ship_location;
-            $paymentMethod =$request->input('payment_method');
-            // Payable Calculation
+
+            $tran_id = uniqid();
+            $paymentMethod = $request->input('payment_method');
+
             $total = 0;
-            $cartList = Cart::where('buyer_id', $buyerId)
-                ->where('status', 'active')->get();
+            $cartList = Cart::where('buyer_id', $buyerId)->where('status', 'active')->get();
+
             if ($cartList->isEmpty()) {
                 return ResponseHelper::Out('failed', 'Cart not found', null, 404);
             }
+
             foreach ($cartList as $cartItem) {
-                $total = $total + $cartItem->price + $cartItem->delivery_charge;
+                $total += $cartItem->price + $cartItem->delivery_charge;
             }
-            $vat = ($total * 0) / 100;
-            $payable = $total + $vat;
+
+            $vat = 0;
+            $payable = $total;
+
             $invoice = Invoice::create([
-                'cus_name' => $cus_name,
+                'cus_name' => $Profile->name,
                 'cus_email' => $user_email,
-                'cus_phone' => $cus_phone,
+                'cus_phone' => $Profile->phone,
                 'total' => $total,
                 'vat' => $vat,
                 'payable' => $payable,
                 'tax_ref' => $tran_id,
-                'currency' => $currency,
+                'currency' => 'USD',
                 'payment_method' => $paymentMethod,
-                'status' => $payment_status,
+                'status' => 'Pending',
                 'user_id' => $user_id
             ]);
-            $invoiceID = $invoice->id;
-            foreach ($cartList as $EachProduct) {
-                $vendorId = $EachProduct['vendor_id'];
-                $vendor = Vendor::where('id', $vendorId)->select('id', 'longitude','latitude','address')->first();
-                $pickup_lat = $vendor->latitude;
-                $pickup_long = $vendor->longitude;
-                $vendorLocation = $vendor->address;
-                $distance = CalculateDistance::Distance($pickup_lat, $pickup_long, $drop_lat, $drop_long);
+
+            foreach ($cartList as $item) {
+
+                // ⭐ PRODUCT STOCK CHECK
+                $product = Product::find($item->product_id);
+                if (!$product) {
+                    DB::rollBack();
+                    return ResponseHelper::Out('failed', 'Product not found', null, 404);
+                }
+
+                if ($product->stock < $item->quantity) {
+                    DB::rollBack();
+                    return ResponseHelper::Out(
+                        'failed',
+                        "Not enough stock for product ID {$item->product_id}",
+                        null,
+                        400
+                    );
+                }
+
+                // ⭐ REDUCE STOCK
+                $product->stock -= $item->quantity;
+                $product->save();
+
+                // CREATE INVOICE ITEM
                 InvoiceItem::create([
-                    'cus_name' => $cus_name,
+                    'cus_name' => $Profile->name,
                     'cus_email' => $user_email,
-                    'cus_phone' => $cus_phone,
-                    'pickup_address' => $vendorLocation,
-                    'ship_address' => $ship_address,
-                    'ship_latitude' => $drop_lat,
-                    'ship_longitude' => $drop_long,
-                    'distance' => $distance,
-                    'quantity' => $EachProduct['quantity'],
-                    'status' => $delivery_status,
-                    'delivery_charge' => $EachProduct['delivery_charge'],
-                    'sale_price' => $EachProduct['price'],
-                    'total_pay' => $EachProduct['price'] + $EachProduct['delivery_charge'],
+                    'cus_phone' => $Profile->phone,
+                    'quantity' => $item->quantity,
+                    'status' => 'Pending',
+                    'delivery_charge' => $item->delivery_charge,
+                    'sale_price' => $item->price,
+                    'total_pay' => $item->price + $item->delivery_charge,
                     'tran_id' => $tran_id,
                     'user_id' => $user_id,
-                    'invoice_id' => $invoiceID,
-                    'payment_proof_id' => null,
-                    'payment_method' => $paymentMethod,
-                    'product_id' => $EachProduct['product_id'],
-                    'vendor_id' => $vendorId,
-                    'driver_id' => null,
+                    'invoice_id' => $invoice->id,
+                    'product_id' => $item->product_id,
+                    'vendor_id' => $item->vendor_id,
                 ]);
-//                $EachProduct->delete();
-            }
-            if ($paymentMethod == 'OPU') {
-                DB::commit();
-                return ResponseHelper::Out('success', 'Order placed with Cash On Delivery', [
-                    'paymentMethod' => $invoice,
-                    'payable' => $payable,
-                    'vat' => $vat,
-                    'total' => $total
-                ], 200);
 
-            } else {
-                // FlutterWave Payment
-                $paymentMethod = PaymentSystem::InitiatePayment($invoice);
-                DB::commit();
-                return ResponseHelper::Out('success', 'Order placed with Online payment', [
-                    'paymentMethod' => $paymentMethod,
-                    'payable' => $payable,
-                    'vat' => $vat,
-                    'total' => $total
-                ], 200);
+                // DELETE CART
+                $item->delete();
             }
+
+            DB::commit();
+
+            return ResponseHelper::Out('success', 'Order placed successfully', [
+                'invoice' => $invoice,
+                'total' => $total,
+                'vat' => $vat,
+                'payable' => $payable
+            ], 200);
+
         } catch (Exception $e) {
             DB::rollBack();
             return ResponseHelper::Out('fail', 'Something went wrong', $e->getMessage(), 200);
         }
     }
+//    function InvoiceCreate(Request $request)
+//    {
+//        DB::beginTransaction();
+//        try {
+//            $user_id = $request->header('id');
+//            $user_email = $request->header('email');
+//            $Profile = User::where('id', '=', $user_id)->with('buyer')->first();
+//            if (!$Profile) {
+//                return ResponseHelper::Out('failed', 'User not found', null, 404);
+//            }
+//            $tran_id = uniqid();
+//            $currency = "USD";
+//            $delivery_status = 'Pending';
+//            $payment_status = 'Pending';
+//            $buyer = $Profile->buyer;
+//            $buyerId = $buyer->id;
+//            $drop_lat = $buyer->ship_latitude;
+//            $drop_long = $buyer->ship_longitude;
+//            $cus_name = $Profile->name;
+//            $cus_phone = $Profile->phone;
+//            $ship_address = $buyer->ship_location;
+//            $paymentMethod =$request->input('payment_method');
+//            // Payable Calculation
+//            $total = 0;
+//            $cartList = Cart::where('buyer_id', $buyerId)
+//                ->where('status', 'active')->get();
+//            if ($cartList->isEmpty()) {
+//                return ResponseHelper::Out('failed', 'Cart not found', null, 404);
+//            }
+//            foreach ($cartList as $cartItem) {
+//                $total = $total + $cartItem->price + $cartItem->delivery_charge;
+//            }
+//            $vat = ($total * 0) / 100;
+//            $payable = $total + $vat;
+//            $invoice = Invoice::create([
+//                'cus_name' => $cus_name,
+//                'cus_email' => $user_email,
+//                'cus_phone' => $cus_phone,
+//                'total' => $total,
+//                'vat' => $vat,
+//                'payable' => $payable,
+//                'tax_ref' => $tran_id,
+//                'currency' => $currency,
+//                'payment_method' => $paymentMethod,
+//                'status' => $payment_status,
+//                'user_id' => $user_id
+//            ]);
+//            $invoiceID = $invoice->id;
+//            foreach ($cartList as $EachProduct) {
+//                $vendorId = $EachProduct['vendor_id'];
+//                $vendor = Vendor::where('id', $vendorId)->select('id', 'longitude','latitude','address')->first();
+//                $pickup_lat = $vendor->latitude;
+//                $pickup_long = $vendor->longitude;
+//                $vendorLocation = $vendor->address;
+//                $distance = CalculateDistance::Distance($pickup_lat, $pickup_long, $drop_lat, $drop_long);
+//                InvoiceItem::create([
+//                    'cus_name' => $cus_name,
+//                    'cus_email' => $user_email,
+//                    'cus_phone' => $cus_phone,
+//                    'pickup_address' => $vendorLocation,
+//                    'ship_address' => $ship_address,
+//                    'ship_latitude' => $drop_lat,
+//                    'ship_longitude' => $drop_long,
+//                    'distance' => $distance,
+//                    'quantity' => $EachProduct['quantity'],
+//                    'status' => $delivery_status,
+//                    'delivery_charge' => $EachProduct['delivery_charge'],
+//                    'sale_price' => $EachProduct['price'],
+//                    'total_pay' => $EachProduct['price'] + $EachProduct['delivery_charge'],
+//                    'tran_id' => $tran_id,
+//                    'user_id' => $user_id,
+//                    'invoice_id' => $invoiceID,
+//                    'payment_proof_id' => null,
+//                    'payment_method' => $paymentMethod,
+//                    'product_id' => $EachProduct['product_id'],
+//                    'vendor_id' => $vendorId,
+//                    'driver_id' => null,
+//                ]);
+//                $EachProduct->delete();
+//            }
+//            if ($paymentMethod == 'OPU') {
+//                DB::commit();
+//                return ResponseHelper::Out('success', 'Order placed with Cash On Delivery', [
+//                    'paymentMethod' => $invoice,
+//                    'payable' => $payable,
+//                    'vat' => $vat,
+//                    'total' => $total
+//                ], 200);
+//
+//            } else {
+//                // FlutterWave Payment
+//                $paymentMethod = PaymentSystem::InitiatePayment($invoice);
+//                DB::commit();
+//                return ResponseHelper::Out('success', 'Order placed with Online payment', [
+//                    'paymentMethod' => $paymentMethod,
+//                    'payable' => $payable,
+//                    'vat' => $vat,
+//                    'total' => $total
+//                ], 200);
+//            }
+//        } catch (Exception $e) {
+//            DB::rollBack();
+//            return ResponseHelper::Out('fail', 'Something went wrong', $e->getMessage(), 200);
+//        }
+//    }
     //flutter wave redirect url method
     public function handleFlutterWaveResponse(Request $request)
     {

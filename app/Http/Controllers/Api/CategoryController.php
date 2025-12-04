@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Vendor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use App\Http\Controllers\Controller;
 use Exception;
@@ -42,6 +43,7 @@ class CategoryController extends Controller
     // Store Category
     public function store(Request $request): JsonResponse
     {
+        DB::beginTransaction();
         try {
             $request->validate([
                 'name' => 'required|string|max:50',
@@ -73,10 +75,13 @@ class CategoryController extends Controller
                     ]);
                 }
             }
+            DB::commit();
             return ResponseHelper::Out('success', 'Category successfully created', $category, 201);
         } catch (ValidationException $e) {
+            DB::rollBack();
             return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
         } catch (Exception $e) {
+            DB::rollBack();
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }

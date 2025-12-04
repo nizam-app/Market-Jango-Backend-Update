@@ -83,7 +83,6 @@ class VariantValueController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
     // DELETE ATTRIBUTE VALUE
     public function destroy(Request $request, $id): JsonResponse
     {

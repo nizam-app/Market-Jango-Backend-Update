@@ -9,7 +9,7 @@ use App\Models\Driver;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoiceStatusLog;
-use App\Models\OrderItem;
+use App\Models\Location;
 use App\Models\Product;
 use App\Models\ProductClickLog;
 use App\Models\User;
@@ -128,19 +128,74 @@ class VendorHomePageController extends Controller
                 'query' => 'required|string|max:100'
             ]);
             $query = $request->input('query');
-
-            $drivers = User::where('user_type', 'driver')->where('name', 'like', "%{$query}%")
-                ->with(['driver'])
-            ->get();
-
-            if (!$drivers) {
-                return ResponseHelper::Out('success', 'No driver found', [], 200);
+            // Step 1: Search users by name
+            $users = User::where('name', 'like', "%{$query}%")
+                ->where('user_type', 'vendor') // only vendors
+                ->get();
+            if ($users->isEmpty()) {
+                return ResponseHelper::Out('success', 'No user found', [], 200);
             }
+            // Step 2: Collect vendor addresses
+            $vendorIds = $users->pluck('id')->toArray();
+            $vendors = Vendor::whereIn('user_id', $vendorIds)->get();
+
+            if ($vendors->isEmpty()) {
+                return ResponseHelper::Out('success', 'No vendor found', [], 200);
+            }
+            $vendorAddresses = $vendors->pluck('address')->toArray();
+            // Step 3: Match vendor addresses with locations table
+            $locations = Location::whereIn('name', $vendorAddresses)->get();
+            if ($locations->isEmpty()) {
+                return ResponseHelper::Out('success', 'No locations found', [], 200);
+            }
+            // Step 4: Collect route_ids from locations
+            $routeIds = $locations->pluck('route_id')->unique()->toArray();
+            // Step 5: Fetch drivers under these routes
+            $drivers = Driver::whereIn('route_id', $routeIds)->with('user')->get()->map(function($driver) {
+                return [
+                    // Driver table er shob data
+                    'driver_id' => $driver->id,
+                    'car_name' => $driver->car_name,
+                    'car_model' => $driver->car_model,
+                    'location' => $driver->location,
+                    'price' => $driver->price,
+                    'description' => $driver->description,
+                    'rating' => $driver->rating,
+                    'user_id' => $driver->user_id,
+                    'route_id' => $driver->route_id,
+                    'created_at' => $driver->created_at,
+                    'updated_at' => $driver->updated_at,
+                    // User table er shob relevant data
+                    'user' => $driver->user ? [
+                        'id' => $driver->user->id,
+                        'user_type' => $driver->user->user_type,
+                        'last_active_at' => $driver->user->last_active_at,
+                        'name' => $driver->user->name,
+                        'email' => $driver->user->email,
+                        'phone' => $driver->user->phone,
+                        'otp' => $driver->user->otp,
+                        'phone_verified_at' => $driver->user->phone_verified_at,
+                        'password' => $driver->user->password,
+                        'language' => $driver->user->language,
+                        'image' => $driver->user->image,
+                        'public_id' => $driver->user->public_id,
+                        'is_read' => $driver->user->is_read,
+                        'is_active' => $driver->user->is_active,
+                        'status' => $driver->user->status,
+                        'fcm_token' => $driver->user->fcm_token,
+                        'expires_at' => $driver->user->expires_at,
+                        'invite_token' => $driver->user->invite_token,
+                        'must_change_password' => $driver->user->must_change_password,
+                        'remember_token' => $driver->user->remember_token,
+                        'created_at' => $driver->user->created_at,
+                        'updated_at' => $driver->user->updated_at,
+                    ] : null
+                ];
+            });
             return ResponseHelper::Out('success', 'Driver data fetched successfully', $drivers, 200);
 
         } catch (ValidationException $e) {
             return ResponseHelper::Out('failed', 'Validation error', $e->errors(), 422);
-
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
