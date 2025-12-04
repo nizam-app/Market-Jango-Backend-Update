@@ -142,18 +142,14 @@ class ChatController extends Controller
                 'image.*' => 'nullable|mimes:jpg,jpeg,png,webp,pdf,doc,docx,xls,xlsx|max:10240',
                 'reply_to' => 'nullable|exists:chats,id',
             ]);
-
             $sender = User::find($request->header('id'));
             $receiver = User::find($receiverId);
-
             if (!$sender || !$receiver) {
                 return ResponseHelper::Out('failed', 'User not found', null, 404);
             }
-
             // Handle image/file upload
             $imagePath = null;
             $publicId = null;
-
             if ($request->hasFile('image')) {
                 $uploadedFiles = FileHelper::upload($request->file('image'), 'chat');
                 $firstFile = $uploadedFiles[0] ?? null;
@@ -161,7 +157,6 @@ class ChatController extends Controller
                 $imagePath = $firstFile['url'] ?? null;
                 $publicId  = $firstFile['public_id'] ?? null;
             }
-
             $message = Chat::create([
                 'sender_id'  => $sender->id,
                 'receiver_id'=> $receiver->id,
@@ -171,7 +166,6 @@ class ChatController extends Controller
                 'reply_to'   => $request->reply_to ?? null,
             ]);
             broadcast(new MessageSent($message))->toOthers();
-
             return ResponseHelper::Out('success', 'Message sent successfully', $message, 200);
         } catch (ValidationException $e) {
             return ResponseHelper::Out('failed', 'Validation failed', $e->errors(), 422);

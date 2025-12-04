@@ -64,7 +64,7 @@ Route::middleware(['tokenVerify'])->group(function () {
         Route::post('/send/{id}', [ChatController::class, 'sendMessage']);
         Route::get('/history/{id}', [ChatController::class, 'getMessages']);
         //create offer
-        Route::post('/offer/{id}', [ChatController::class, 'createOffer']);
+        Route::post('/offer/{receiver_id}', [ChatController::class, 'createOffer']);
     });
     Route::get('/translations', function (Request $request) {
         $user_id = $request->header('id');
@@ -280,6 +280,8 @@ Route::middleware(['tokenVerify'])->group(function () {
         Route::get('/admin', [AdminController::class, 'index']);
         Route::get('/suspended/vendor', [AdminController::class, 'suspendedVendor']);
         Route::put('/vendor/status-update/{vendor_id}', [AdminController::class, 'vendorStatusUpdate']);
+        Route::put('/buyer/status-update/{buyer_id}', [AdminController::class, 'buyerStatusUpdate']);
+        Route::put('/transport/status-update/{transport_id}', [AdminController::class, 'transportStatusUpdate']);
         Route::put('/driver/status-update/{driver_id}', [AdminController::class, 'driverStatusUpdate']);
         Route::post('/product-status-update/{id}', [AdminController::class, 'productStatusUpdate']);
         Route::get('/vendor-request-count', [AdminController::class, 'vendorRequestCount']);
@@ -291,6 +293,8 @@ Route::middleware(['tokenVerify'])->group(function () {
         Route::get('/request-product-details/{id}', [AdminController::class, 'requestProductDetails']);
         Route::get('/request-driver', [AdminController::class, 'requestDriver']);
         Route::get('/request-driver/show', [AdminController::class, 'requestDriverDetails']);
+        Route::get('/buyers', [AdminController::class, 'buyers']);
+        Route::get('/transports', [AdminController::class, 'transports']);
         Route::get('/suspended-driver', [AdminController::class, 'suspendedDriver']);
         Route::get('/suspended-driver/show', [AdminController::class, 'suspendedDriverDetails']);
         Route::put('/admin-select-update/{id}', [AdminSelectController::class, 'adminSelectUpdate']);

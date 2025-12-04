@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\NotificationSent;
 use App\Helpers\FileHelper;
 use App\Helpers\JWTToken;
+use App\Helpers\NotificationHelper;
 use App\Helpers\ResponseHelper;
 use App\Helpers\TwilioService;
 use App\Http\Controllers\Controller;
@@ -11,6 +13,7 @@ use App\Mail\OTPSend;
 use App\Models\Admin;
 use App\Models\Buyer;
 use App\Models\Driver;
+use App\Models\Notification;
 use App\Models\Transport;
 use App\Models\User;
 use App\Models\UserImage;
@@ -68,34 +71,33 @@ class AuthController extends Controller
                 'user_type' => 'required|in:buyer,vendor,driver,transport,admin',
             ]);
             $userType =  $request->input('user_type');
-            if($userType==='admin'){
-                $role = $request->role;
-                // Create the user
-                $user = User::create([
-                    'user_type' => 'admin',
-                    'name' => $request->name,
-                    'email' => $request->email,
-                    'status' => 'Approved',
-                    'password' => bcrypt($request->password),
-                ]);
-
-                // Create admin in separate table
-                $admin = Admin::create([
-                    'user_id'           => $user->id,
-                    'role'              => $role ?? 'admin',
-                    'date_of_birth'     => $request->input('date_of_birth'),
-                    'present_address'   => $request->input('present_address'),
-                    'permanent_address' => $request->input('permanent_address'),
-                    'city'              => $request->input('city'),
-                    'postal_code'       => $request->input('postal_code'),
-                    'country'           => $request->input('country'),
-                ]);
-                // Assign role via spatie
-                $user->assignRole($role??'admin');
-                $token = JWTToken::registerToken($user->user_type, $user->id);
-                $sendToken = 'Bearer ' . $token;
-                return ResponseHelper::Out('success','admin created successfully',['uer'=>$user, 'admin'=> $admin, 'token'=> $sendToken],201)->cookie('token', $sendToken, 525600);
-            }
+//            if($userType==='admin'){
+//                $role = $request->role;
+//                // Create the user
+//                $user = User::create([
+//                    'user_type' => 'admin',
+//                    'name' => $request->name,
+//                    'email' => $request->email,
+//                    'status' => 'Approved',
+//                    'password' => bcrypt($request->password),
+//                ]);
+//                // Create admin in separate table
+//                $admin = Admin::create([
+//                    'user_id'           => $user->id,
+//                    'role'              => $role ?? 'admin',
+//                    'date_of_birth'     => $request->input('date_of_birth'),
+//                    'present_address'   => $request->input('present_address'),
+//                    'permanent_address' => $request->input('permanent_address'),
+//                    'city'              => $request->input('city'),
+//                    'postal_code'       => $request->input('postal_code'),
+//                    'country'           => $request->input('country'),
+//                ]);
+//                // Assign role via spatie
+//                $user->assignRole($role??'admin');
+//                $token = JWTToken::registerToken($user->user_type, $user->id);
+//                $sendToken = 'Bearer ' . $token;
+//                return ResponseHelper::Out('success','admin created successfully',['uer'=>$user, 'admin'=> $admin, 'token'=> $sendToken],201)->cookie('token', $sendToken, 525600);
+//            }
             $user = User::create([
                 'user_type' =>$userType,
             ]);
@@ -261,33 +263,86 @@ class AuthController extends Controller
             $user->update([
                 'password' => Hash::make($request->input('password'))
             ]);
-            //update status and throw message
-            if ($user->user_type === 'buyer') {
-                Buyer::create([
-                    'user_id' => $user->id,
-                ]);
-                // Auto-approve
-                $user->update(['status' => 'Approved']);
-                $title    = $congratulationMessage;
-                $subtitle = $confirmMessage;
-            } elseif ($user->user_type === 'transport'){
-                Transport::create([
-                    'user_id' => $user->id,
-                ]);
-                $user->update(['status' => 'Approved']);
-                $title    = $congratulationMessage;
-                $subtitle = $confirmMessage;
+            $receiverIds = User::whereIn('user_type', ['admin', 'owner'])
+                ->pluck('id')
+                ->toArray();
+            // update status and throw message
+            switch ($user->user_type) {
+
+                case 'buyer':
+                    Buyer::create([
+                        'user_id' => $user->id,
+                    ]);
+
+                    // Auto-approve
+                    $user->update(['status' => 'Approved']);
+                    $title    = $congratulationMessage;
+                    $subtitle = $confirmMessage;
+                    break;
+
+                case 'transport':
+                    Transport::create([
+                        'user_id' => $user->id,
+                    ]);
+
+                    $user->update(['status' => 'Approved']);
+                    $title    = $congratulationMessage;
+                    $subtitle = $confirmMessage;
+                    break;
+
+                case 'vendor':
+                    $user->update(['status' => 'Pending']);
+                    $title    = $waitMessage;
+                    $subtitle = $reviewMessage;
+                    // SEND NOTIFICATION
+                    $senderId=$userId;
+                    $message='vendor request for accept';
+                    $name=$user->name;
+                    NotificationHelper::sendNotifications($senderId,$receiverIds,$message, $name );
+                    break;
+                case 'driver':
+                    $user->update(['status' => 'Pending']);
+                    $title    = $waitMessage;
+                    $subtitle = $reviewMessage;
+                    // SEND NOTIFICATION
+                    $senderId=$userId;
+                    $message='driver request for accept';
+                    $name=$user->name;
+                    NotificationHelper::sendNotifications($senderId,$receiverIds,$message, $name );
+                    break;
+
+                default:
+                    return ResponseHelper::Out('error', 'Invalid user type', [
+                        'user_type' => $user->user_type
+                    ], 400);
             }
-            elseif ($user->user_type === 'vendor' || $user->user_type === 'driver') {
-                // Under review
-                $user->update(['status' => 'Pending']);
-                $title    = $waitMessage;
-                $subtitle = $reviewMessage;
-            } else {
-                return ResponseHelper::Out('error', 'Invalid user type', [
-                    'user_type' => $user->user_type
-                ], 400);
-            }
+//            //update status and throw message
+//            if ($user->user_type === 'buyer') {
+//                Buyer::create([
+//                    'user_id' => $user->id,
+//                ]);
+//                // Auto-approve
+//                $user->update(['status' => 'Approved']);
+//                $title    = $congratulationMessage;
+//                $subtitle = $confirmMessage;
+//            } elseif ($user->user_type === 'transport'){
+//                Transport::create([
+//                    'user_id' => $user->id,
+//                ]);
+//                $user->update(['status' => 'Approved']);
+//                $title    = $congratulationMessage;
+//                $subtitle = $confirmMessage;
+//            }
+//            elseif ($user->user_type === 'vendor' || $user->user_type === 'driver') {
+//                // Under review
+//                $user->update(['status' => 'Pending']);
+//                $title    = $waitMessage;
+//                $subtitle = $reviewMessage;
+//            } else {
+//                return ResponseHelper::Out('error', 'Invalid user type', [
+//                    'user_type' => $user->user_type
+//                ], 400);
+//            }
             $payload = [
                 'user'     => $user->fresh(),
                 'title'    => $title,

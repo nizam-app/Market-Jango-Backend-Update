@@ -8,6 +8,7 @@ use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Mail\AdminInviteMail;
 use App\Models\Admin;
+use App\Models\Buyer;
 use App\Models\Category;
 use App\Models\Driver;
 use App\Models\Invoice;
@@ -15,6 +16,7 @@ use App\Models\InvoiceItem;
 use App\Models\InvoiceStatusLog;
 use App\Models\Product;
 use App\Models\Role;
+use App\Models\Transport;
 use App\Models\User;
 use App\Models\Vendor;
 use Exception;
@@ -222,7 +224,6 @@ class AdminController extends Controller
                 'images:id,user_id,user_type,image_path,file_type',
             ])
             ->where('id', $id)
-//            ->select('id', 'user_id', 'country', 'address', 'business_name', 'business_type')
             ->first();
             if (!$vendor) {
                 return ResponseHelper::Out('failed', 'Vendor not found for this user ID', null, 404);
@@ -230,7 +231,7 @@ class AdminController extends Controller
             //get user status
             $user = $vendor->user;
             //update status
-            $user->update(['status' => $request->input('status')]);
+            $user->update(['status' => $request->input('status') ?? $user->status]);
             return ResponseHelper::Out('success', 'Vendor status update successfully', $vendor, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
@@ -245,7 +246,6 @@ class AdminController extends Controller
                 'images:id,user_id,user_type,image_path,file_type',
             ])
             ->where('id', $id)
-//            ->select('id', 'user_id', 'country', 'address', 'business_name', 'business_type')
             ->first();
             if (!$driver) {
                 return ResponseHelper::Out('failed', 'Driver not found for this user ID', null, 404);
@@ -253,8 +253,72 @@ class AdminController extends Controller
             //get user status
             $user = $driver->user;
             //update status
-            $user->update(['status' => $request->input('status')]);
+            $user->update(['status' => $request->input('status')] ?? $user->status);
             return ResponseHelper::Out('success', 'Driver status update successfully', $driver, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    //BUYER STATUS UPDATE
+    public function buyerStatusUpdate(Request $request, $id): JsonResponse
+    {
+        try {
+            $buyer = Buyer::with(['user'])
+                ->where('id', $id)
+                ->first();
+            if (!$buyer) {
+                return ResponseHelper::Out('failed', 'Buyer not found for this user ID', null, 404);
+            }
+            //get user status
+            $user = $buyer->user;
+            //update status
+            $user->update(['status' => $request->input('status') ?? $user->status]);
+            return ResponseHelper::Out('success', 'Buyer status update successfully', $buyer, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    //TRANSPORT STATUS UPDATE
+    public function transportStatusUpdate(Request $request, $id): JsonResponse
+    {
+        try {
+            $transport = Transport::with(['user'])
+                ->where('id', $id)
+                ->first();
+            if (!$transport) {
+                return ResponseHelper::Out('failed', 'Transport not found for this user ID', null, 404);
+            }
+            //get user status
+            $user = $transport->user;
+            //update status
+            $user->update(['status' => $request->input('status') ?? $user->status]);
+            return ResponseHelper::Out('success', 'Transport status update successfully', $transport, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    //GET ALL BUYER
+    public function buyers(Request $request): JsonResponse
+    {
+        try {
+            $buyer = Buyer::with('user')->paginate('10');
+            if ($buyer->isEmpty()) {
+                return ResponseHelper::Out('success', 'Buyer not found', null, 200);
+            }
+            return ResponseHelper::Out('success', 'Buyer successfully fetched', $buyer, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    //GET ALL TRANSPORT
+    public function transports(Request $request): JsonResponse
+    {
+        try {
+            $transport = Transport::with('user')->paginate('10');
+            if ($transport->isEmpty()) {
+                return ResponseHelper::Out('success', 'Transport not found', null, 200);
+            }
+            return ResponseHelper::Out('success', 'Transport successfully fetched', $transport, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }

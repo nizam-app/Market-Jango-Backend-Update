@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Helpers\CalculateDistance;
+use App\Helpers\NotificationHelper;
 use App\Helpers\PaymentSystem;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
@@ -80,6 +81,21 @@ class InvoiceController extends Controller
                 'current_longitude' => $request->input('current_longitude') ?? $invoice->current_longitude,
                 'current_address' => $request->input('current_address') ?? $invoice->current_address,
             ]);
+            return ResponseHelper::Out('success', 'Status updated successfully', $invoice, 200);
+        }
+        if($status=='Complete'){
+            // Update status
+            $invoice->update([
+                'status' =>$status,
+                'note' =>$request->input('note')
+            ]);
+            // SEND NOTIFICATION
+            $senderId=$user_id;
+            $receiverId=$user_id;
+            $message = 'You order is delivered';
+            $name=$invoice->cus_name;
+            NotificationHelper::sendNotification($senderId,$receiverId,$message, $name );
+            return ResponseHelper::Out('success', 'Status updated successfully', $invoice, 200);
         }
         if($status=='Ready for delivery' && $invoice->payment_method == 'OPU'){
             $invoice->update([
@@ -87,12 +103,8 @@ class InvoiceController extends Controller
                 'note' => $request->input('note') ?? $invoice->note,
                 'payment_proof_id' => $request->input('payment_proof_id') ?? $invoice->payment_proof_id,
             ]);
+            return ResponseHelper::Out('success', 'Status updated successfully', $invoice, 200);
         }
-        // Update status
-        $invoice->update([
-            'status' =>$status,
-            'note' =>$request->input('note')
-        ]);
         return ResponseHelper::Out('success', 'Status updated successfully', $invoice, 200);
         }catch (ValidationException $e) {
             return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
@@ -146,215 +158,241 @@ class InvoiceController extends Controller
         }
     }
     //create order
-    public function InvoiceCreate(Request $request)
-    {
-        DB::beginTransaction();
-        try {
-            $user_id = $request->header('id');
-            $user_email = $request->header('email');
-
-            $Profile = User::where('id', $user_id)->with('buyer')->first();
-            if (!$Profile) {
-                return ResponseHelper::Out('failed', 'User not found', null, 404);
-            }
-
-            $buyer = $Profile->buyer;
-            $buyerId = $buyer->id;
-
-            $tran_id = uniqid();
-            $paymentMethod = $request->input('payment_method');
-
-            $total = 0;
-            $cartList = Cart::where('buyer_id', $buyerId)->where('status', 'active')->get();
-
-            if ($cartList->isEmpty()) {
-                return ResponseHelper::Out('failed', 'Cart not found', null, 404);
-            }
-
-            foreach ($cartList as $cartItem) {
-                $total += $cartItem->price + $cartItem->delivery_charge;
-            }
-
-            $vat = 0;
-            $payable = $total;
-
-            $invoice = Invoice::create([
-                'cus_name' => $Profile->name,
-                'cus_email' => $user_email,
-                'cus_phone' => $Profile->phone,
-                'total' => $total,
-                'vat' => $vat,
-                'payable' => $payable,
-                'tax_ref' => $tran_id,
-                'currency' => 'USD',
-                'payment_method' => $paymentMethod,
-                'status' => 'Pending',
-                'user_id' => $user_id
-            ]);
-
-            foreach ($cartList as $item) {
-
-                // ⭐ PRODUCT STOCK CHECK
-                $product = Product::find($item->product_id);
-                if (!$product) {
-                    DB::rollBack();
-                    return ResponseHelper::Out('failed', 'Product not found', null, 404);
-                }
-
-                if ($product->stock < $item->quantity) {
-                    DB::rollBack();
-                    return ResponseHelper::Out(
-                        'failed',
-                        "Not enough stock for product ID {$item->product_id}",
-                        null,
-                        400
-                    );
-                }
-
-                // ⭐ REDUCE STOCK
-                $product->stock -= $item->quantity;
-                $product->save();
-
-                // CREATE INVOICE ITEM
-                InvoiceItem::create([
-                    'cus_name' => $Profile->name,
-                    'cus_email' => $user_email,
-                    'cus_phone' => $Profile->phone,
-                    'quantity' => $item->quantity,
-                    'status' => 'Pending',
-                    'delivery_charge' => $item->delivery_charge,
-                    'sale_price' => $item->price,
-                    'total_pay' => $item->price + $item->delivery_charge,
-                    'tran_id' => $tran_id,
-                    'user_id' => $user_id,
-                    'invoice_id' => $invoice->id,
-                    'product_id' => $item->product_id,
-                    'vendor_id' => $item->vendor_id,
-                ]);
-
-                // DELETE CART
-                $item->delete();
-            }
-
-            DB::commit();
-
-            return ResponseHelper::Out('success', 'Order placed successfully', [
-                'invoice' => $invoice,
-                'total' => $total,
-                'vat' => $vat,
-                'payable' => $payable
-            ], 200);
-
-        } catch (Exception $e) {
-            DB::rollBack();
-            return ResponseHelper::Out('fail', 'Something went wrong', $e->getMessage(), 200);
-        }
-    }
-//    function InvoiceCreate(Request $request)
+//    public function InvoiceCreate(Request $request)
 //    {
 //        DB::beginTransaction();
 //        try {
 //            $user_id = $request->header('id');
 //            $user_email = $request->header('email');
-//            $Profile = User::where('id', '=', $user_id)->with('buyer')->first();
+//
+//            $Profile = User::where('id', $user_id)->with('buyer')->first();
 //            if (!$Profile) {
 //                return ResponseHelper::Out('failed', 'User not found', null, 404);
 //            }
-//            $tran_id = uniqid();
-//            $currency = "USD";
-//            $delivery_status = 'Pending';
-//            $payment_status = 'Pending';
+//
 //            $buyer = $Profile->buyer;
 //            $buyerId = $buyer->id;
-//            $drop_lat = $buyer->ship_latitude;
-//            $drop_long = $buyer->ship_longitude;
-//            $cus_name = $Profile->name;
-//            $cus_phone = $Profile->phone;
-//            $ship_address = $buyer->ship_location;
-//            $paymentMethod =$request->input('payment_method');
-//            // Payable Calculation
+//
+//            $tran_id = uniqid();
+//            $paymentMethod = $request->input('payment_method');
+//
 //            $total = 0;
-//            $cartList = Cart::where('buyer_id', $buyerId)
-//                ->where('status', 'active')->get();
+//            $cartList = Cart::where('buyer_id', $buyerId)->where('status', 'active')->get();
+//
 //            if ($cartList->isEmpty()) {
 //                return ResponseHelper::Out('failed', 'Cart not found', null, 404);
 //            }
+//
 //            foreach ($cartList as $cartItem) {
-//                $total = $total + $cartItem->price + $cartItem->delivery_charge;
+//                $total += $cartItem->price + $cartItem->delivery_charge;
 //            }
-//            $vat = ($total * 0) / 100;
-//            $payable = $total + $vat;
+//
+//            $vat = 0;
+//            $payable = $total;
+//
 //            $invoice = Invoice::create([
-//                'cus_name' => $cus_name,
+//                'cus_name' => $Profile->name,
 //                'cus_email' => $user_email,
-//                'cus_phone' => $cus_phone,
+//                'cus_phone' => $Profile->phone,
 //                'total' => $total,
 //                'vat' => $vat,
 //                'payable' => $payable,
 //                'tax_ref' => $tran_id,
-//                'currency' => $currency,
+//                'currency' => 'USD',
 //                'payment_method' => $paymentMethod,
-//                'status' => $payment_status,
+//                'status' => 'Pending',
 //                'user_id' => $user_id
 //            ]);
-//            $invoiceID = $invoice->id;
-//            foreach ($cartList as $EachProduct) {
-//                $vendorId = $EachProduct['vendor_id'];
-//                $vendor = Vendor::where('id', $vendorId)->select('id', 'longitude','latitude','address')->first();
-//                $pickup_lat = $vendor->latitude;
-//                $pickup_long = $vendor->longitude;
-//                $vendorLocation = $vendor->address;
-//                $distance = CalculateDistance::Distance($pickup_lat, $pickup_long, $drop_lat, $drop_long);
+//
+//            foreach ($cartList as $item) {
+//
+//                // ⭐ PRODUCT STOCK CHECK
+//                $product = Product::find($item->product_id);
+//                if (!$product) {
+//                    DB::rollBack();
+//                    return ResponseHelper::Out('failed', 'Product not found', null, 404);
+//                }
+//
+//                if ($product->stock < $item->quantity) {
+//                    DB::rollBack();
+//                    return ResponseHelper::Out(
+//                        'failed',
+//                        "Not enough stock for product ID {$item->product_id}",
+//                        null,
+//                        400
+//                    );
+//                }
+//
+//                //REDUCE STOCK
+//                $product->stock -= $item->quantity;
+//                $product->save();
+//
+//                // CREATE INVOICE ITEM
 //                InvoiceItem::create([
-//                    'cus_name' => $cus_name,
+//                    'cus_name' => $Profile->name,
 //                    'cus_email' => $user_email,
-//                    'cus_phone' => $cus_phone,
-//                    'pickup_address' => $vendorLocation,
-//                    'ship_address' => $ship_address,
-//                    'ship_latitude' => $drop_lat,
-//                    'ship_longitude' => $drop_long,
-//                    'distance' => $distance,
-//                    'quantity' => $EachProduct['quantity'],
-//                    'status' => $delivery_status,
-//                    'delivery_charge' => $EachProduct['delivery_charge'],
-//                    'sale_price' => $EachProduct['price'],
-//                    'total_pay' => $EachProduct['price'] + $EachProduct['delivery_charge'],
+//                    'cus_phone' => $Profile->phone,
+//                    'quantity' => $item->quantity,
+//                    'status' => 'Pending',
+//                    'delivery_charge' => $item->delivery_charge,
+//                    'sale_price' => $item->price,
+//                    'total_pay' => $item->price + $item->delivery_charge,
 //                    'tran_id' => $tran_id,
 //                    'user_id' => $user_id,
-//                    'invoice_id' => $invoiceID,
-//                    'payment_proof_id' => null,
-//                    'payment_method' => $paymentMethod,
-//                    'product_id' => $EachProduct['product_id'],
-//                    'vendor_id' => $vendorId,
-//                    'driver_id' => null,
+//                    'invoice_id' => $invoice->id,
+//                    'product_id' => $item->product_id,
+//                    'vendor_id' => $item->vendor_id,
 //                ]);
-//                $EachProduct->delete();
-//            }
-//            if ($paymentMethod == 'OPU') {
-//                DB::commit();
-//                return ResponseHelper::Out('success', 'Order placed with Cash On Delivery', [
-//                    'paymentMethod' => $invoice,
-//                    'payable' => $payable,
-//                    'vat' => $vat,
-//                    'total' => $total
-//                ], 200);
 //
-//            } else {
-//                // FlutterWave Payment
-//                $paymentMethod = PaymentSystem::InitiatePayment($invoice);
-//                DB::commit();
-//                return ResponseHelper::Out('success', 'Order placed with Online payment', [
-//                    'paymentMethod' => $paymentMethod,
-//                    'payable' => $payable,
-//                    'vat' => $vat,
-//                    'total' => $total
-//                ], 200);
+//                // DELETE CART
+//                $item->delete();
 //            }
+//
+//            DB::commit();
+//
+//            return ResponseHelper::Out('success', 'Order placed successfully', [
+//                'invoice' => $invoice,
+//                'total' => $total,
+//                'vat' => $vat,
+//                'payable' => $payable
+//            ], 200);
+//
 //        } catch (Exception $e) {
 //            DB::rollBack();
 //            return ResponseHelper::Out('fail', 'Something went wrong', $e->getMessage(), 200);
 //        }
 //    }
+    function InvoiceCreate(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $user_id = $request->header('id');
+            $user_email = $request->header('email');
+            $Profile = User::where('id', '=', $user_id)->with('buyer')->first();
+            if (!$Profile) {
+                return ResponseHelper::Out('failed', 'User not found', null, 404);
+            }
+            $tran_id = uniqid();
+            $currency = "USD";
+            $delivery_status = 'Pending';
+            $payment_status = 'Pending';
+            $buyer = $Profile->buyer;
+            $buyerId = $buyer->id;
+            $drop_lat = $buyer->ship_latitude;
+            $drop_long = $buyer->ship_longitude;
+            $cus_name = $Profile->name;
+            $cus_phone = $Profile->phone;
+            $ship_address = $buyer->ship_location;
+            $paymentMethod =$request->input('payment_method');
+            // Payable Calculation
+            $total = 0;
+            $cartList = Cart::where('buyer_id', $buyerId)
+                ->where('status', 'active')->get();
+            if ($cartList->isEmpty()) {
+                return ResponseHelper::Out('failed', 'Cart not found', null, 404);
+            }
+            foreach ($cartList as $cartItem) {
+                $total = $total + $cartItem->price + $cartItem->delivery_charge;
+            }
+            $vat = ($total * 0) / 100;
+            $payable = $total + $vat;
+            $invoice = Invoice::create([
+                'cus_name' => $cus_name,
+                'cus_email' => $user_email,
+                'cus_phone' => $cus_phone,
+                'total' => $total,
+                'vat' => $vat,
+                'payable' => $payable,
+                'tax_ref' => $tran_id,
+                'currency' => $currency,
+                'payment_method' => $paymentMethod,
+                'status' => $payment_status,
+                'user_id' => $user_id
+            ]);
+            $invoiceID = $invoice->id;
+            foreach ($cartList as $EachProduct) {
+                $vendorId = $EachProduct['vendor_id'];
+                $vendor = Vendor::where('id', $vendorId)->select('id', 'longitude','latitude','address')->first();
+                $pickup_lat = $vendor->latitude;
+                $pickup_long = $vendor->longitude;
+                $vendorLocation = $vendor->address;
+                $distance = CalculateDistance::Distance($pickup_lat, $pickup_long, $drop_lat, $drop_long);
+                // ⭐ PRODUCT STOCK CHECK
+                $product = Product::find($EachProduct->product_id);
+                if (!$product) {
+                    DB::rollBack();
+                    return ResponseHelper::Out('failed', 'Product not found', null, 404);
+                }
+
+                if ($product->stock < $EachProduct->quantity) {
+                    DB::rollBack();
+                    return ResponseHelper::Out(
+                        'failed',
+                        "Not enough stock for product ID {$EachProduct->product_id}",
+                        null,
+                        400
+                    );
+                }
+
+                //REDUCE STOCK
+                $product->stock -= $EachProduct->quantity;
+                $product->save();
+
+                InvoiceItem::create([
+                    'cus_name' => $cus_name,
+                    'cus_email' => $user_email,
+                    'cus_phone' => $cus_phone,
+                    'pickup_address' => $vendorLocation,
+                    'ship_address' => $ship_address,
+                    'ship_latitude' => $drop_lat,
+                    'ship_longitude' => $drop_long,
+                    'distance' => $distance,
+                    'quantity' => $EachProduct['quantity'],
+                    'status' => $delivery_status,
+                    'delivery_charge' => $EachProduct['delivery_charge'],
+                    'sale_price' => $EachProduct['price'],
+                    'total_pay' => $EachProduct['price'] + $EachProduct['delivery_charge'],
+                    'tran_id' => $tran_id,
+                    'user_id' => $user_id,
+                    'invoice_id' => $invoiceID,
+                    'payment_proof_id' => null,
+                    'payment_method' => $paymentMethod,
+                    'product_id' => $EachProduct['product_id'],
+                    'vendor_id' => $vendorId,
+                    'driver_id' => null,
+                ]);
+                $EachProduct->delete();
+            }
+            if ($paymentMethod == 'OPU') {
+                DB::commit();
+                // SEND NOTIFICATION
+                $senderId=$user_id;
+                $message = 'You have add to order';
+                $name=$buyer->name;
+                NotificationHelper::sendNotification($senderId,$senderId,$message, $name );
+                return ResponseHelper::Out('success', 'Order placed with Cash On Delivery', [
+                    'paymentMethod' => $invoice,
+                    'payable' => $payable,
+                    'vat' => $vat,
+                    'total' => $total
+                ], 200);
+
+            } else {
+                // FlutterWave Payment
+                $paymentMethod = PaymentSystem::InitiatePayment($invoice);
+                DB::commit();
+                return ResponseHelper::Out('success', 'Order placed with Online payment', [
+                    'paymentMethod' => $paymentMethod,
+                    'payable' => $payable,
+                    'vat' => $vat,
+                    'total' => $total
+                ], 200);
+            }
+        } catch (Exception $e) {
+            DB::rollBack();
+            return ResponseHelper::Out('fail', 'Something went wrong', $e->getMessage(), 200);
+        }
+    }
     //flutter wave redirect url method
     public function handleFlutterWaveResponse(Request $request)
     {
@@ -406,7 +444,19 @@ class InvoiceController extends Controller
             $payment->save();
             if ($status === 'successful') {
                 $invoiceStatusLog = InvoiceStatusLog::where('invoice_id',$payment->id )->first();
-                $invoiceItem = InvoiceItem::where('id',$invoiceStatusLog->invoice_item_id )->first();
+                if (!$invoiceStatusLog) {
+                    // SEND NOTIFICATION
+                    $senderId=$payment->user_id;
+                    $message = 'Payment successful';
+                    $name=$payment->cus_name;
+                    NotificationHelper::sendNotification($senderId,$senderId,$message, $name );
+                    foreach ($payment->items as $item) {
+                        $item->status = 'Pending';
+                        $item->save();
+                    }
+                    return ResponseHelper::Out('success', 'Payment status updated', $payment, 200);
+                }
+                $invoiceItem = InvoiceItem::where('id',$invoiceStatusLog->invoice_item_id)->first();
                 $invoiceItem->update([
                     'status'=>'AssignedOrder',
                     'driver_id'=>$invoiceStatusLog->driver_id,

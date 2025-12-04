@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\NotificationHelper;
 use App\Helpers\ResponseHelper;
 use App\Models\Buyer;
 use App\Models\Cart;
@@ -115,10 +116,9 @@ class CartController extends Controller
                 // UPDATE CART
                 $cart->update([
                     'quantity' => $newQty,
-                    'price' => (float)$product->regular_price * $newQty,
+                    'price' => (float)$product->sell_price * $newQty,
                     'delivery_charge' => $deliveryChargeAmount,
                 ]);
-
                 return ResponseHelper::Out('success', 'Cart updated successfully', $cart, 200);
             }
 
@@ -142,11 +142,15 @@ class CartController extends Controller
                 'quantity' => $requestedQty,
                 'color' => $request->input('color'),
                 'size' => $request->input('size'),
-                'price' => (float)$product->regular_price * $requestedQty,
+                'price' => (float)$product->sell_price * $requestedQty,
                 'delivery_charge' => $deliveryChargeAmount,
                 'status' => 'active',
             ]);
-
+            // SEND NOTIFICATION
+            $senderId=$userId;
+            $message = 'You have add to cart';
+            $name=$buyer->name;
+            NotificationHelper::sendNotification($senderId,$senderId,$message, $name );
             return ResponseHelper::Out('success', 'Cart item added successfully', $cart, 201);
 
         } catch (Exception $e) {
