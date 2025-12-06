@@ -61,20 +61,24 @@ class DriverHomeController extends Controller
     public function driverHomeStats(Request $request)
     {
         try {
+            $user_id = $request->header('id');
+            $driver = Driver::where('user_id', $user_id)->first();
+            $driverId = $driver->id;
             // Total Active Orders
-            $activeOrders = InvoiceItem::where('status', '!=', 'Complete')->where('driver_id', $request->header('id'))->count();
+            $activeOrders = InvoiceItem::where('status', '!=', 'Complete')->where('driver_id', $driverId)->count();
 
             // Picked Orders
-            $picked = InvoiceItem::where('status', 'On The Way')->where('driver_id', $request->header('id'))->count();
+            $picked = InvoiceItem::where('status', 'On The Way')->where('driver_id', $driverId)->count();
+//            dd($activeOrders);
 
             // Delivered Today
             $deliveredToday = InvoiceItem::where('status', 'Complete')
-                ->whereDate('updated_at', today())->where('driver_id', $request->header('id'))
+                ->whereDate('updated_at', today())->where('driver_id', $driverId)
                 ->count();
 
             // Pending Deliveries (picked but not delivered today) // not complete
             $pendingDeliveries = InvoiceItem::where('status', 'On The Way')
-                ->where('driver_id', $request->header('id'))
+                ->where('driver_id', $driverId)
                 ->count();
             return ResponseHelper::Out('success', 'Driver Order all Status', [ 'data' => [
                 'total_active_orders' => $activeOrders,
@@ -86,7 +90,7 @@ class DriverHomeController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-    public function showDriverTracking(Request $request, $invoiceId)
+    public function showDriverTracking(Request $request, $invoiceItemId)
     {
         try {
             // get login driver
@@ -95,13 +99,13 @@ class DriverHomeController extends Controller
             if (!$driver) {
                 return ResponseHelper::Out('failed', 'Driver not found', null, 404);
             }
-            $invoice = InvoiceItem::where('driver_id', $driver->id)
-                ->where('id', $invoiceId)
+            $invoiceItem = InvoiceItem::where('driver_id', $driver->id)
+                ->where('id', $invoiceItemId)
                 ->with(['invoice', 'user', 'driver'])->first();
-            if (!$invoice) {
+            if (!$invoiceItem) {
                 return ResponseHelper::Out('success', 'order not found', null, 200);
             }
-            return ResponseHelper::Out('success', 'Status History fetched successfully', $invoice, 200);
+            return ResponseHelper::Out('success', 'Status History fetched successfully', $invoiceItem, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }

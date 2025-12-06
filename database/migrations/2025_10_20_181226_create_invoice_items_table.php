@@ -17,13 +17,15 @@ return new class extends Migration
             $table->string('cus_email',50)->nullable();
             $table->string('cus_phone',20)->nullable();
             $table->string('pickup_address',100)->nullable();
+            $table->string('pickup_longitude',100)->nullable();
+            $table->decimal('pickup_latitude', 10,6)->nullable();
             $table->string('payment_method',10)->nullable();
+            $table->string('payment_proof_id',100)->nullable();
+            $table->text('note')->nullable();
             $table->string('ship_address',100)->nullable();
             $table->decimal('ship_latitude', 10,6)->nullable();
-            $table->string('pickup_address',100)->nullable();
-            $table->string('payment_proof_id',100)->nullable();
+            $table->string('ship_longitude',100)->nullable();
             $table->string('current_address',100)->nullable();
-            $table->text('note')->nullable();
             $table->decimal('current_latitude', 10,6)->nullable();
             $table->decimal('current_longitude', 10,6)->nullable();
             $table->decimal('distance',10,2)->nullable();

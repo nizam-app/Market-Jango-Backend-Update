@@ -1,10 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Static Template</title>
+    <title>Market Jango OTP</title>
 
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap"
@@ -24,10 +25,10 @@
         max-width: 680px;
         margin: 0 auto;
         padding: 45px 30px 60px;
-        background: #f4f7ff;
-        background-image: url(https://archisketch-resources.s3.ap-northeast-2.amazonaws.com/vrstyler/1661497957196_595865/email-template-background-banner);
+        background: #f9f9f9;
+        background-image: url('https://marketjango-assets.s3.ap-northeast-2.amazonaws.com/email-background.jpg');
         background-repeat: no-repeat;
-        background-size: 800px 452px;
+        background-size: cover;
         background-position: top center;
         font-size: 14px;
         color: #434343;
@@ -36,19 +37,19 @@
     <header>
         <table style="width: 100%;">
             <tbody>
-            <tr style="height: 0;">
+            <tr>
                 <td>
                     <img
-                        alt=""
-                        src="https://archisketch-resources.s3.ap-northeast-2.amazonaws.com/vrstyler/1663574980688_114990/archisketch-logo"
-                        height="30px"
+                        alt="Market Jango"
+                        src="{{asset('asset/marketJango.png')}}"
+                        height="100px"
+                        style="border-radius:10%;"
                     />
                 </td>
                 <td style="text-align: right;">
-                <span
-                    style="font-size: 16px; line-height: 30px; color: #ffffff;"
-                >12 Nov, 2021</span
-                >
+                    <span
+                        style="font-size: 16px; line-height: 30px; color: #100e0e;"
+                    >{{ date('d M, Y') }}</span>
                 </td>
             </tr>
             </tbody>
@@ -59,10 +60,10 @@
         <div
             style="
             margin: 0;
-            margin-top: 70px;
-            padding: 92px 30px 115px;
+            margin-top: 20px;
+            padding: 50px 20px 50px;
             background: #ffffff;
-            border-radius: 30px;
+            border-radius: 25px;
             text-align: center;
           "
         >
@@ -70,43 +71,41 @@
                 <h1
                     style="
                 margin: 0;
-                font-size: 24px;
-                font-weight: 500;
+                font-size: 15px;
+                font-weight: 600;
                 color: #1f1f1f;
               "
                 >
-                    Your OTP
+                    Your OTP Code
                 </h1>
                 <p
                     style="
                 margin: 0;
-                margin-top: 17px;
+                margin-top: 15px;
                 font-size: 16px;
                 font-weight: 500;
-              "
-                >
-                    {{$title}},
+                ">
+                    Hi {{$title}},
                 </p>
                 <p
                     style="
                 margin: 0;
-                margin-top: 17px;
+                margin-top: 15px;
                 font-weight: 500;
-                letter-spacing: 0.56px;
+                letter-spacing: 0.5px;
               "
                 >
-                    Thank you for using School Management System.
-                    Use the following OTP to complete your verification process.
-                    Do not share this code with others.
+                    Thank you for using Market Jango. Use the following OTP to complete your verification process. Do not share this code with anyone.
                 </p>
                 <p
+
                     style="
                 margin: 0;
-                margin-top: 60px;
-                font-size: 40px;
-                font-weight: 600;
-                letter-spacing: 25px;
-                color: #ba3d4f;
+                margin-top: 30px;
+                font-size: 25px;
+                font-weight: 700;
+                letter-spacing: 10px;
+                color: #d59292;
               "
                 >
                     {{$otp}}
@@ -118,25 +117,23 @@
             style="
             max-width: 400px;
             margin: 0 auto;
-            margin-top: 90px;
+            margin-top: 70px;
             text-align: center;
             font-weight: 500;
             color: #8c8c8c;
           "
         >
-            Need help? Ask at
+            Need help? Contact us at
             <a
-                href="mailto:archisketch@gmail.com"
-                style="color: #499fb6; text-decoration: none;"
-            >archisketch@gmail.com</a
-            >
+                href="mailto:support@marketjango.com"
+                style="color: #1e88e5; text-decoration: none;"
+            >support@marketjango.com</a>
             or visit our
             <a
-                href=""
+                href="https://marketjango.com/help"
                 target="_blank"
-                style="color: #499fb6; text-decoration: none;"
-            >Help Center</a
-            >
+                style="color: #1e88e5; text-decoration: none;"
+            >Help Center</a>
         </p>
     </main>
 
@@ -152,61 +149,38 @@
         <p
             style="
             margin: 0;
-            margin-top: 40px;
+            margin-top: 30px;
             font-size: 16px;
             font-weight: 600;
             color: #434343;
           "
         >
-            Archisketch Company
+            Market Jango
         </p>
-        <p style="margin: 0; margin-top: 8px; color: #434343;">
-            Address 540, City, State.
+        <p style="margin: 0; margin-top: 6px; color: #434343;">
+            123 Market Street, Dhaka, Bangladesh
         </p>
-        <div style="margin: 0; margin-top: 16px;">
-            <a href="" target="_blank" style="display: inline-block;">
-                <img
-                    width="36px"
-                    alt="Facebook"
-                    src="https://archisketch-resources.s3.ap-northeast-2.amazonaws.com/vrstyler/1661502815169_682499/email-template-icon-facebook"
-                />
+        <div style="margin: 0; margin-top: 14px;">
+            <a href="#" target="_blank" style="display: inline-block;">
+                <img width="36px" alt="Facebook" src="https://marketjango-assets.s3.ap-northeast-2.amazonaws.com/facebook-icon.png"/>
             </a>
-            <a
-                href=""
-                target="_blank"
-                style="display: inline-block; margin-left: 8px;"
-            >
-                <img
-                    width="36px"
-                    alt="Instagram"
-                    src="https://archisketch-resources.s3.ap-northeast-2.amazonaws.com/vrstyler/1661504218208_684135/email-template-icon-instagram"
-                /></a>
-            <a
-                href=""
-                target="_blank"
-                style="display: inline-block; margin-left: 8px;"
-            >
-                <img
-                    width="36px"
-                    alt="Twitter"
-                    src="https://archisketch-resources.s3.ap-northeast-2.amazonaws.com/vrstyler/1661503043040_372004/email-template-icon-twitter"
-                />
+            <a href="#" target="_blank" style="display: inline-block; margin-left: 8px;">
+                <img width="36px" alt="Instagram" src="https://marketjango-assets.s3.ap-northeast-2.amazonaws.com/instagram-icon.png"/>
             </a>
-            <a
-                href=""
-                target="_blank"
-                style="display: inline-block; margin-left: 8px;"
-            >
-                <img
-                    width="36px"
-                    alt="Youtube"
-                    src="https://archisketch-resources.s3.ap-northeast-2.amazonaws.com/vrstyler/1661503195931_210869/email-template-icon-youtube"
-                /></a>
+            <a href="#" target="_blank" style="display: inline-block; margin-left: 8px;">
+                <img width="36px" alt="Twitter" src="https://marketjango-assets.s3.ap-northeast-2.amazonaws.com/twitter-icon.png"/>
+            </a>
+            <a href="#" target="_blank" style="display: inline-block; margin-left: 8px;">
+                <img width="36px" alt="YouTube" src="https://marketjango-assets.s3.ap-northeast-2.amazonaws.com/youtube-icon.png"/>
+            </a>
         </div>
         <p style="margin: 0; margin-top: 16px; color: #434343;">
-            Copyright © 2022 Company. All rights reserved.
+            © 2026 R2AIT. All rights reserved.
         </p>
     </footer>
 </div>
 </body>
 </html>
+
+
+

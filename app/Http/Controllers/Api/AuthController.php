@@ -519,8 +519,9 @@ class AuthController extends Controller
             if ($user == null) {
                 return ResponseHelper::Out('failed','unauthorized',null,401);
             }
+            $userName = $user->name;
             $otp = rand(100000, 999999);
-            Mail::to($email)->send(new OTPSend($otp,$user->title));
+            Mail::to($email)->send(new OTPSend($otp, $userName));
             $user->update(['otp' => $otp,'expires_at' => Carbon::now()->addMinutes(10)]);
             return ResponseHelper::Out('success', 'OTP sent to your registered mail',$otp,200);
         } catch (ValidationException $e) {

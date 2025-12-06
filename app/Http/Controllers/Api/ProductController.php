@@ -157,13 +157,15 @@ class ProductController extends Controller
         try {
             $request->validate([
                 'name' => 'required|string|max:50',
-                'description' => 'required|string',
+                'description' => 'nullable|string',
                 'regular_price' => 'required|string|max:50',
                 'sell_price' => 'required|string|max:50',
-                'image*' => 'required|mimes:jpeg,png,jpg,gif,webp|max:2048',
-                'color' => 'required|array',
+                'image' => 'required|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'files' => 'required|array',
+                'files.*' => 'required|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'color' => 'nullable|array',
                 'color.*' => 'string',
-                'size' => 'required|array',
+                'size' => 'nullable|array',
                 'size.*' => 'string',
                 'category_id' => 'nullable|exists:categories,id',
                 'stock' => 'nullable|integer|min:0',
@@ -191,6 +193,7 @@ class ProductController extends Controller
                 'category_id' => $request->input('category_id'),
                 'stock' => $request->input('stock')
             ]);
+
             if ($request->hasFile('files')) {
                 $files = $request->file('files');
                 // all file upload

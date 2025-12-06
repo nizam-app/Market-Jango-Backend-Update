@@ -105,6 +105,20 @@ class InvoiceController extends Controller
             ]);
             return ResponseHelper::Out('success', 'Status updated successfully', $invoice, 200);
         }
+        if($status=='Ready for delivery'){
+            $invoice->update([
+                'status' => $status,
+                'note' => $request->input('note') ?? $invoice->note,
+            ]);
+            return ResponseHelper::Out('success', 'Status updated successfully', $invoice, 200);
+        }
+        if($status == 'On The Way'){
+            $invoice->update([
+                'status' => $status,
+                'note' => $request->input('note') ?? $invoice->note,
+            ]);
+            return ResponseHelper::Out('success', 'Status updated successfully', $invoice, 200);
+        }
         return ResponseHelper::Out('success', 'Status updated successfully', $invoice, 200);
         }catch (ValidationException $e) {
             return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
@@ -343,6 +357,8 @@ class InvoiceController extends Controller
                     'cus_email' => $user_email,
                     'cus_phone' => $cus_phone,
                     'pickup_address' => $vendorLocation,
+                    'pickup_latitude' => $pickup_lat,
+                    'pickup_longitude' => $pickup_long,
                     'ship_address' => $ship_address,
                     'ship_latitude' => $drop_lat,
                     'ship_longitude' => $drop_long,
@@ -361,7 +377,7 @@ class InvoiceController extends Controller
                     'vendor_id' => $vendorId,
                     'driver_id' => null,
                 ]);
-                $EachProduct->delete();
+//                $EachProduct->delete();
             }
             if ($paymentMethod == 'OPU') {
                 DB::commit();
@@ -457,10 +473,17 @@ class InvoiceController extends Controller
                     return ResponseHelper::Out('success', 'Payment status updated', $payment, 200);
                 }
                 $invoiceItem = InvoiceItem::where('id',$invoiceStatusLog->invoice_item_id)->first();
+                if($invoiceItem){
                 $invoiceItem->update([
                     'status'=>'AssignedOrder',
                     'driver_id'=>$invoiceStatusLog->driver_id,
                 ]);
+                    // SEND NOTIFICATION
+                    $senderId=$invoiceItem->user_id;
+                    $message = 'Start Delivery';
+                    $name=$invoiceItem->cus_name;
+                    NotificationHelper::sendNotification($senderId,$senderId,$message, $name );
+                }
                 foreach ($payment->items as $item) {
                     $item->status = 'Pending';
                     $item->save();

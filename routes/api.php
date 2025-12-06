@@ -35,6 +35,9 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
 //after login
+Route::post('/', function (){
+    return response()->json("server is running");
+});
 Route::post('/register-type', [AuthController::class, 'registerType']);
 Route::post('/forget-password', [AuthController::class, 'forgetPassword']);
 Route::get('/business-type', [AuthController::class, 'businessType']);
@@ -61,7 +64,7 @@ Route::middleware(['tokenVerify'])->group(function () {
     Route::prefix('chat')->group(function () {
         Route::get('/user', [ChatController::class, 'userInbox']);
         Route::get('/user/search', [ChatController::class, 'userSearch']);
-        Route::post('/send/{id}', [ChatController::class, 'sendMessage']);
+        Route::post('/send/{receiver_id}', [ChatController::class, 'sendMessage']);
         Route::get('/history/{id}', [ChatController::class, 'getMessages']);
         //create offer
         Route::post('/offer/{receiver_id}', [ChatController::class, 'createOffer']);
@@ -124,9 +127,8 @@ Route::middleware(['tokenVerify'])->group(function () {
         Route::get('just-for-you', [ProductController::class, 'getJustForYou']);
     });
     //user Update routes
-    Route::prefix('user')->group(function () {
-        Route::post('/update', [AuthController::class, 'update']);
-    });
+    Route::post('/user/update', [AuthController::class, 'update']);
+
     //Invoice and payment
     Route::get("/invoice", [InvoiceController::class, 'index']);
     Route::get("/buyer/all-order", [InvoiceController::class, 'allOrders']);

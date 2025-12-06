@@ -329,9 +329,7 @@ class VendorHomePageController extends Controller
                 ->count();
 
             // ---------- Conversion Rate ----------
-            $conversionRate = $totalClicks > 0
-                ? round(($totalOrders / $totalClicks) * 100, 2)
-                : 0;
+            $conversionRate = $totalClicks > 0 ? round(($totalOrders / $totalClicks) * 100, 2) : 0;
             return response()->json([
                 'status' => 'success',
                 'data' => [
