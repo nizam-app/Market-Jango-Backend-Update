@@ -35,7 +35,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
 //after login
-Route::post('/', function (){
+Route::get('/', function (){
     return response()->json("server is running");
 });
 Route::post('/register-type', [AuthController::class, 'registerType']);
@@ -272,9 +272,14 @@ Route::middleware(['tokenVerify'])->group(function () {
     Route::get('/approved-driver', [AdminController::class, 'approvedDriver']);
     Route::get('/driver/home-stats', [DriverHomeController::class, 'driverHomeStats']);
 
+
     //Admin Routes
     Route::middleware('userTypeVerify:admin')->group(function () {
         Route::post('/admin/invoice/create/{driver_id}/{order_item_id}', [AdminController::class, 'adminInvoice']);
+        Route::get('/admin-vendor', [AdminController::class, 'adminVendor']);
+        Route::get('/admin-driver', [AdminController::class, 'adminDriver']);
+        Route::post('/create-vendor', [AdminController::class, 'createVendor']);
+        Route::post('/create-driver', [AdminController::class, 'createDriver']);
         Route::post('/create-admin', [AdminController::class, 'createAdmin']);
         Route::put('/update-admin/{id}', [AdminController::class, 'updateAdmin']);
         Route::get('/active/vendor', [AdminController::class, 'activeVendor']);

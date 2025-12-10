@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Helpers\CalculateDistance;
+use App\Helpers\FileHelper;
 use App\Helpers\PaymentSystem;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
@@ -18,6 +19,7 @@ use App\Models\Product;
 use App\Models\Role;
 use App\Models\Transport;
 use App\Models\User;
+use App\Models\UserImage;
 use App\Models\Vendor;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -82,6 +84,131 @@ class AdminController extends Controller
             $data = [
                 'user'=>$user,
                 'admin'=>$admin
+            ];
+            return ResponseHelper::Out('success', 'Admin user created and invite sent.', $data, 200);
+        } catch (ValidationException $e) {
+            return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    //  NEW VENDOR CREATE
+    public function createVendor(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'name'  => 'required|string|max:255',
+                'email' => 'required|email|unique:users,email'
+            ]);
+            //invite token generate
+            $tempPassword = Str::random(8);
+            // user create
+            $user = User::create([
+                'name'                 => $validated['name'],
+                'email'                => $validated['email'],
+                'user_type'             => 'vendor',
+                'status'             => $request->input('status')?? 'Approved',
+                'password'             =>  Hash::make($tempPassword),
+                'must_change_password' => true,
+            ]);
+            $vendor = Vendor::Create([
+                    'user_id'      => $user->id,
+                    'country'        => $request->input('country'),
+                    'business_name'  => $request->input('business_name'),
+                    'business_type'  => $request->input('business_type'),
+                    'address'        => $request->input('address'),
+                    'longitude'        => $request->input('longitude'),
+                    'latitude'        => $request->input('latitude'),
+                ]);
+            if ($request->hasFile('files')) {
+                $oldImages = UserImage::where('user_type', 'vendor')->where('user_id', $vendor->id)->get();
+                if ($oldImages->count() > 0) {
+                    foreach ($oldImages as $old) {
+                        if (!empty($old->public_id)) {
+                            FileHelper::delete($old->public_id);
+                        }
+                        $old->delete();
+                    }
+                }
+                $files = $request->file('files');
+                $uploadedFiles = FileHelper::upload($files, $user->user_type);
+                foreach ($uploadedFiles as $file) {
+                    UserImage::create([
+                        'image_path' => $file['url'],
+                        'public_id'  => $file['public_id'],
+                        'user_id'    => $vendor->id,
+                        'user_type'  => $user->user_type,
+                        'file_type'  => 'image'
+                    ]);
+                }
+            }
+            //mail send
+//            Mail::to($user->email)->send(new AdminInviteMail($user, $tempPassword));
+            $data = [
+                'user'=>$user,
+                'vendor'=>$vendor
+            ];
+            return ResponseHelper::Out('success', 'Admin vendor created', $data, 200);
+        } catch (ValidationException $e) {
+            return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    //  NEW DRIVER CREATE
+    public function createDriver(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'name'  => 'required|string|max:255',
+                'email' => 'required|email|unique:users,email'
+            ]);
+            //invite token generate
+            $tempPassword = Str::random(8);
+            // user create
+            $user = User::create([
+                'name'                 => $validated['name'],
+                'email'                => $validated['email'],
+                'user_type'             => 'driver',
+                'status'             => $request->input('status')?? 'Approved',
+                'password'             =>  Hash::make($tempPassword),
+                'must_change_password' => true,
+            ]);
+            $driver = Driver::Create([
+                'car_name'=> $request->input('car_name'),
+                'car_model' => $request->input('car_model'),
+                'location' => $request->input('location'),
+                'price' => $request->input('price'),
+                'user_id' => $user->id,
+                'route_id' => $request->input('route_id'),
+                ]);
+            if ($request->hasFile('files')) {
+                $oldImages = UserImage::where('user_type', 'driver')->where('user_id', $driver->id)->get();
+                if ($oldImages->count() > 0) {
+                    foreach ($oldImages as $old) {
+                        if (!empty($old->public_id)) {
+                            FileHelper::delete($old->public_id);
+                        }
+                        $old->delete();
+                    }
+                }
+                $files = $request->file('files');
+                $uploadedFiles = FileHelper::upload($files, $user->user_type);
+                foreach ($uploadedFiles as $file) {
+                    UserImage::create([
+                        'image_path' => $file['url'],
+                        'public_id'  => $file['public_id'],
+                        'user_id'    => $driver->id,
+                        'user_type'  => $user->user_type,
+                        'file_type'  => 'image'
+                    ]);
+                }
+            }
+            //mail send
+//            Mail::to($user->email)->send(new AdminInviteMail($user, $tempPassword));
+            $data = [
+                'user'=>$user,
+                'driver'=>$driver
             ];
             return ResponseHelper::Out('success', 'Admin user created and invite sent.', $data, 200);
         } catch (ValidationException $e) {
@@ -211,6 +338,66 @@ class AdminController extends Controller
                 return ResponseHelper::Out('success', 'No suspended vendor found', $vendors, 200);
             }
             return ResponseHelper::Out('success', 'All suspended vendor successfully fetched', $vendors, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    // admin vendor
+    public function adminVendor(Request $request): JsonResponse
+    {
+        try {
+            $status = $request->input('status');
+
+            $query = User::where('user_type', 'vendor')
+                ->with([
+                    'vendor',
+                    'vendor.products',
+                    'vendor.products.images',
+                    'vendor.images'
+                ]);
+
+            if (!empty($status)) {
+                $query->where('status', $status);
+            }
+            $vendors = $query->paginate(10);
+            $vendors->getCollection()->transform(function ($vendor) {
+                $vendor->product_count =
+                    $vendor->vendor ? $vendor->vendor->products->count() : 0;
+                return $vendor;
+            });
+            return ResponseHelper::Out('success', 'Vendors fetched successfully', $vendors, 200);
+        } catch (Exception $e) {
+            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+        }
+    }
+    // admin driver
+    public function adminDriver(Request $request): JsonResponse
+    {
+        try {
+            $status = $request->input('status');
+
+            $query = User::where('user_type', 'driver')
+                ->with([
+                    'driver',
+                    'driver.user',
+                    'driver.images',
+                    'driver.route'
+                ]);
+
+            if (!empty($status)) {
+                $query->where('status', $status);
+            }
+            $drivers = $query->paginate(10);
+            $drivers->getCollection()->transform(function ($driver) {
+                $driver->route_count =
+                    $driver->driver && $driver->driver->route
+                        ? 1
+                        : 0;
+
+                return $driver;
+            });
+
+            return ResponseHelper::Out('success', 'Vendors fetched successfully', $drivers, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }

@@ -14,22 +14,7 @@ use Exception;
 
 class ProductVariantController extends Controller
 {
-    // Get All Product Attributes
-//    public function index(Request $request): JsonResponse
-//    {
-//        try {
-//            $vendor = Vendor::where('user_id', $request->header('id'))->select(['id'])->first();
-//            if (!$vendor) {
-//                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
-//            }
-//            $attributes = ProductAttribute::where('vendor_id',$vendor->id)->with(['attributeValues:id,name,product_attribute_id'])->select('id','name','vendor_id')->get();
-//            return ResponseHelper::Out('success', 'All product attribute successfully fetched', $attributes, 200);
-//        } catch (Exception $e) {
-//            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
-//        }
-//    }
-//
-//   // Get All Product Attributes by vendor
+   // Get All Product Attributes by vendor
     public function allAttributes(Request $request): JsonResponse
     {
         try {

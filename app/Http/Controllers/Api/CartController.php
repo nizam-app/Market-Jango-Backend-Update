@@ -60,25 +60,19 @@ class CartController extends Controller
             if ($validator->fails()) {
                 return ResponseHelper::Out('failed', 'Validation exception', $validator->errors()->first(), 422);
             }
-
             $userId = $request->header('id');
             $buyer = Buyer::where('user_id', $userId)->select('id')->first();
-
             if (!$buyer) {
                 return ResponseHelper::Out('failed', 'Buyer not found', null, 404);
             }
-
             $productId = $request->input('product_id');
             $product = Product::find($productId);
-
             if (!$product) {
                 return ResponseHelper::Out('failed', 'Product not found', null, 422);
             }
-
             $vendorId = $product->vendor_id;
             $requestedQty = $request->input('quantity', 1);
             $action = $request->input('action');
-
             $cart = Cart::where('product_id', $productId)
                 ->where('buyer_id', $buyer->id)
                 ->first();
@@ -268,7 +262,7 @@ class CartController extends Controller
 //            $action = $request->input('action');
 //            $updateQty = 1;
 //
-//            // ✅ Check if cart item already exists
+//            // Check if cart item already exists ✅
 //            $cart = Cart::where('product_id', $productId)
 //                ->where('buyer_id', $buyer->id)
 //                ->first();

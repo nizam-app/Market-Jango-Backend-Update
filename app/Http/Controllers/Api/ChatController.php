@@ -7,6 +7,7 @@ use App\Helpers\FileHelper;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Chat;
+use App\Models\Product;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -204,7 +205,6 @@ class ChatController extends Controller
             if (!$sender || !$receiver) {
                 return ResponseHelper::Out('failed', 'User not found', null, 404);
             }
-
             // Validation only for checking (no data extraction)
             $request->validate([
                 'product_id'      => 'required|integer',
@@ -214,21 +214,25 @@ class ChatController extends Controller
                 'delivery_charge' => 'required|numeric|min:0',
                 'note'            => 'nullable|string',
             ]);
-
             // All data will come from request->input()
             $quantity       = $request->input('quantity', 1);
             $deliveryCharge = $request->input('delivery_charge', 0);
             $salePrice      = $request->input('sale_price', 0);
-
             $totalAmount = ($salePrice * $quantity) + $deliveryCharge;
-
+            $productId = $request->input('product_id');
+            $product = Product::find($productId);
+            if (!$product) {
+                return ResponseHelper::Out('failed', 'Product not found', null, 404);
+            }
             // Offer create
             $offer = Offer::create([
                 'sender_id'       => $sender->id,
                 'receiver_id'     => $receiver->id,
-                'product_id'      => $request->input('product_id'),
-                'product_name'    => $request->input('product_name'),
+                'product_id'      => $product->id,
+                'product_name'    => $product->name,
                 'quantity'        => $quantity,
+                'image'      => $product->image,
+                'public_id'      => $product->public_id,
                 'sale_price'      => $salePrice,
                 'delivery_charge' => $deliveryCharge,
                 'color' => $request->input('color'),
@@ -237,7 +241,6 @@ class ChatController extends Controller
                 'status'          => 'pending',
                 'note'            => $request->input('note'),
             ]);
-
             // Chat create
             $message = Chat::create([
                 'sender_id'   => $sender->id,
@@ -250,13 +253,9 @@ class ChatController extends Controller
                 'is_offer'    => true,
                 'offer_id'    => $offer->id,
             ]);
-
             $message->load(['offer', 'sender', 'receiver']);
-
             broadcast(new MessageSent($message))->toOthers();
-
             return ResponseHelper::Out('success', 'Offer created successfully', $message, 200);
-
         } catch (ValidationException $e) {
             return ResponseHelper::Out('failed', 'Validation failed', $e->errors(), 422);
         } catch (Exception $e) {
