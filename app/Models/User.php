@@ -28,6 +28,7 @@ class User extends Authenticatable
         'is_online',
         'status',
         'expires_at',
+        'note',
         'fcm_token'
     ];
 

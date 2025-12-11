@@ -418,7 +418,10 @@ class AdminController extends Controller
             //get user status
             $user = $vendor->user;
             //update status
-            $user->update(['status' => $request->input('status') ?? $user->status]);
+            $user->update([
+                'status' => $request->input('status') ?? $user->status,
+                'note' => $request->input('note') ?? $user->note,
+            ]);
             return ResponseHelper::Out('success', 'Vendor status update successfully', $vendor, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
@@ -440,7 +443,10 @@ class AdminController extends Controller
             //get user status
             $user = $driver->user;
             //update status
-            $user->update(['status' => $request->input('status')] ?? $user->status);
+            $user->update([
+                'status' => $request->input('status') ?? $user->status,
+                'note' => $request->input('note') ?? $user->note,
+            ]);
             return ResponseHelper::Out('success', 'Driver status update successfully', $driver, 200);
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);

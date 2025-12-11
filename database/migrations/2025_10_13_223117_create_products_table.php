@@ -21,8 +21,7 @@ return new class extends Migration
             $table->string('public_id')->nullable();
             $table->integer('star')->default(0);
             $table->string('image', 200);
-            $table->json('color');
-            $table->json('size');
+            $table->json('attributes')->nullable();
             $table->enum('remark', ['Top', 'New'])->default('New');
             $table->tinyInteger('is_active',[0,1,2])->default(0)->comment('0 = No, 1 = Yes, 2=cancel');
             $table->boolean('new_item')->default(0)->comment('0 = No, 1 = Yes');

@@ -49,40 +49,53 @@ class BuyerHomeController extends Controller
         });
         return ResponseHelper::Out('success', 'Popular Product fetched successfully', $data, 200);
     }
+    //vendor first product
     public function vendorFirstProduct(): JsonResponse
     {
         $vendors = Vendor::with(['user', 'categories.products'])
             ->inRandomOrder()
-            ->take(10)
+            ->take(50)
             ->get();
-        $data = $vendors->map(function ($vendor) {
-            $firstCategory = $vendor->categories->first();
-            $firstProduct = $firstCategory ? $firstCategory->products->first() : null;
+
+        // Filter kore sudhu oi vendor jader first product ache
+        $vendorsWithFirstProduct = $vendors->filter(function ($vendor) {
+            return $vendor->categories->contains(function ($category) {
+                return $category->products->isNotEmpty();
+            });
+        });
+
+        $data = $vendorsWithFirstProduct->map(function ($vendor) {
+            // First category jekhane product ache
+            $firstCategory = $vendor->categories->first(function ($category) {
+                return $category->products->isNotEmpty();
+            });
+
+            $firstProduct = $firstCategory->products->first();
+
             return [
                 'vendor_id' => $vendor->id,
                 'business_name' => $vendor->business_name,
                 'vendor_name' => $vendor->user ? $vendor->user->name : null,
                 'vendor_image' =>  $vendor->user->image,
-                'category' => $firstCategory ? [
+                'category' => [
                     'id' => $firstCategory->id,
                     'name' => $firstCategory->name,
-                ] : null,
-                'product' => $firstProduct ? [
+                ],
+                'product' => [
                     'id' => $firstProduct->id,
                     'discount' => $firstProduct->discount,
                     'name' => $firstProduct->name,
                     'regular_price' => $firstProduct->regular_price,
                     'sell_price' => $firstProduct->sell_price,
                     'image' => $firstProduct->image ?? null,
-                ] : null,
+                ],
             ];
         });
-        return ResponseHelper::Out('success', 'Product fetched successfully', $data, 200);
+
+        return ResponseHelper::Out('success', 'Product fetched successfully', $data->values(), 200);
     }
     public function vendorListId(Request $request, $id): JsonResponse
     {
-
-
         // get all selected vendor
         $vendor = Vendor::where('id', $id)
             ->with([

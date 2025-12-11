@@ -161,6 +161,7 @@ class InvoiceController extends Controller
             // get cart data by login buyer
             $invoices = InvoiceItem::where('user_id', $user_id)
                 ->with(['invoice','product'])
+                ->orderBy('id', 'DESC')
                 ->get();
 //                ->paginate(10);
             if ($invoices->isEmpty()) {

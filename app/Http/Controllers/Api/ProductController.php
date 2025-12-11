@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Exception;
 use App\Helpers\ResponseHelper;
@@ -163,46 +164,50 @@ class ProductController extends Controller
                 'image' => 'required|mimes:jpeg,png,jpg,gif,webp|max:2048',
                 'files' => 'required|array',
                 'files.*' => 'required|mimes:jpeg,png,jpg,gif,webp|max:2048',
-                'color' => 'nullable|array',
-                'color.*' => 'string',
-                'size' => 'nullable|array',
-                'size.*' => 'string',
+                'attributes' => 'nullable|json',
                 'category_id' => 'nullable|exists:categories,id',
                 'stock' => 'nullable|integer|min:0',
             ]);
             $userId = $request->header('id');
             $userEmail = $request->header('email');
-            $user = User::where('id', $userId)->where('email', $userEmail)->with('vendor')->first();
-            if(!$user){
-                return ResponseHelper::Out('failed','Vendor not found',null, 404);
+            $user = User::where('id', $userId)
+                ->where('email', $userEmail)
+                ->with('vendor')
+                ->first();
+
+            if (!$user) {
+                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
-            // File upload using your helper
-            $uploadedFiles = FileHelper::upload($request->file('image'), 'product');
-            // If multiple files, take first image path
-            $imagePath = $uploadedFiles[0]?? null;
+
+            // Upload main image
+            if ($request->hasFile('image')) {
+                $uploadedFiles = FileHelper::upload($request->file('image'), 'product');
+                $imagePath = $uploadedFiles[0] ?? null;
+            }
+            // Create product
             $product = Product::create([
-                'name' => $request->input('name'),
-                'description' => $request->input('description'),
-                'regular_price' => $request->input('regular_price'),
-                'sell_price' => $request->input('sell_price'),
-                'color' => $request->input('color'),
-                'size' => $request->input('size'),
-                'image' => $imagePath['url'],
-                'public_id' => $imagePath['public_id'],
-                'vendor_id' => $user->vendor->id,
-                'category_id' => $request->input('category_id'),
-                'stock' => $request->input('stock')
+                'name'          => $request->name,
+                'description'   => $request->description,
+                'regular_price' => $request->regular_price,
+                'sell_price'    => $request->sell_price,
+                'image'         => $imagePath['url'],
+                'public_id'     => $imagePath['public_id'],
+                'vendor_id'     => $user->vendor->id,
+                'category_id'   => $request->category_id,
+                'stock'         => $request->stock,
+                'attributes'    => $request->input('attributes'),
             ]);
 
+            // Upload additional images
             if ($request->hasFile('files')) {
                 $files = $request->file('files');
-                // all file upload
                 $uploadedFiles = FileHelper::upload($files, "productImage");
+
                 foreach ($uploadedFiles as $file) {
                     ProductImage::create([
                         'image_path' => $file['url'],
                         'public_id'  => $file['public_id'],
-                        'product_id'  => $product->id,
+                        'product_id' => $product->id,
                     ]);
                 }
             }
@@ -211,83 +216,238 @@ class ProductController extends Controller
         } catch (ValidationException $e) {
             return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
         } catch (Exception $e) {
+            DB::rollBack();
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
     // Update Product
     public function update(Request $request, $id): JsonResponse
     {
+        DB::beginTransaction();
         try {
             $request->validate([
                 'name' => 'nullable|string|max:50',
                 'description' => 'nullable|string',
                 'regular_price' => 'nullable|string',
                 'sell_price' => 'nullable|string',
-                'image' => 'nullable',
-                'size' => 'nullable',
-                'color' => 'nullable',
-                'category_id' => 'nullable|exists:categories,id'
+                'image' => 'nullable|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'files' => 'nullable|array',
+                'files.*' => 'nullable|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'attributes' => 'nullable|array',
+                'attributes.*' => 'array',
+                'category_id' => 'nullable|exists:categories,id',
+                'stock' => 'nullable|integer|min:0',
             ]);
-            //  Get user
+
+            // Get user & vendor
             $userId = $request->header('id');
-            // Vendor fetch
-            $vendor = Vendor::where('user_id',$userId)
+            $vendor = Vendor::where('user_id', $userId)
                 ->select(['id', 'user_id'])
                 ->first();
+
             if (!$vendor) {
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
+
             // Get product
-            $product = Product::where('id',$id)->where('vendor_id', $vendor->id)->first();
+            $product = Product::where('id', $id)
+                ->where('vendor_id', $vendor->id)
+                ->first();
+
             if (!$product) {
-                return ResponseHelper::Out('failed', 'product not found', null, 404);
+                return ResponseHelper::Out('failed', 'Product not found', null, 404);
             }
+
             // Handle main image update
             if ($request->hasFile('image')) {
-                // Delete old main image
                 if ($product->public_id) {
                     FileHelper::delete($product->public_id);
                 }
-                // File upload using your helper
+
                 $uploadedFiles = FileHelper::upload($request->file('image'), 'product');
-                // If multiple files, take first image path
-                $imagePath = $uploadedFiles[0]?? null;
+                $imagePath = $uploadedFiles[0] ?? null;
                 $product->image = $imagePath['url'];
                 $product->public_id = $imagePath['public_id'];
                 $product->save();
-            } else {
-                $imagePath = $product->image;
             }
-            // Update product
+
+            // Update product fields
             $product->update([
                 'name' => $request->input('name', $product->name),
                 'description' => $request->input('description', $product->description),
                 'regular_price' => $request->input('regular_price', $product->regular_price),
                 'sell_price' => $request->input('sell_price', $product->sell_price),
-                'color' => isset($request->color) ? $request->input('color') : $product->color,
-                'size' => isset($request->size) ? $request->input('size') : $product->size,
+                'attributes' => $request->has('attributes') ? $request->input('attributes') : $product->attributes,
                 'category_id' => $request->input('category_id', $product->category_id),
-                'stock' => $request->input('stock')
+                'stock' => $request->input('stock', $product->stock),
             ]);
+
             // Handle additional files
             if ($request->hasFile('files')) {
                 $files = $request->file('files');
                 $uploadedImages = FileHelper::upload($files, 'productImage');
+
                 foreach ($uploadedImages as $file) {
                     ProductImage::create([
                         'image_path' => $file['url'],
                         'public_id'  => $file['public_id'],
-                        'product_id'  => $product->id
+                        'product_id' => $product->id
                     ]);
                 }
             }
+
+            DB::commit();
+
             return ResponseHelper::Out('success', 'Product successfully updated', $product, 200);
+
         } catch (ValidationException $e) {
+            DB::rollBack();
             return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
         } catch (Exception $e) {
+            DB::rollBack();
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+
+    //store product
+
+//    public function store(Request $request): JsonResponse
+//    {
+//        DB::beginTransaction();
+//        try {
+//            $request->validate([
+//                'name' => 'required|string|max:50',
+//                'description' => 'nullable|string',
+//                'regular_price' => 'required|string|max:50',
+//                'sell_price' => 'required|string|max:50',
+//                'image' => 'required|mimes:jpeg,png,jpg,gif,webp|max:2048',
+//                'files' => 'required|array',
+//                'files.*' => 'required|mimes:jpeg,png,jpg,gif,webp|max:2048',
+//                'color' => 'nullable|array',
+//                'color.*' => 'string',
+//                'size' => 'nullable|array',
+//                'size.*' => 'string',
+//                'category_id' => 'nullable|exists:categories,id',
+//                'stock' => 'nullable|integer|min:0',
+//            ]);
+//            $userId = $request->header('id');
+//            $userEmail = $request->header('email');
+//            $user = User::where('id', $userId)->where('email', $userEmail)->with('vendor')->first();
+//            if(!$user){
+//                return ResponseHelper::Out('failed','Vendor not found',null, 404);
+//            }
+//            // File upload using your helper
+//            $uploadedFiles = FileHelper::upload($request->file('image'), 'product');
+//            // If multiple files, take first image path
+//            $imagePath = $uploadedFiles[0]?? null;
+//            $product = Product::create([
+//                'name' => $request->input('name'),
+//                'description' => $request->input('description'),
+//                'regular_price' => $request->input('regular_price'),
+//                'sell_price' => $request->input('sell_price'),
+//                'color' => $request->input('color'),
+//                'size' => $request->input('size'),
+//                'image' => $imagePath['url'],
+//                'public_id' => $imagePath['public_id'],
+//                'vendor_id' => $user->vendor->id,
+//                'category_id' => $request->input('category_id'),
+//                'stock' => $request->input('stock')
+//            ]);
+//
+//            if ($request->hasFile('files')) {
+//                $files = $request->file('files');
+//                // all file upload
+//                $uploadedFiles = FileHelper::upload($files, "productImage");
+//                foreach ($uploadedFiles as $file) {
+//                    ProductImage::create([
+//                        'image_path' => $file['url'],
+//                        'public_id'  => $file['public_id'],
+//                        'product_id'  => $product->id,
+//                    ]);
+//                }
+//            }
+//            DB::commit();
+//            return ResponseHelper::Out('success', 'Product successfully created', $product, 201);
+//        } catch (ValidationException $e) {
+//            return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
+//        } catch (Exception $e) {
+//            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+//        }
+//    }
+    //update product
+//    public function update(Request $request, $id): JsonResponse
+//    {
+//        try {
+//            $request->validate([
+//                'name' => 'nullable|string|max:50',
+//                'description' => 'nullable|string',
+//                'regular_price' => 'nullable|string',
+//                'sell_price' => 'nullable|string',
+//                'image' => 'nullable',
+//                'size' => 'nullable',
+//                'color' => 'nullable',
+//                'category_id' => 'nullable|exists:categories,id'
+//            ]);
+//            //  Get user
+//            $userId = $request->header('id');
+//            // Vendor fetch
+//            $vendor = Vendor::where('user_id',$userId)
+//                ->select(['id', 'user_id'])
+//                ->first();
+//            if (!$vendor) {
+//                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+//            }
+//            // Get product
+//            $product = Product::where('id',$id)->where('vendor_id', $vendor->id)->first();
+//            if (!$product) {
+//                return ResponseHelper::Out('failed', 'product not found', null, 404);
+//            }
+//            // Handle main image update
+//            if ($request->hasFile('image')) {
+//                // Delete old main image
+//                if ($product->public_id) {
+//                    FileHelper::delete($product->public_id);
+//                }
+//                // File upload using your helper
+//                $uploadedFiles = FileHelper::upload($request->file('image'), 'product');
+//                // If multiple files, take first image path
+//                $imagePath = $uploadedFiles[0]?? null;
+//                $product->image = $imagePath['url'];
+//                $product->public_id = $imagePath['public_id'];
+//                $product->save();
+//            } else {
+//                $imagePath = $product->image;
+//            }
+//            // Update product
+//            $product->update([
+//                'name' => $request->input('name', $product->name),
+//                'description' => $request->input('description', $product->description),
+//                'regular_price' => $request->input('regular_price', $product->regular_price),
+//                'sell_price' => $request->input('sell_price', $product->sell_price),
+//                'color' => isset($request->color) ? $request->input('color') : $product->color,
+//                'size' => isset($request->size) ? $request->input('size') : $product->size,
+//                'category_id' => $request->input('category_id', $product->category_id),
+//                'stock' => $request->input('stock')
+//            ]);
+//            // Handle additional files
+//            if ($request->hasFile('files')) {
+//                $files = $request->file('files');
+//                $uploadedImages = FileHelper::upload($files, 'productImage');
+//                foreach ($uploadedImages as $file) {
+//                    ProductImage::create([
+//                        'image_path' => $file['url'],
+//                        'public_id'  => $file['public_id'],
+//                        'product_id'  => $product->id
+//                    ]);
+//                }
+//            }
+//            return ResponseHelper::Out('success', 'Product successfully updated', $product, 200);
+//        } catch (ValidationException $e) {
+//            return ResponseHelper::Out('failed', 'Validation exception', $e->errors(), 422);
+//        } catch (Exception $e) {
+//            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+//        }
+//    }
     // Delete Product
     public function destroy(Request $request, $id): JsonResponse
     {

@@ -28,6 +28,7 @@ return new class extends Migration
             $table->boolean('is_active')->default(false);
             $table->enum('status', ['Pending','Approved','Rejected'])->default('Pending');
             $table->text('fcm_token')->nullable();
+            $table->text('note')->nullable();
             $table->timestamp('expires_at')->nullable();
             // invite flow er jonno
             $table->string('invite_token')->nullable()->unique();

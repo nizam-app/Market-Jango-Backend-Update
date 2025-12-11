@@ -25,6 +25,7 @@ class Product extends Model
         'just_for_you',
         'top_product',
         'category_id',
+        'attributes',
         'stock'
     ];
     protected $casts = [
