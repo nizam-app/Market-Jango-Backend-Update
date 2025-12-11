@@ -8,7 +8,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class AdminInviteMail extends Mailable
+class VendorInviteMail extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -20,23 +20,20 @@ class AdminInviteMail extends Mailable
      */
     public function __construct(User $user, string $tempPassword)
     {
-        $this->user         = $user;
+        $this->user = $user;
         $this->tempPassword = $tempPassword;
     }
 
-    /**
-     * Build the message.
-     */
     public function build()
     {
-        return $this->subject('Your Market Jango admin account')
-            ->view('emails.admin_invite')
+        return $this->subject('Your Market Jango vendor account')
+            ->view('emails.vendor_invite')
             ->with([
-                'name'         => $this->user->name,
-                'email'        => $this->user->email,
+                'name' => $this->user->name,
+                'email' => $this->user->email,
                 'tempPassword' => $this->tempPassword,
                 // frontend er login page link jodi dite chao
-                'loginUrl'     => config('app.frontend_url', 'http://localhost:5173/login'),
+                'loginUrl' => config('app.frontend_url', 'http://localhost:5173/login'),
             ]);
     }
 }

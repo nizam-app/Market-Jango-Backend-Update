@@ -3,13 +3,13 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Your Market Jango admin account</title>
+    <title>Your Market Jango vendor account</title>
 </head>
 <body style="font-family: Arial, sans-serif; color: #333;">
 
 <h2>Hello {{ $name }},</h2>
 
-<p>You have been added as an admin/manager on <strong>Market Jango</strong>.</p>
+<p>You have been added as an vendor on <strong>Market Jango</strong>.</p>
 
 <p>Here are your login details:</p>
 

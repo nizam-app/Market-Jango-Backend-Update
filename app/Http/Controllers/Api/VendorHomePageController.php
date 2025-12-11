@@ -137,6 +137,7 @@ class VendorHomePageController extends Controller
             }
             // Step 2: Collect vendor addresses
             $vendorIds = $users->pluck('id')->toArray();
+
             $vendors = Vendor::whereIn('user_id', $vendorIds)->get();
 
             if ($vendors->isEmpty()) {

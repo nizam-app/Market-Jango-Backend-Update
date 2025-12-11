@@ -183,11 +183,11 @@ Route::middleware(['tokenVerify'])->group(function () {
         Route::put('/read/{id}', [NotificationController::class, 'markAsRead']);
     });
     //vendor routes
+    Route::get('/drivers/search', [VendorHomePageController::class, 'driverSearch']);
     Route::middleware('userTypeVerify:vendor')->group(function () {
         Route::post('/vendor/register', [AuthController::class, 'registerVendor']);
         Route::middleware('statusVerify')->group(function () {
             //Vendor Home Page
-            Route::get('/drivers/search', [VendorHomePageController::class, 'driverSearch']);
             Route::get('/vendor/all/order', [VendorHomePageController::class, 'vendorAllOrder']);
             Route::post('/vendor/invoice/create/{driver_id}/{order_item_id}', [VendorHomePageController::class, 'vendorInvoice']);
 

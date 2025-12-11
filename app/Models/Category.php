@@ -13,10 +13,16 @@ class Category extends Model
         'is_top_category',
         'vendor_id'
     ];
-    public function vendor()
+    public function vendors()
     {
-        return $this->belongsTo(Vendor::class);
+        return $this->belongsToMany(Vendor::class, 'category_vendor')
+            ->withPivot('priority')
+            ->withTimestamps();
     }
+//    public function vendor()
+//    {
+//        return $this->belongsTo(Vendor::class);
+//    }
     public function products()
     {
         return $this->hasMany(Product::class);

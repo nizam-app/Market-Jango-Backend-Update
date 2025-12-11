@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Mail;
 
 use App\Models\User;
@@ -8,13 +7,11 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class AdminInviteMail extends Mailable
+class DriverInviteMail extends Mailable
 {
     use Queueable, SerializesModels;
-
     public User $user;
     public string $tempPassword;
-
     /**
      * Create a new message instance.
      */
@@ -23,14 +20,10 @@ class AdminInviteMail extends Mailable
         $this->user         = $user;
         $this->tempPassword = $tempPassword;
     }
-
-    /**
-     * Build the message.
-     */
     public function build()
     {
-        return $this->subject('Your Market Jango admin account')
-            ->view('emails.admin_invite')
+        return $this->subject('Your Market Jango driver account')
+            ->view('emails.driver_invite')
             ->with([
                 'name'         => $this->user->name,
                 'email'        => $this->user->email,

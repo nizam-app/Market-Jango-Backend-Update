@@ -8,6 +8,8 @@ use App\Helpers\PaymentSystem;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Mail\AdminInviteMail;
+use App\Mail\DriverInviteMail;
+use App\Mail\VendorInviteMail;
 use App\Models\Admin;
 use App\Models\Buyer;
 use App\Models\Category;
@@ -143,7 +145,7 @@ class AdminController extends Controller
                 }
             }
             //mail send
-//            Mail::to($user->email)->send(new AdminInviteMail($user, $tempPassword));
+            Mail::to($user->email)->send(new VendorInviteMail($user, $tempPassword));
             $data = [
                 'user'=>$user,
                 'vendor'=>$vendor
@@ -205,7 +207,7 @@ class AdminController extends Controller
                 }
             }
             //mail send
-//            Mail::to($user->email)->send(new AdminInviteMail($user, $tempPassword));
+            Mail::to($user->email)->send(new DriverInviteMail ($user, $tempPassword));
             $data = [
                 'user'=>$user,
                 'driver'=>$driver
