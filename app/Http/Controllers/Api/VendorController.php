@@ -38,26 +38,61 @@ class VendorController extends Controller
     public function category(Request $request): JsonResponse
     {
         try {
-            $vendor = Vendor::where('user_id',  $request->header('id'))->select(['id', 'user_id'])->first();
+            $vendor = Vendor::where('user_id', $request->header('id'))
+                ->select(['id', 'user_id'])
+                ->first();
+
             if (!$vendor) {
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
-            $categories = Category::where('vendor_id', $vendor->id)
+
+            // Fetch categories using pivot (category_vendor)
+            $categories = Category::whereHas('vendors', function ($query) use ($vendor) {
+                $query->where('vendor_id', $vendor->id);
+            })
                 ->with([
                     'products:id,name,description,sell_price,regular_price,category_id',
                     'products.images:id,product_id,image_path,public_id',
                     'categoryImages:id,category_id,image_path',
-                    'vendor:id,country,address,business_name,business_type,user_id',
-                    'vendor.user:id,name,image,email,phone,language',
-
+                    'vendors:id,country,address,business_name,business_type,user_id',
+                    'vendors.user:id,name,image,email,phone,language'
                 ])
-                ->select(['id', 'name', 'status','vendor_id'])
+                ->select(['id', 'name', 'status'])
                 ->paginate(10);
+
             return ResponseHelper::Out('success', 'All categories successfully fetched', $categories, 200);
+
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+
+    //=================OLD WORK=========================//
+//    public function category(Request $request): JsonResponse
+//    {
+//        try {
+//            $vendor = Vendor::where('user_id',  $request->header('id'))->select(['id', 'user_id'])->first();
+//            if (!$vendor) {
+//                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+//            }
+//            $categories = Category::where('vendor_id', $vendor->id)
+//                ->with([
+//                    'products:id,name,description,sell_price,regular_price,category_id',
+//                    'products.images:id,product_id,image_path,public_id',
+//                    'categoryImages:id,category_id,image_path',
+//                    'vendor:id,country,address,business_name,business_type,user_id',
+//                    'vendor.user:id,name,image,email,phone,language',
+//
+//                ])
+//                ->select(['id', 'name', 'status','vendor_id'])
+//                ->paginate(10);
+//            return ResponseHelper::Out('success', 'All categories successfully fetched', $categories, 200);
+//        } catch (Exception $e) {
+//            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+//        }
+//    }
+
+    //================OLD WORK=======================//
     public function categoryByProduct(Request $request, $id): JsonResponse
     {
         try {

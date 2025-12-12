@@ -76,6 +76,7 @@ class BuyerHomeController extends Controller
                 'vendor_id' => $vendor->id,
                 'business_name' => $vendor->business_name,
                 'vendor_name' => $vendor->user ? $vendor->user->name : null,
+                'user_id' => $vendor->user ? $vendor->user->id : null,
                 'vendor_image' =>  $vendor->user->image,
                 'category' => [
                     'id' => $firstCategory->id,
@@ -99,10 +100,10 @@ class BuyerHomeController extends Controller
         // get all selected vendor
         $vendor = Vendor::where('id', $id)
             ->with([
-            'user',         // যদি vendor -> user থাকে
+            'user',
             'products',
             'location',
-            'ratings'       // যদি review/rating model থাকে
+            'ratings'
         ]);
 
         if (!$vendor) {
@@ -120,32 +121,94 @@ class BuyerHomeController extends Controller
             $request->validate([
                 'location' => 'required|string',
             ]);
-            $location   = $request->input('location');
+
+            $location     = $request->input('location');
             $categoryName = $request->input('category');
-            $vendors = Vendor::where('address', 'LIKE', "%{$location}%")->pluck('id');
-            if ($vendors->isEmpty()) {
+
+            // 1. Get vendor IDs from location
+            $vendorIds = Vendor::where('address', 'LIKE', "%{$location}%")->pluck('id');
+
+            if ($vendorIds->isEmpty()) {
                 return ResponseHelper::Out('success', 'No vendors found for this location', null, 200);
             }
-            $categories = Category::whereIn('vendor_id', $vendors)
-                ->where('name','LIKE', "%{$categoryName}%" )
-                ->pluck('id');
-            if ($categories->isEmpty()) {
+
+            // 2. Get category IDs from pivot table (category_vendor)
+            $categoryIds = DB::table('category_vendor')
+                ->join('categories', 'categories.id', '=', 'category_vendor.category_id')
+                ->when($categoryName, function ($query) use ($categoryName) {
+                    $query->where('categories.name', 'LIKE', "%{$categoryName}%");
+                })
+                ->whereIn('category_vendor.vendor_id', $vendorIds)  // FIXED
+                ->pluck('category_vendor.category_id')
+                ->unique()
+                ->values();
+
+
+            if ($categoryIds->isEmpty()) {
                 return ResponseHelper::Out('success', 'No categories found for selected vendors', null, 200);
             }
-            $products = Product::whereIn('category_id', $categories)->with([
-                'vendor:id,user_id',
-                'vendor.user:id,name',
-                'vendor.reviews:id,vendor_id,review,rating',
-                'category:id,name',
-                'images:id,image_path,public_id,product_id'])
-                ->select(['id','name','description','regular_price','sell_price','image','vendor_id','category_id', 'color', 'size', 'discount'])
+
+            // 3. Get products by category
+            $products = Product::whereIn('category_id', $categoryIds)
+                ->with([
+                    'vendor:id,user_id',
+                    'vendor.user:id,name',
+                    'vendor.reviews:id,vendor_id,review,rating',
+                    'category:id,name',
+                    'images:id,image_path,public_id,product_id'
+                ])
+                ->select([
+                    'id','name','description','regular_price','sell_price','image',
+                    'vendor_id','category_id', 'color', 'size', 'discount'
+                ])
                 ->latest()
                 ->paginate(20);
-            return ResponseHelper::Out('success', 'Products fetched successfully', ["total"=>$products->count(), 'data' => $products], 200);
+
+            return ResponseHelper::Out('success', 'Products fetched successfully', [
+                "total" => $products->total(),
+                "data"  => $products
+            ], 200);
+
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Error filtering locations', $e->getMessage(), 500);
         }
     }
+
+
+    //==============OLD WORK=========================
+//    public function productFilter(Request $request)
+//    {
+//        try {
+//            $request->validate([
+//                'location' => 'required|string',
+//            ]);
+//            $location   = $request->input('location');
+//            $categoryName = $request->input('category');
+//            $vendors = Vendor::where('address', 'LIKE', "%{$location}%")->pluck('id');
+//            if ($vendors->isEmpty()) {
+//                return ResponseHelper::Out('success', 'No vendors found for this location', null, 200);
+//            }
+//            $categories = Category::whereIn('vendor_id', $vendors)
+//                ->where('name','LIKE', "%{$categoryName}%" )
+//                ->pluck('id');
+//            if ($categories->isEmpty()) {
+//                return ResponseHelper::Out('success', 'No categories found for selected vendors', null, 200);
+//            }
+//            $products = Product::whereIn('category_id', $categories)->with([
+//                'vendor:id,user_id',
+//                'vendor.user:id,name',
+//                'vendor.reviews:id,vendor_id,review,rating',
+//                'category:id,name',
+//                'images:id,image_path,public_id,product_id'])
+//                ->select(['id','name','description','regular_price','sell_price','image','vendor_id','category_id', 'color', 'size', 'discount'])
+//                ->latest()
+//                ->paginate(20);
+//            return ResponseHelper::Out('success', 'Products fetched successfully', ["total"=>$products->count(), 'data' => $products], 200);
+//        } catch (Exception $e) {
+//            return ResponseHelper::Out('failed', 'Error filtering locations', $e->getMessage(), 500);
+//        }
+//    }
+////==========================OLD WORK=================================
     // Search Product and Store Search Value to condition
     public function productSearchByBuyer(Request $request): JsonResponse
     {
@@ -242,33 +305,86 @@ class BuyerHomeController extends Controller
     public function vendorCategoryByProduct(Request $request, $id): JsonResponse
     {
         try {
-            $vendor = Vendor::where('id', $id)->with(['user', 'user.reviews'])
+            // Vendor info with user and reviews
+            $vendor = Vendor::where('id', $id)
+                ->with(['user', 'user.reviews'])
                 ->first();
-            $categories = Category::where('vendor_id', $id)
+
+            if (!$vendor) {
+                return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+            }
+
+            // Categories assigned to this vendor via pivot table
+            $categories = Category::whereHas('vendors', function ($query) use ($id) {
+                $query->where('vendor_id', $id);
+            })
                 ->where('status', 'active')
-            ->with([
-                'products' => function ($query) {
-                    $query->where('is_active', 1)
-                        ->select('id','name', 'description', 'regular_price', 'sell_price','discount','image','color', 'size', 'vendor_id','remark', 'category_id')
-                        ->with([
-                            'images:id,product_id,image_path,public_id',
-                            'vendor:id,country,address,business_name,business_type,user_id',
-                            'vendor.user:id,name,image,email,phone,language',
-                        ]);
-                },
-                'categoryImages:id,category_id,image_path,public_id',
-                'vendor.user:id,name,image',
-                'vendor.reviews',
-            ])
-            ->paginate(10);
+                ->with([
+                    'products' => function ($query) {
+                        $query->where('is_active', 1)
+                            ->select('id','name','description','regular_price','sell_price','discount',
+                                'image','color','size','vendor_id','remark','category_id')
+                            ->with([
+                                'images:id,product_id,image_path,public_id',
+                                'vendor:id,country,address,business_name,business_type,user_id',
+                                'vendor.user:id,name,image,email,phone,language',
+                            ]);
+                    },
+                    'categoryImages:id,category_id,image_path,public_id',
+                    'vendors.user:id,name,image',
+                    'vendors.reviews',
+                ])
+                ->paginate(10);
+
             if ($categories->isEmpty()) {
                 return ResponseHelper::Out('success', 'You have no products', [], 200);
             }
-            return ResponseHelper::Out('success', 'Products found', ['all' => $categories->count(), 'categories' => $categories, 'vendor'=>$vendor], 200);
+
+            return ResponseHelper::Out('success', 'Products found', [
+                'all'       => $categories->count(),
+                'categories'=> $categories,
+                'vendor'    => $vendor
+            ], 200);
+
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+
+
+    //======================OLD WORK==========================//
+//    public function vendorCategoryByProduct(Request $request, $id): JsonResponse
+//    {
+//        try {
+//            $vendor = Vendor::where('id', $id)->with(['user', 'user.reviews'])
+//                ->first();
+//            $categories = Category::where('vendor_id', $id)
+//                ->where('status', 'active')
+//            ->with([
+//                'products' => function ($query) {
+//                    $query->where('is_active', 1)
+//                        ->select('id','name', 'description', 'regular_price', 'sell_price','discount','image','color', 'size', 'vendor_id','remark', 'category_id')
+//                        ->with([
+//                            'images:id,product_id,image_path,public_id',
+//                            'vendor:id,country,address,business_name,business_type,user_id',
+//                            'vendor.user:id,name,image,email,phone,language',
+//                        ]);
+//                },
+//                'categoryImages:id,category_id,image_path,public_id',
+//                'vendor.user:id,name,image',
+//                'vendor.reviews',
+//            ])
+//            ->paginate(10);
+//            if ($categories->isEmpty()) {
+//                return ResponseHelper::Out('success', 'You have no products', [], 200);
+//            }
+//            return ResponseHelper::Out('success', 'Products found', ['all' => $categories->count(), 'categories' => $categories, 'vendor'=>$vendor], 200);
+//        } catch (Exception $e) {
+//            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+//        }
+//    }
+    //======================OLD WORK==========================//
+
     // Get All invoice
     public function userInvoice(Request $request): JsonResponse
     {

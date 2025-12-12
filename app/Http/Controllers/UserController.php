@@ -33,6 +33,9 @@ class UserController extends Controller
             $user = User::where('id', $userId)
                 ->with('vendor.reviews', 'buyer', 'driver', 'transport')
                 ->first();
+            if (!$user) {
+                return ResponseHelper::Out('failed', 'user not found', null, 404);
+            }
             $userType =  $user->user_type;
             switch ($userType) {
                 case 'vendor':

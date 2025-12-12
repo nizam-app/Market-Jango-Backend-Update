@@ -310,7 +310,7 @@ Route::middleware(['tokenVerify'])->group(function () {
         Route::delete('/user/destroy/{id}', [AdminController::class, 'destroy']);
         Route::get('/all/order', [AdminController::class, 'allOrder']);
     });
-        Route::get('/drivers/search/location', [DriverHomeController::class, 'driverSearchByLocation']);
+    Route::get('/drivers/search/location', [DriverHomeController::class, 'driverSearchByLocation']);
 
     Route::middleware('userTypeVerify:transport')->group(function () {
     });

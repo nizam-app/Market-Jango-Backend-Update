@@ -884,8 +884,8 @@ class AdminController extends Controller
             //Get All Category But New Product First
             $products = Category::where('status','Active')->where('is_top_category',1)->with([
                 'products',
-                'vendor.user:id,name',
-                'vendor.reviews:id,vendor_id,review,rating',
+                'vendors.user:id,name',
+                'vendors.reviews:id,vendor_id,review,rating',
                 'categoryImages:id,image_path,public_id,category_id'
             ])
                 ->latest()
