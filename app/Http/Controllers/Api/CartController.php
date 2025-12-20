@@ -261,7 +261,7 @@ class CartController extends Controller
             // DELIVERY CHARGE (ROUTE BASED)
             // ===============================
 
-            $deliveryChargeAmount = 0;
+            $deliveryChargeAmount = 100;
 
             $routes = LocationRoute::with(['startPoint', 'endPoint'])->get();
 

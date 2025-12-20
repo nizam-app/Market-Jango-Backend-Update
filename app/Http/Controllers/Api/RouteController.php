@@ -105,6 +105,7 @@ class RouteController extends Controller
             if (!$route) {
                 return ResponseHelper::Out('failed', 'Route not found', null, 404);
             }
+            LocationRoute::where('route_id', $id)->delete();
             $route->delete();
             return ResponseHelper::Out('success', 'Route Delete successfully', null, 200);
         } catch (Exception $e) {
