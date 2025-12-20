@@ -13,7 +13,6 @@ class Driver extends Model
         'price',
         'rating',
         'description',
-        'route_id',
         'user_id'
     ];
     public function user(){
@@ -23,10 +22,15 @@ class Driver extends Model
     {
         return $this->hasMany(UserImage::class, 'user_id', 'id');
     }
-    public function route()
-    {
-        return $this->belongsTo(Route::class);
-    }
+    public function routes()
+{
+    return $this->belongsToMany(Route::class, 'driver_route');
+}
+
+    // public function route()
+    // {
+    //     return $this->belongsTo(Route::class);
+    // }
 
 
 }

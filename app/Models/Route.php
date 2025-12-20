@@ -16,10 +16,15 @@ class Route extends Model
         return $this->hasMany(Location::class);
 
     }
-    public function driver()
+    public function drivers()
     {
-        return $this->hasMany(Driver::class);
-
+        return $this->belongsToMany(Driver::class, 'driver_route');
     }
+
+    // public function driver()
+    // {
+    //     return $this->hasMany(Driver::class);
+
+    // }
 
 }

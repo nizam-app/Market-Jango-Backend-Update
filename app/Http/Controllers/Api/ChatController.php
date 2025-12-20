@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Api;
+
 use App\Models\Offer;
 use App\Events\MessageSent;
 use App\Helpers\FileHelper;
@@ -129,7 +130,6 @@ class ChatController extends Controller
                 });
 
             return ResponseHelper::Out('success', 'Chat list retrieved successfully', $chatList, 200);
-
         } catch (\Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
@@ -160,7 +160,7 @@ class ChatController extends Controller
             }
             $message = Chat::create([
                 'sender_id'  => $sender->id,
-                'receiver_id'=> $receiver->id,
+                'receiver_id' => $receiver->id,
                 'message'    => $request->message ?? null,
                 'image' => $imagePath,
                 'public_id'  => $publicId,
@@ -179,10 +179,10 @@ class ChatController extends Controller
         $userId = $request->header('id');
 
         $messages = Chat::with('offer')   // <--- ei line add
-        ->where(function ($q) use ($userId, $receiverId) {
-            $q->where('sender_id', $userId)
-                ->where('receiver_id', $receiverId);
-        })
+            ->where(function ($q) use ($userId, $receiverId) {
+                $q->where('sender_id', $userId)
+                    ->where('receiver_id', $receiverId);
+            })
             ->orWhere(function ($q) use ($userId, $receiverId) {
                 $q->where('sender_id', $receiverId)
                     ->where('receiver_id', $userId);
@@ -213,6 +213,7 @@ class ChatController extends Controller
                 'sale_price'      => 'required|numeric|min:0',
                 'delivery_charge' => 'required|numeric|min:0',
                 'note'            => 'nullable|string',
+                'attributes' => 'nullable|json',
             ]);
             // All data will come from request->input()
             $quantity       = $request->input('quantity', 1);
@@ -235,8 +236,7 @@ class ChatController extends Controller
                 'public_id'      => $product->public_id,
                 'sale_price'      => $salePrice,
                 'delivery_charge' => $deliveryCharge,
-                'color' => $request->input('color'),
-                'size' => $request->input('size'),
+                'attributes'    => $request->input('attributes'),
                 'total_amount'    => $totalAmount,
                 'status'          => 'pending',
                 'note'            => $request->input('note'),

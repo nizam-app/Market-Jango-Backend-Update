@@ -21,7 +21,7 @@ class CategoryController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $categories = Category::with([
+            $categories = Category::where('status', 'Active')->with([
                 'products' => function ($query) {
                     $query->where('is_active', 1)
                         ->select('id','name', 'description', 'regular_price', 'sell_price','discount',
@@ -45,7 +45,7 @@ class CategoryController extends Controller
     }
 
 
-    // Store Category (Vendor optional)
+    // Store Category
     public function store(Request $request): JsonResponse
     {
         DB::beginTransaction();
@@ -64,7 +64,6 @@ class CategoryController extends Controller
                 'description' => $request->description,
                 'status'      => $request->status
             ]);
-
             // Vendor assign only if provided
             if ($request->has('vendor_ids')) {
                 $category->vendors()->syncWithoutDetaching($request->vendor_ids);
@@ -72,6 +71,7 @@ class CategoryController extends Controller
 
             // Image upload
             if ($request->hasFile('images')) {
+
                 $files = $request->file('images');
                 $uploadedFiles = FileHelper::upload($files, "category");
 
@@ -106,21 +106,17 @@ class CategoryController extends Controller
             $request->validate([
                 'vendor_ids' => 'required|array'
             ]);
-
             $category = Category::findOrFail($id);
-
-            // Add new vendors, keep old ones
+            if(!$category){
+                return ResponseHelper::Out('failed','Vendor not found',null, 404);
+            }
+            // Add new vendors
             $category->vendors()->syncWithoutDetaching($request->vendor_ids);
-
             return ResponseHelper::Out('success', 'Vendors successfully added', $category->load('vendors'), 200);
-
         } catch (Exception $e) {
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
-
-
     // Update category information only (not vendor logic here)
     public function update(Request $request, $id): JsonResponse
     {

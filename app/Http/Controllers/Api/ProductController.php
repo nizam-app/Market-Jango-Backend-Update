@@ -233,8 +233,7 @@ class ProductController extends Controller
                 'image' => 'nullable|mimes:jpeg,png,jpg,gif,webp|max:2048',
                 'files' => 'nullable|array',
                 'files.*' => 'nullable|mimes:jpeg,png,jpg,gif,webp|max:2048',
-                'attributes' => 'nullable|array',
-                'attributes.*' => 'array',
+                'attributes' => 'nullable|json',
                 'category_id' => 'nullable|exists:categories,id',
                 'stock' => 'nullable|integer|min:0',
             ]);
@@ -277,7 +276,7 @@ class ProductController extends Controller
                 'description' => $request->input('description', $product->description),
                 'regular_price' => $request->input('regular_price', $product->regular_price),
                 'sell_price' => $request->input('sell_price', $product->sell_price),
-                'attributes' => $request->has('attributes') ? $request->input('attributes') : $product->attributes,
+                'attributes' => $request->input('attributes', $product->attributes),
                 'category_id' => $request->input('category_id', $product->category_id),
                 'stock' => $request->input('stock', $product->stock),
             ]);

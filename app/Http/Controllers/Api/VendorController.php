@@ -91,7 +91,6 @@ class VendorController extends Controller
 //            return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
 //        }
 //    }
-
     //================OLD WORK=======================//
     public function categoryByProduct(Request $request, $id): JsonResponse
     {

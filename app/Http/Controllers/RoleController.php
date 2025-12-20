@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 
 use App\Http\Controllers\Controller;
 use App\Services\RoleService;
+use App\Models\LocationRoute;
+use Illuminate\Support\Facades\DB;
 
 class RoleController extends Controller
 {

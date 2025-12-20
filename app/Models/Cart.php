@@ -15,6 +15,7 @@ class Cart extends Model
         'buyer_id',
         'vendor_id',
         'delivery_charge',
+        'attributes',
         'status',
     ];
     public function product()

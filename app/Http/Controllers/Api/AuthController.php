@@ -425,11 +425,14 @@ class AuthController extends Controller
     //driver store
     public function registerDriver(Request $request):JsonResponse
     {
+        DB::beginTransaction();
         try {
                 $request->validate([
                     'car_name'  => 'required|string',
                     'car_model'  => 'required|string',
-                    'location'  => 'required|string',
+                    'location'  => 'required|string',                
+                    'route_ids'   => 'nullable|array',
+                    'route_ids.*' => 'exists:routes,id',
                     'price'  => 'required|string',
                     'files.*' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf,doc,docx,xls,xlsx|max:10240'
                 ]);
@@ -446,9 +449,11 @@ class AuthController extends Controller
                     'car_model' => $request->input('car_model'),
                     'location' => $request->input('location'),
                     'price' => $request->input('price'),
-                    'user_id' => $userId,
-                    'route_id' => $request->input('route_id'),
+                    'user_id' => $userId
                 ]);
+                if ($request->has('route_ids')) {
+                    $driver->routes()->syncWithoutDetaching($request->route_ids);
+                }
             if ($request->hasFile('files')) {
                 $oldImages = UserImage::where('user_type', 'driver')->where('user_id', $driver->id)->get();
                 if ($oldImages->count() > 0) {
@@ -472,10 +477,13 @@ class AuthController extends Controller
                     ]);
                 }
             }
-            return ResponseHelper::Out('success', 'Driver registered successfully!', $driver, 201);
+              DB::commit();
+            return ResponseHelper::Out('success', 'Driver registered successfully!', $driver->load('routes'), 201);
         } catch (ValidationException $e) {
+             DB::rollBack();
             return ResponseHelper::Out('error','Validation Failed',$e->errors(),422);
         } catch (Exception $e) {
+             DB::rollBack();
             return ResponseHelper::Out('failed','Something went wrong',$e->getMessage(),500);
         }
     }
@@ -699,17 +707,6 @@ class AuthController extends Controller
                         "name" => $request->input('name', $user->name),
                         "language" => $request->input('language', $user->language)
                     ]);
-//                    if ($admin) {
-//                        $admin->update([
-//                            "role" => $request->input('role', $admin->role),
-//                            'date_of_birth'      => $request->input('date_of_birth', $admin->date_of_birth),
-//                            'present_address'    => $request->input('present_address', $admin->present_address),
-//                            'permanent_address'  => $request->input('permanent_address', $admin->permanent_address),
-//                            'city'               => $request->input('city', $admin->city),
-//                            'postal_code'        => $request->input('postal_code', $admin->postal_code),
-//                            'country'            => $request->input('country', $admin->country)
-//                        ]);
-//                    }
                     break;
                 default:
                     break;

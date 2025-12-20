@@ -17,6 +17,7 @@ class Vendor extends Model
         'close_time',
         'user_id',
         'cover_image',
+        'zone_id',
         'public_id'
     ];
     public function categories()

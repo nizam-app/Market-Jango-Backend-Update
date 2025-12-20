@@ -21,6 +21,7 @@ class Offer extends Model
         'receiver_id',
         'product_id',
         'color',
+        'attributes',
         'size'
     ];
 

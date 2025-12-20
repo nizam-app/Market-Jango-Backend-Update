@@ -33,9 +33,11 @@ use App\Models\User;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Api\ZoneController;
+use App\Http\Controllers\Api\RouteLocationController;
 
 //after login
-Route::get('/', function (){
+Route::get('/', function () {
     return response()->json("server is running");
 });
 Route::post('/register-type', [AuthController::class, 'registerType']);
@@ -60,6 +62,24 @@ Route::middleware(['tokenVerify'])->group(function () {
         $user->update(['fcm_token' => $request->token]);
         return response()->json($user);
     });
+    //zone routes
+    Route::prefix('zones')->group(function () {
+        Route::get('/', [ZoneController::class, 'index']);
+        Route::post('/', [ZoneController::class, 'store']);
+        Route::get('{id}', [ZoneController::class, 'show']);
+        Route::put('{id}', [ZoneController::class, 'update']);
+        Route::delete('{id}', [ZoneController::class, 'destroy']);
+    });
+    //
+    Route::prefix('route-locations')->group(function () {
+    Route::get('/', [RouteLocationController::class, 'index']);       // All route locations
+    Route::post('/', [RouteLocationController::class, 'store']);      // Create new
+    Route::get('/{id}', [RouteLocationController::class, 'show']);    // Show single
+    Route::put('/{id}', [RouteLocationController::class, 'update']);  // Update
+    Route::delete('/{id}', [RouteLocationController::class, 'destroy']); // Delete
+});
+
+
     //chat routes
     Route::prefix('chat')->group(function () {
         Route::get('/user', [ChatController::class, 'userInbox']);
@@ -98,11 +118,10 @@ Route::middleware(['tokenVerify'])->group(function () {
     });
     Route::post('/roles/{role_id}/permissions', [RoleController::class, 'assignPermissions']);
     Route::prefix('permissions')->group(function () {
-    Route::get('/', [PermissionController::class, 'index']);
-    Route::post('/', [PermissionController::class, 'store']);
-    Route::put('/{id}', [PermissionController::class, 'update']);
-    Route::delete('/{id}', [PermissionController::class, 'destroy']);
-
+        Route::get('/', [PermissionController::class, 'index']);
+        Route::post('/', [PermissionController::class, 'store']);
+        Route::put('/{id}', [PermissionController::class, 'update']);
+        Route::delete('/{id}', [PermissionController::class, 'destroy']);
     });
     Route::post('/users/{user_id}/assign-role', [UserRoleController::class, 'assignRole']);
     Route::delete('/users/{user_id}/remove-role', [UserRoleController::class, 'removeRole']);
@@ -117,8 +136,8 @@ Route::middleware(['tokenVerify'])->group(function () {
     Route::get('/vendor/first/product', [BuyerHomeController::class, 'vendorFirstProduct']);
     Route::get('/popular/product/{id}', [BuyerHomeController::class, 'popularProducts']);
     Route::get('/language', [AuthController::class, 'language']);
-//    Route::get('/drivers/filter',        [AdminController::class, 'driverFilter']);
-//    Route::get('/drivers/{id}',   [AdminController::class, 'driverDetails']);
+    //    Route::get('/drivers/filter',        [AdminController::class, 'driverFilter']);
+    //    Route::get('/drivers/{id}',   [AdminController::class, 'driverDetails']);
     // Fetch all buyer home page products
     Route::prefix('admin-selects')->group(function () {
         Route::get('top-categories', [AdminController::class, 'getTopCategory']);
@@ -151,7 +170,7 @@ Route::middleware(['tokenVerify'])->group(function () {
     Route::get('/category/vendor/product/{id}', [BuyerHomeController::class, 'vendorCategoryByProduct']);
 
     //Driver Home Page Routes
-//    Route::get('/driver/total-order/count', [DriverHomeController::class, 'driverTotalOrderCount']);
+    //    Route::get('/driver/total-order/count', [DriverHomeController::class, 'driverTotalOrderCount']);
 
     // Route routes
     Route::prefix('route')->group(function () {
@@ -205,12 +224,6 @@ Route::middleware(['tokenVerify'])->group(function () {
                 Route::get('/category', [VendorController::class, 'category']);
                 Route::get('/category/{id}', [VendorController::class, 'categoryByProduct']);
                 Route::get('/attribute', [VendorController::class, 'attribute']);
-            });
-            //category routes
-            Route::prefix('category')->group(function () {
-                Route::post('/create', [CategoryController::class, 'store']);
-                Route::post('/update/{id}', [CategoryController::class, 'update']);
-                Route::post('/destroy/{id}', [CategoryController::class, 'destroy']);
             });
             //product attribute routes
             Route::prefix('product-attribute')->group(function () {
@@ -275,8 +288,16 @@ Route::middleware(['tokenVerify'])->group(function () {
 
     //Admin Routes
     Route::middleware('userTypeVerify:admin')->group(function () {
+        //category routes
+        Route::prefix('category')->group(function () {
+            Route::post('/create', [CategoryController::class, 'store']);
+            Route::put('/update/{id}', [CategoryController::class, 'update']);
+            Route::post('/destroy/{id}', [CategoryController::class, 'destroy']);
+            Route::put('/{id}/vendors/add', [CategoryController::class, 'addVendors']);
+        });
         Route::post('/admin/invoice/create/{driver_id}/{order_item_id}', [AdminController::class, 'adminInvoice']);
         Route::get('/admin-vendor', [AdminController::class, 'adminVendor']);
+        Route::put('/admin-update-user-info/{user_id}', [AdminController::class, 'adminUpdateUserInfo']);
         Route::get('/admin-driver', [AdminController::class, 'adminDriver']);
         Route::post('/create-vendor', [AdminController::class, 'createVendor']);
         Route::post('/create-driver', [AdminController::class, 'createDriver']);
@@ -312,8 +333,7 @@ Route::middleware(['tokenVerify'])->group(function () {
     });
     Route::get('/drivers/search/location', [DriverHomeController::class, 'driverSearchByLocation']);
 
-    Route::middleware('userTypeVerify:transport')->group(function () {
-    });
+    Route::middleware('userTypeVerify:transport')->group(function () {});
     Route::post("/transport/invoice/create/{driver_id}", [TransportHomeController::class, 'InvoiceCreateTransport']);
     //search
     Route::get('/search/product', [BuyerHomeController::class, 'productSearchByBuyer']);
@@ -336,7 +356,3 @@ Route::middleware(['tokenVerify'])->group(function () {
         Route::get('/search', [VendorController::class, 'searchByName']);
     });
 });
-
-
-
-

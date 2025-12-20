@@ -14,8 +14,7 @@ return new class extends Migration
         Schema::create('carts', function (Blueprint $table) {
             $table->id();
             $table->integer('quantity')->default(1);
-            $table->string('color',20);
-            $table->string('size',20);
+            $table->json('attributes')->nullable();
             $table->decimal('price',10,2);
             $table->decimal('delivery_charge',10, 2);
             $table->foreignId('product_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
