@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductVariantController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\RouteController;
+use App\Http\Controllers\Api\WeightController;
 use App\Http\Controllers\Api\TransportHomeController;
 use App\Http\Controllers\Api\UserRoleController;
 use App\Http\Controllers\Api\VariantValueController;
@@ -62,6 +63,13 @@ Route::middleware(['tokenVerify'])->group(function () {
         $user->update(['fcm_token' => $request->token]);
         return response()->json($user);
     });
+    Route::prefix('weights')->group(function () {
+        Route::get('/', [WeightController::class, 'index']);
+        Route::get('/{id}', [WeightController::class, 'show']);
+        Route::post('/', [WeightController::class, 'store']);
+        Route::put('/{id}', [WeightController::class, 'update']);
+        Route::delete('/{id}', [WeightController::class, 'destroy']);
+    });
     //zone routes
     Route::prefix('zones')->group(function () {
         Route::get('/', [ZoneController::class, 'index']);
@@ -72,12 +80,12 @@ Route::middleware(['tokenVerify'])->group(function () {
     });
     //
     Route::prefix('route-locations')->group(function () {
-    Route::get('/', [RouteLocationController::class, 'index']);       // All route locations
-    Route::post('/', [RouteLocationController::class, 'store']);      // Create new
-    Route::get('/{id}', [RouteLocationController::class, 'show']);    // Show single
-    Route::put('/{id}', [RouteLocationController::class, 'update']);  // Update
-    Route::delete('/{id}', [RouteLocationController::class, 'destroy']); // Delete
-});
+        Route::get('/', [RouteLocationController::class, 'index']);       // All route locations
+        Route::post('/', [RouteLocationController::class, 'store']);      // Create new
+        Route::get('/{id}', [RouteLocationController::class, 'show']);    // Show single
+        Route::put('/{id}', [RouteLocationController::class, 'update']);  // Update
+        Route::delete('/{id}', [RouteLocationController::class, 'destroy']); // Delete
+    });
 
 
     //chat routes
