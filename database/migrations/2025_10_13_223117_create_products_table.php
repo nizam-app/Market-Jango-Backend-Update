@@ -23,10 +23,12 @@ return new class extends Migration
             $table->string('image', 200);
             $table->json('attributes')->nullable();
             $table->enum('remark', ['Top', 'New'])->default('New');
-            $table->tinyInteger('is_active',[0,1,2])->default(0)->comment('0 = No, 1 = Yes, 2=cancel');
+            $table->enum('is_active', ['0', '1', '2'])->default('0')->comment('0 = No, 1 = Yes, 2 = Cancel');
             $table->boolean('new_item')->default(0)->comment('0 = No, 1 = Yes');
             $table->boolean('just_for_you')->default(0)->comment('0 = No, 1 = Yes');
             $table->boolean('top_product')->default(0)->comment('0 = No, 1 = Yes');
+            $table->decimal('weight', 8, 2)->nullable()->comment('Maximum weight for this slab');
+            $table->enum('weight_unit', ['kg', 'gram'])->default('kg');
             $table->foreignId('vendor_id')->constrained('vendors')->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('category_id')->constrained('categories')->cascadeOnUpdate()->cascadeOnDelete();
             $table->integer('stock')->default(0);

@@ -16,7 +16,9 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use App\Http\Controllers\Controller;
 use App\Models\LocationRoute;
+use App\Models\SetWeight;
 use App\Models\Vendor;
+use App\Models\Weight;
 use Exception;
 
 class CartController extends Controller
@@ -58,14 +60,15 @@ class CartController extends Controller
                 'quantity'   => 'nullable|integer|min:1',
                 'action'     => 'nullable|in:increase,decrease'
             ]);
+
             if ($validator->fails()) {
                 return ResponseHelper::Out('failed', 'Validation error', $validator->errors()->first(), 422);
             }
+
             $userId = $request->header('id');
             $buyer = Buyer::where('user_id', $userId)
                 ->select('id', 'ship_latitude', 'ship_longitude')
                 ->first();
-
 
             if (!$buyer) {
                 return ResponseHelper::Out('failed', 'Buyer not found', null, 404);
@@ -75,6 +78,8 @@ class CartController extends Controller
             if (!$product) {
                 return ResponseHelper::Out('failed', 'Product not found', null, 404);
             }
+
+
             $vendor = Vendor::select('id', 'latitude', 'longitude')
                 ->find($product->vendor_id);
 
@@ -82,20 +87,18 @@ class CartController extends Controller
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
             }
 
+
             $requestedQty = $request->input('quantity', 1);
             $action = $request->input('action');
             $currentStock = $product->stock;
-
 
             $cart = Cart::where('product_id', $product->id)
                 ->where('buyer_id', $buyer->id)
                 ->first();
 
-
             // ===============================
             // DELIVERY CHARGE CALCULATION
             // ===============================
-
             $deliveryChargeAmount = 0;
 
             $routes = LocationRoute::with(['startPoint', 'endPoint'])->get();
@@ -103,53 +106,60 @@ class CartController extends Controller
 
             foreach ($routes as $route) {
 
-                if (
-                    !$route->radius_km ||
-                    !$route->startPoint ||
-                    !$route->endPoint
-                ) {
+                if (!$route->radius_km || !$route->startPoint || !$route->endPoint) {
                     continue;
                 }
 
-                // // Exact location match (small tolerance)
-                // $vendorMatch =
-                //     abs($vendor->latitude - $route->startPoint->latitude) < 0.001 &&
-                //     abs($vendor->longitude - $route->endPoint->longitude) < 0.001;
-
-                // $buyerMatch =
-                //     abs($buyer->ship_latitude - $route->startPoint->latitude) < 0.001 &&
-                //     abs($buyer->ship_longitude - $route->endPoint->longitude) < 0.001;
-
-                // if ($vendorMatch && $buyerMatch) {
-                //     $deliveryChargeAmount = (float) $route->price;
-                //     break;
-                // }
-
-                // Radius based check
                 $vendorDistance = CalculateDistance::distanceInKm(
                     $vendor->latitude,
                     $vendor->longitude,
                     $route->startPoint->latitude,
                     $route->startPoint->longitude
                 );
+
+
                 $buyerDistance = CalculateDistance::distanceInKm(
                     $buyer->ship_latitude,
                     $buyer->ship_longitude,
                     $route->endPoint->latitude,
                     $route->endPoint->longitude
                 );
-                if (
-                    $vendorDistance <= $route->radius_km &&
-                    $buyerDistance <= $route->radius_km
-                ) {
+
+
+                if ($vendorDistance <= $route->radius_km && $buyerDistance <= $route->radius_km) {
                     $deliveryChargeAmount = (float) $route->price;
                     break;
                 }
             }
             // ===============================
+            // WEIGHT-BASED CHARGE
+            // ===============================
+            $setWeight = SetWeight::where('status', true)->latest()->first();
+
+            if ($setWeight) {
+
+                $productWeight = (float) $product->weight;
+
+                $adminMaxWeight = (float) $setWeight->max_weight;
+
+                if ($productWeight > $adminMaxWeight) {
+
+                    $extraWeight = $productWeight - $adminMaxWeight;
+
+
+                    $weightCharge = Weight::where('min_weight', '<=', $extraWeight)
+                        ->where('max_weight', '>=', $extraWeight)
+                        ->first();
+
+
+                    if ($weightCharge) {
+                        $deliveryChargeAmount += (float) $weightCharge->delivery_charge;
+                    }
+                }
+            }
+            // ===============================
             // EXISTING CART
             // ===============================
-
             if ($cart) {
 
                 if ($action === 'increase') {
@@ -176,7 +186,6 @@ class CartController extends Controller
             // ===============================
             // NEW CART ITEM
             // ===============================
-
             if ($requestedQty > $currentStock) {
                 return ResponseHelper::Out('failed', 'Not enough stock available', null, 400);
             }
@@ -204,6 +213,163 @@ class CartController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
+
+    // public function store(Request $request): JsonResponse
+    // {
+    //     try {
+
+    //         $validator = Validator::make($request->all(), [
+    //             'product_id' => 'required|exists:products,id',
+    //             'attributes' => 'nullable|json',
+    //             'quantity'   => 'nullable|integer|min:1',
+    //             'action'     => 'nullable|in:increase,decrease'
+    //         ]);
+    //         if ($validator->fails()) {
+    //             return ResponseHelper::Out('failed', 'Validation error', $validator->errors()->first(), 422);
+    //         }
+    //         $userId = $request->header('id');
+    //         $buyer = Buyer::where('user_id', $userId)
+    //             ->select('id', 'ship_latitude', 'ship_longitude')
+    //             ->first();
+
+
+    //         if (!$buyer) {
+    //             return ResponseHelper::Out('failed', 'Buyer not found', null, 404);
+    //         }
+
+    //         $product = Product::find($request->product_id);
+    //         if (!$product) {
+    //             return ResponseHelper::Out('failed', 'Product not found', null, 404);
+    //         }
+    //         $vendor = Vendor::select('id', 'latitude', 'longitude')
+    //             ->find($product->vendor_id);
+
+    //         if (!$vendor) {
+    //             return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
+    //         }
+
+    //         $requestedQty = $request->input('quantity', 1);
+    //         $action = $request->input('action');
+    //         $currentStock = $product->stock;
+
+
+    //         $cart = Cart::where('product_id', $product->id)
+    //             ->where('buyer_id', $buyer->id)
+    //             ->first();
+
+
+    //         // ===============================
+    //         // DELIVERY CHARGE CALCULATION
+    //         // ===============================
+
+    //         $deliveryChargeAmount = 0;
+
+    //         $routes = LocationRoute::with(['startPoint', 'endPoint'])->get();
+
+
+    //         foreach ($routes as $route) {
+
+    //             if (
+    //                 !$route->radius_km ||
+    //                 !$route->startPoint ||
+    //                 !$route->endPoint
+    //             ) {
+    //                 continue;
+    //             }
+
+    //             // // Exact location match (small tolerance)
+    //             // $vendorMatch =
+    //             //     abs($vendor->latitude - $route->startPoint->latitude) < 0.001 &&
+    //             //     abs($vendor->longitude - $route->endPoint->longitude) < 0.001;
+
+    //             // $buyerMatch =
+    //             //     abs($buyer->ship_latitude - $route->startPoint->latitude) < 0.001 &&
+    //             //     abs($buyer->ship_longitude - $route->endPoint->longitude) < 0.001;
+
+    //             // if ($vendorMatch && $buyerMatch) {
+    //             //     $deliveryChargeAmount = (float) $route->price;
+    //             //     break;
+    //             // }
+
+    //             // Radius based check
+    //             $vendorDistance = CalculateDistance::distanceInKm(
+    //                 $vendor->latitude,
+    //                 $vendor->longitude,
+    //                 $route->startPoint->latitude,
+    //                 $route->startPoint->longitude
+    //             );
+    //             $buyerDistance = CalculateDistance::distanceInKm(
+    //                 $buyer->ship_latitude,
+    //                 $buyer->ship_longitude,
+    //                 $route->endPoint->latitude,
+    //                 $route->endPoint->longitude
+    //             );
+    //             if (
+    //                 $vendorDistance <= $route->radius_km &&
+    //                 $buyerDistance <= $route->radius_km
+    //             ) {
+    //                 $deliveryChargeAmount = (float) $route->price;
+    //                 break;
+    //             }
+    //         }
+    //         // ===============================
+    //         // EXISTING CART
+    //         // ===============================
+
+    //         if ($cart) {
+
+    //             if ($action === 'increase') {
+    //                 $newQty = $cart->quantity + 1;
+    //             } elseif ($action === 'decrease') {
+    //                 $newQty = max($cart->quantity - 1, 1);
+    //             } else {
+    //                 $newQty = $cart->quantity + $requestedQty;
+    //             }
+
+    //             if ($newQty > $currentStock) {
+    //                 return ResponseHelper::Out('failed', 'Stock not available', null, 400);
+    //             }
+
+    //             $cart->update([
+    //                 'quantity'        => $newQty,
+    //                 'price'           => (float)$product->sell_price * $newQty,
+    //                 'delivery_charge' => $deliveryChargeAmount,
+    //             ]);
+
+    //             return ResponseHelper::Out('success', 'Cart updated successfully', $cart, 200);
+    //         }
+
+    //         // ===============================
+    //         // NEW CART ITEM
+    //         // ===============================
+
+    //         if ($requestedQty > $currentStock) {
+    //             return ResponseHelper::Out('failed', 'Not enough stock available', null, 400);
+    //         }
+
+    //         $cart = Cart::create([
+    //             'product_id'      => $product->id,
+    //             'vendor_id'       => $vendor->id,
+    //             'buyer_id'        => $buyer->id,
+    //             'quantity'        => $requestedQty,
+    //             'attributes'      => $request->input('attributes'),
+    //             'price'           => (float)$product->sell_price * $requestedQty,
+    //             'delivery_charge' => $deliveryChargeAmount,
+    //             'status'          => 'active',
+    //         ]);
+
+    //         NotificationHelper::sendNotification(
+    //             $userId,
+    //             $userId,
+    //             'You have added an item to cart',
+    //             $buyer->name ?? ''
+    //         );
+
+    //         return ResponseHelper::Out('success', 'Cart item added successfully', $cart, 201);
+    //     } catch (\Exception $e) {
+    //         return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
+    //     }
+    // }
 
     public function addOfferToCart(Request $request, $offerId): JsonResponse
     {

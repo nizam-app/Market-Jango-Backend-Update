@@ -32,7 +32,7 @@ class ProductController extends Controller
                 'category:id,name',
                 'images:id,image_path,public_id,product_id'
             ])
-                ->select(['id','name','description','regular_price','sell_price','image','vendor_id','category_id', 'color', 'size'])
+                ->select(['id','name','description','regular_price','sell_price','image','vendor_id','category_id', 'color', 'size','weight','weight_unit'])
                 ->latest()
                 ->paginate(20);
             if ($products->isEmpty()) {
@@ -186,7 +186,9 @@ class ProductController extends Controller
             }
             // Create product
             $product = Product::create([
-                'name'          => $request->name,
+                'name'          => $request->input('name'),
+                'weight'        => $request->input('weight'),
+                'weight_unit'   => $request->input('weight_unit'),
                 'description'   => $request->description,
                 'regular_price' => $request->regular_price,
                 'sell_price'    => $request->sell_price,
@@ -272,6 +274,8 @@ class ProductController extends Controller
 
             // Update product fields
             $product->update([
+                'weight'        => $request->input('weight', $product->weight),
+                'weight_unit'   => $request->input('weight_unit', $product->weight_unit),
                 'name' => $request->input('name', $product->name),
                 'description' => $request->input('description', $product->description),
                 'regular_price' => $request->input('regular_price', $product->regular_price),

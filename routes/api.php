@@ -1,4 +1,4 @@
-<?php
+F<?php
 
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Api\AdminController;
@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\UserRoleController;
 use App\Http\Controllers\Api\VariantValueController;
 use App\Http\Controllers\Api\VendorController;
 use App\Http\Controllers\Api\VendorHomePageController;
+use App\Http\Controllers\Api\SetWeightController;
 use App\Http\Controllers\Api\WishListController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
@@ -63,12 +64,21 @@ Route::middleware(['tokenVerify'])->group(function () {
         $user->update(['fcm_token' => $request->token]);
         return response()->json($user);
     });
+    //weight price
     Route::prefix('weights')->group(function () {
         Route::get('/', [WeightController::class, 'index']);
         Route::get('/{id}', [WeightController::class, 'show']);
         Route::post('/', [WeightController::class, 'store']);
         Route::put('/{id}', [WeightController::class, 'update']);
         Route::delete('/{id}', [WeightController::class, 'destroy']);
+    });
+    //set weight
+    Route::prefix('set-weights')->group(function () {
+        Route::get('/', [SetWeightController::class, 'index']);
+        Route::get('/{id}', [SetWeightController::class, 'show']);
+        Route::post('/', [SetWeightController::class, 'store']);
+        Route::put('/{id}', [SetWeightController::class, 'update']);
+        Route::delete('/{id}', [SetWeightController::class, 'destroy']);
     });
     //zone routes
     Route::prefix('zones')->group(function () {
@@ -267,7 +277,7 @@ Route::middleware(['tokenVerify'])->group(function () {
     //Buyer routes
     Route::middleware('userTypeVerify:buyer')->group(function () {
         Route::get('/search/product', [BuyerHomeController::class, 'productSearchByBuyer']);
-        // Cart routes
+        //Cart routes
         Route::prefix('cart')->group(function () {
             Route::get('/', [CartController::class, 'index']);
             Route::post('/create', [CartController::class, 'store']);

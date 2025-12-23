@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use App\Helpers\ResponseHelper;
 use App\Models\Buyer;
 use App\Models\Driver;
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\Transport;
 use App\Models\User;
 use App\Models\Vendor;
@@ -18,7 +20,7 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // 🔹 Create users (if not exist)
+        // 🔹 Create users (if not exist)P
         $superAdmin = User::firstOrCreate(
             ['email' => 'superadmin@gmail.com'],
             [
@@ -37,16 +39,73 @@ class UserSeeder extends Seeder
 
         // 🔹 Create role (if not exist)
         $role = Role::firstOrCreate(
-            ['name' => 'Admin', 'guard_name' => 'web']
+            ['name' => 'Owner']
         );
+        $permissions = [
+            'category_create',
+            'category_update',
+            'category_delete',
+            'category_assign_vendor',
 
+            'admin_invoice_create',
+            'admin_view',
+            'admin_vendor_list',
+            'admin_driver_list',
+            'admin_buyer_list',
+            'admin_transport_list',
+
+            'admin_create_vendor',
+            'admin_create_driver',
+            'admin_create_admin',
+            'admin_update_admin',
+
+            'vendor_view_active',
+            'vendor_view_pending',
+            'vendor_view_suspended',
+            'vendor_status_update',
+            'vendor_count',
+            'vendor_request_count',
+
+            'driver_view',
+            'driver_view_suspended',
+            'driver_request_list',
+            'driver_request_count',
+            'driver_count',
+            'driver_status_update',
+
+            'buyer_status_update',
+            'transport_status_update',
+
+            'product_status_update',
+            'product_request_list',
+            'product_request_details',
+            'product_admin_list',
+
+            'order_view_all',
+            'order_view_not_delivered',
+
+            'admin_select_update',
+            'admin_category_update',
+
+            'user_delete',
+        ];
+
+        foreach ($permissions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        
         // 🔹 Assign all permissions to role
         $permissions = Permission::pluck('id')->all();
+        // add permission  to role
+        $role->permissions()->sync($permissions);
+        $admin->roles()->sync([$role]);
+        //admin assign to role
         $role->syncPermissions($permissions);
 
         // 🔹 Assign role to users
         $superAdmin->assignRole($role);
-        $admin->syncRoles($role);
+        $admin->roles()->sync([$role]);
 //        $superAdmin = User::create([
 //            'name' => 'Super Admin',
 //            'email' => 'superadmin@gmail.com',

@@ -26,6 +26,8 @@ class Product extends Model
         'top_product',
         'category_id',
         'attributes',
+        'weight',
+        'weight_unit',
         'stock'
     ];
     protected $casts = [

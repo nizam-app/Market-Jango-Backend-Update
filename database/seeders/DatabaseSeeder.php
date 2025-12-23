@@ -16,14 +16,14 @@ class DatabaseSeeder extends Seeder
         $this->call([
             //LocationSeeder::class,
 //            RouteSeeder::class,
-            // UserSeeder::class,
+            UserSeeder::class,
 //            CategorySeeder::class,
 //            ProductAttributeSeeder::class,
 //            AttributeValueSeeder::class,
 //            ProductSeeder::class,
             // PermissionTableSeeder::class,
             // ZonesTableSeeder::class,
-            RoutePriceSeeder::class,
+            // RoutePriceSeeder::class,
         ]);
     }
 }

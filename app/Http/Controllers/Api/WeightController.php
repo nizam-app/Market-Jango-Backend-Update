@@ -130,7 +130,6 @@ class WeightController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
     //DELETE WEIGHT
     public function destroy($id): JsonResponse
     {
