@@ -13,6 +13,7 @@ use App\Models\Product;
 use App\Models\SearchHistory;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Models\vendorClick;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -47,6 +48,47 @@ class BuyerHomeController extends Controller
                 'sold_qty' => (int) $row->sold_qty,
             ];
         });
+        
+        //============for click ==================
+         //  Get user
+            $userId = $request->header('id');
+            $user = User::where('id', $userId)
+                ->select(['id'])
+                ->first();
+            if (!$user) {
+                return ResponseHelper::Out('failed', 'user not found', null, 404);
+            }
+
+        $vendor = Vendor::findOrFail($vendorId);
+
+        // // check already clicked or not
+        $alreadyClicked = vendorClick::where('vendor_id', $vendor->id)
+            ->where('user_id', $user->id)
+            ->exists();
+
+        // if ($alreadyClicked) {
+        //     return response()->json([
+        //         'message' => 'Already clicked',
+        //         'click_count' => $vendor->click_count
+        //     ]);
+        // }
+
+        // DB::transaction(function () use ($vendor, $user) {
+
+        //     VendorClick::create([
+        //         'vendor_id' => $vendor->id,
+        //         'user_id'   => $user->id,
+        //     ]);
+
+        //     $vendor->increment('click_count');
+        // });
+
+        // return response()->json([
+        //     'message' => 'Click counted successfully',
+        //     'click_count' => $vendor->fresh()->click_count
+        // ]);
+
+        //========================click end===============
         return ResponseHelper::Out('success', 'Popular Product fetched successfully', $data, 200);
     }
     //vendor first product
@@ -56,7 +98,6 @@ class BuyerHomeController extends Controller
             ->inRandomOrder()
             ->take(50)
             ->get();
-
         // Filter kore sudhu oi vendor jader first product ache
         $vendorsWithFirstProduct = $vendors->filter(function ($vendor) {
             return $vendor->categories->contains(function ($category) {

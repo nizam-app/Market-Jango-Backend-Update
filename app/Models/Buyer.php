@@ -6,24 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Buyer extends Model
 {
-    protected $fillable = [
-        'gender',
-        'age',
-        'address',
-        'state',
-        'postcode',
-        'country',
-        'ship_name',
-        'ship_email',
-        'ship_location',
-        'ship_latitude',
-        'ship_longitude',
-        'ship_country',
-        'ship_phone',
-        'description',
-        'location',
-        'user_id',
-    ];
+     protected $guarded = [];
     public function cart()
     {
         return $this->hasMany(Cart::class);

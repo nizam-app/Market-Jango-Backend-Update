@@ -6,15 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Driver extends Model
 {
-    protected $fillable = [
-        'car_name',
-        'car_model',
-        'location',
-        'price',
-        'rating',
-        'description',
-        'user_id'
-    ];
+     protected $guarded = [];
     public function user(){
         return $this->belongsTo(User::class);
     }

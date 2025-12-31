@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('vendors', function (Blueprint $table) {
             $table->id();
             $table->string('country');
+            $table->integer('click')->nullable();
             $table->string('address', 50);
             $table->string('business_name', 100);
             $table->time('open_time')->default('09:00');

@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProductOffer extends Model
 {
-    //
+        protected $guarded = [];
 }

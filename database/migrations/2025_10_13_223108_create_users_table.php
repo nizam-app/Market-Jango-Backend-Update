@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('password')->nullable();
             $table->enum('language', ['en', 'fr', 'ru', 'vi'])->default('en');
             $table->string('image', 200)->nullable();
+            $table->string('currency', 20)->nullable();
             $table->string('public_id')->nullable();
             $table->boolean('is_read')->default(false);
             $table->boolean('is_active')->default(false);

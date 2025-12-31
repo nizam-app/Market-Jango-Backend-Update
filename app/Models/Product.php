@@ -7,29 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class Product extends Model
 {
-    protected $fillable = [
-        'name',
-        'description',
-        'regular_price',
-        'sell_price',
-        'discount',
-        'public_id',
-        'star',
-        'image',
-        'color',
-        'size',
-        'remark',
-        'is_active',
-        'vendor_id',
-        'new_item',
-        'just_for_you',
-        'top_product',
-        'category_id',
-        'attributes',
-        'weight',
-        'weight_unit',
-        'stock'
-    ];
+    protected $guarded = [];
     protected $casts = [
         'color' => 'array',
         'size' => 'array',

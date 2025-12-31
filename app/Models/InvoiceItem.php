@@ -6,35 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class InvoiceItem extends Model
 {
-    protected $fillable = [
-        'cus_name',
-        'cus_email',
-        'cus_phone',
-        'pickup_address',
-        'pickup_longitude',
-        'pickup_latitude',
-        'ship_address',
-        'ship_latitude',
-        'current_latitude',
-        'current_longitude',
-        'current_address',
-        'ship_longitude',
-        'total_pay',
-        'payment_proof_id',
-        'delivery_charge',
-        'user_id',
-        'quantity',
-        'distance',
-        'note',
-        'payment_method',
-        'sale_price',
-        'status',
-        'invoice_id',
-        'product_id',
-        'vendor_id',
-        'driver_id',
-        'tran_id'
-    ];
+    protected $guarded = [];
     public function invoice()
     {
         return $this->belongsTo(Invoice::class);

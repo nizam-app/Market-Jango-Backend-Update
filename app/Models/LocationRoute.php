@@ -6,13 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class LocationRoute extends Model
 {
-     protected $fillable = [
-        'route_id',
-        'start_point_id',
-        'end_point_id',
-        'radius_km',
-        'price'
-    ];
+    protected $guarded = [];
 
     public function route()
     {

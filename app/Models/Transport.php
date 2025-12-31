@@ -6,12 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Transport extends Model
 {
-    protected $fillable = [
-        'user_id',
-        'address',
-        'longitude',
-        'latitude',
-        ];
+    protected $guarded = [];
     public function user()
     {
         return $this->belongsTo(User::class);

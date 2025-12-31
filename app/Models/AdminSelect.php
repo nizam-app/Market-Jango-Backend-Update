@@ -6,10 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class AdminSelect extends Model
 {
-    protected $fillable = [
-        'key',
-        'product_id'
-    ];
+       protected $guarded = [];
     public function product()
     {
         return $this->belongsTo(Product::class);

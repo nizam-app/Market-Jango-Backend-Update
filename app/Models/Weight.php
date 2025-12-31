@@ -6,13 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Weight extends Model
 {
-        protected $fillable = [
-        'min_weight',
-        'max_weight',
-        'weight_unit',
-        'delivery_charge',
-        'status',
-    ];
+       protected $guarded = [];
     protected $casts = [
     'min_weight' => 'float',
     'max_weight' => 'float',

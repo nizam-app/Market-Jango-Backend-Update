@@ -3,26 +3,23 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Vendor extends Model
 {
-    protected $fillable = [
-        'country',
-        'address',
-        'latitude',
-        'longitude',
-        'business_name',
-        'business_type',
-        'open_time',
-        'close_time',
-        'user_id',
-        'cover_image',
-        'zone_id',
-        'public_id'
-    ];
-    public function categories()
+    protected $guarded = [];
+    public function clickedUsers(): BelongsToMany
     {
-        return $this->hasMany(Category::class, 'vendor_id', 'id');
+        return $this->belongsToMany(
+            User::class,
+            'vendor_clicks',
+            'vendor_id',
+            'user_id'
+        )->withTimestamps();
+    }
+  public function categories()
+    {
+        return $this->belongsToMany(Category::class, 'category_vendor');
     }
     public function user()
     {

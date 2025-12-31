@@ -6,10 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProductAttribute extends Model
 {
-    protected $fillable = [
-        'name',
-        'vendor_id',
-    ];
+    protected $guarded = [];
 
     public function product()
     {

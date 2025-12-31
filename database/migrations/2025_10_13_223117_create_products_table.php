@@ -29,6 +29,7 @@ return new class extends Migration
             $table->boolean('top_product')->default(0)->comment('0 = No, 1 = Yes');
             $table->decimal('weight', 8, 2)->nullable()->comment('Maximum weight for this slab');
             $table->enum('weight_unit', ['kg', 'gram'])->default('kg');
+             $table->unsignedInteger('position')->index();
             $table->foreignId('vendor_id')->constrained('vendors')->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('category_id')->constrained('categories')->cascadeOnUpdate()->cascadeOnDelete();
             $table->integer('stock')->default(0);

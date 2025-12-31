@@ -9,8 +9,7 @@ class Route extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name','longitude', 'latitude'];
-
+       protected $guarded = [];
     public function locations()
     {
         return $this->hasMany(Location::class);

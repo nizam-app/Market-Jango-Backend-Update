@@ -1,4 +1,4 @@
-F<?php
+<?php
 
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Api\AdminController;
@@ -276,7 +276,7 @@ Route::middleware(['tokenVerify'])->group(function () {
     });
     //Buyer routes
     Route::middleware('userTypeVerify:buyer')->group(function () {
-        Route::get('/search/product', [BuyerHomeController::class, 'productSearchByBuyer']);
+        // Route::get('/search/product', [BuyerHomeController::class, 'productSearchByBuyer']);
         //Cart routes
         Route::prefix('cart')->group(function () {
             Route::get('/', [CartController::class, 'index']);

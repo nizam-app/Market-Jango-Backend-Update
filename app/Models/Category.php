@@ -6,18 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class Category extends Model
 {
-    protected $fillable = [
-        'name',
-        'description',
-        'status',
-        'is_top_category'
-    ];
-    public function vendors()
+    protected $guarded = [];
+        public function vendors()
     {
-        return $this->belongsToMany(Vendor::class, 'category_vendor')
-            ->withPivot('priority')
-            ->withTimestamps();
+        return $this->belongsToMany(Vendor::class, 'category_vendor');
     }
+    // public function vendors()
+    // {
+    //     return $this->belongsToMany(Vendor::class, 'category_vendor')
+    //         ->withPivot('priority')
+    //         ->withTimestamps();
+    // }
 //    public function vendor()
 //    {
 //        return $this->belongsTo(Vendor::class);

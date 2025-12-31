@@ -9,7 +9,7 @@ class Location extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name','route_id', 'latitude', 'longitude'];
+    protected $guarded = [];
 
     public function route()
     {

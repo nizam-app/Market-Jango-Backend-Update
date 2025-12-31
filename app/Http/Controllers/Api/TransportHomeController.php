@@ -178,11 +178,11 @@ class TransportHomeController extends Controller
                 'user_id' => $user_id,
                 'invoice_id' => $invoiceID,
                 'driver_id' => $driver_id,
-//                'sale_price' => $EachProduct['price'],
-//                'product_id' => $EachProduct['product_id'],
-//                'vendor_id' => $vendorId,
-//                'quantity' => $EachProduct['quantity'],
-//                'delivery_charge' => $EachProduct['delivery_charge'],
+                // 'sale_price' => $EachProduct['price'],
+                // 'product_id' => $EachProduct['product_id'],
+                // 'vendor_id' => $vendorId,
+                // 'quantity' => $EachProduct['quantity'],
+                // 'delivery_charge' => $EachProduct['delivery_charge'],
             ]);
             $paymentMethod = PaymentSystem::InitiatePayment($invoice);
             DB::commit();

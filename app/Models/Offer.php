@@ -7,23 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Offer extends Model
 {
-    protected $fillable = [
-        'product_name',
-        'quantity',
-        'sale_price',
-        'delivery_charge',
-        'total_amount',
-        'status',
-        'image',
-        'public_id',
-        'note',
-        'sender_id',
-        'receiver_id',
-        'product_id',
-        'color',
-        'attributes',
-        'size'
-    ];
+    protected $guarded = [];
 
     public function sender(): BelongsTo
     {

@@ -6,10 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProductBanner extends Model
 {
-    protected $fillable = [
-        'image',
-        'public_id'
-    ];
+    protected $guarded = [];
     public function product(){
         return $this->belongsTo(Product::class);
     }

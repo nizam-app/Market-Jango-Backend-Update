@@ -21,8 +21,8 @@ use App\Models\Product;
 use App\Models\Role;
 use App\Models\Transport;
 use App\Models\User;
-use App\Models\UserImage;
 use App\Models\Vendor;
+use App\Models\UserImage;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -93,7 +93,6 @@ class AdminController extends Controller
             return ResponseHelper::Out('failed', 'Something went wrong', $e->getMessage(), 500);
         }
     }
-
     //UPDATE INFO VENDOR, DRIVER, TRANSPORT, BUYER BY ADMIN
     public function adminUpdateUserInfo(Request $request, $user_id): JsonResponse
     {
@@ -194,7 +193,6 @@ class AdminController extends Controller
                             ]);
                         }
                     }
-
                     $vendor->update([
                         "country" => $request->input('country', $vendor->country),
                         "address" => $request->input('address', $vendor->address),
@@ -540,6 +538,7 @@ class AdminController extends Controller
             $query = User::where('user_type', 'vendor')
                 ->with([
                     'vendor',
+                    'vendor.reviews',
                     'vendor.products',
                     'vendor.products.images',
                     'vendor.images'
@@ -959,7 +958,7 @@ class AdminController extends Controller
     {
         try {
             $order = InvoiceItem::where('status', 'Not Deliver')
-                ->with(['driver'])
+                ->with(['driver','vendor'])
                 ->paginate(10);
             if (!$order) {
                 return ResponseHelper::Out('success', 'not delivered order  not found', null, 404);

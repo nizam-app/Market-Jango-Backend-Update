@@ -71,33 +71,33 @@ class AuthController extends Controller
                 'user_type' => 'required|in:buyer,vendor,driver,transport,admin',
             ]);
             $userType =  $request->input('user_type');
-//            if($userType==='admin'){
-//                $role = $request->role;
-//                // Create the user
-//                $user = User::create([
-//                    'user_type' => 'admin',
-//                    'name' => $request->name,
-//                    'email' => $request->email,
-//                    'status' => 'Approved',
-//                    'password' => bcrypt($request->password),
-//                ]);
-//                // Create admin in separate table
-//                $admin = Admin::create([
-//                    'user_id'           => $user->id,
-//                    'role'              => $role ?? 'admin',
-//                    'date_of_birth'     => $request->input('date_of_birth'),
-//                    'present_address'   => $request->input('present_address'),
-//                    'permanent_address' => $request->input('permanent_address'),
-//                    'city'              => $request->input('city'),
-//                    'postal_code'       => $request->input('postal_code'),
-//                    'country'           => $request->input('country'),
-//                ]);
-//                // Assign role via spatie
-//                $user->assignRole($role??'admin');
-//                $token = JWTToken::registerToken($user->user_type, $user->id);
-//                $sendToken = 'Bearer ' . $token;
-//                return ResponseHelper::Out('success','admin created successfully',['uer'=>$user, 'admin'=> $admin, 'token'=> $sendToken],201)->cookie('token', $sendToken, 525600);
-//            }
+            //            if($userType==='admin'){
+            //                $role = $request->role;
+            //                // Create the user
+            //                $user = User::create([
+            //                    'user_type' => 'admin',
+            //                    'name' => $request->name,
+            //                    'email' => $request->email,
+            //                    'status' => 'Approved',
+            //                    'password' => bcrypt($request->password),
+            //                ]);
+            //                // Create admin in separate table
+            //                $admin = Admin::create([
+            //                    'user_id'           => $user->id,
+            //                    'role'              => $role ?? 'admin',
+            //                    'date_of_birth'     => $request->input('date_of_birth'),
+            //                    'present_address'   => $request->input('present_address'),
+            //                    'permanent_address' => $request->input('permanent_address'),
+            //                    'city'              => $request->input('city'),
+            //                    'postal_code'       => $request->input('postal_code'),
+            //                    'country'           => $request->input('country'),
+            //                ]);
+            //                // Assign role via spatie
+            //                $user->assignRole($role??'admin');
+            //                $token = JWTToken::registerToken($user->user_type, $user->id);
+            //                $sendToken = 'Bearer ' . $token;
+            //                return ResponseHelper::Out('success','admin created successfully',['uer'=>$user, 'admin'=> $admin, 'token'=> $sendToken],201)->cookie('token', $sendToken, 525600);
+            //            }
             $user = User::create([
                 'user_type' =>$userType,
             ]);
@@ -171,8 +171,8 @@ class AuthController extends Controller
             // OTP generate
             $otp = rand(100000, 999999);
             $phone = $request->input('phone');
-//            $sms = new TwilioService();
-//            $sms->sendSms($request->phone, "Your OTP code is: $otp");
+            //            $sms = new TwilioService();
+            //            $sms->sendSms($request->phone, "Your OTP code is: $otp");
             $user->update([
                 'phone' => $phone,
                 'otp' => $otp,
@@ -316,33 +316,33 @@ class AuthController extends Controller
                         'user_type' => $user->user_type
                     ], 400);
             }
-//            //update status and throw message
-//            if ($user->user_type === 'buyer') {
-//                Buyer::create([
-//                    'user_id' => $user->id,
-//                ]);
-//                // Auto-approve
-//                $user->update(['status' => 'Approved']);
-//                $title    = $congratulationMessage;
-//                $subtitle = $confirmMessage;
-//            } elseif ($user->user_type === 'transport'){
-//                Transport::create([
-//                    'user_id' => $user->id,
-//                ]);
-//                $user->update(['status' => 'Approved']);
-//                $title    = $congratulationMessage;
-//                $subtitle = $confirmMessage;
-//            }
-//            elseif ($user->user_type === 'vendor' || $user->user_type === 'driver') {
-//                // Under review
-//                $user->update(['status' => 'Pending']);
-//                $title    = $waitMessage;
-//                $subtitle = $reviewMessage;
-//            } else {
-//                return ResponseHelper::Out('error', 'Invalid user type', [
-//                    'user_type' => $user->user_type
-//                ], 400);
-//            }
+                //            //update status and throw message
+                //            if ($user->user_type === 'buyer') {
+                //                Buyer::create([
+                //                    'user_id' => $user->id,
+                //                ]);
+                //                // Auto-approve
+                //                $user->update(['status' => 'Approved']);
+                //                $title    = $congratulationMessage;
+                //                $subtitle = $confirmMessage;
+                //            } elseif ($user->user_type === 'transport'){
+                //                Transport::create([
+                //                    'user_id' => $user->id,
+                //                ]);
+                //                $user->update(['status' => 'Approved']);
+                //                $title    = $congratulationMessage;
+                //                $subtitle = $confirmMessage;
+                //            }
+                //            elseif ($user->user_type === 'vendor' || $user->user_type === 'driver') {
+                //                // Under review
+                //                $user->update(['status' => 'Pending']);
+                //                $title    = $waitMessage;
+                //                $subtitle = $reviewMessage;
+                //            } else {
+                //                return ResponseHelper::Out('error', 'Invalid user type', [
+                //                    'user_type' => $user->user_type
+                //                ], 400);
+                //            }
             $payload = [
                 'user'     => $user->fresh(),
                 'title'    => $title,
@@ -597,7 +597,6 @@ class AuthController extends Controller
                     'vendor',
                     'transport'
                 ])
-                ->select(['id', 'name', 'image', 'public_id', 'user_type', 'email', 'phone', 'phone_verified_at', 'language', 'status'])
                 ->first();
             if (!$user) {
                 return ResponseHelper::Out('failed', 'Vendor not found', null, 404);
@@ -628,7 +627,8 @@ class AuthController extends Controller
                 case 'buyer':
                     $user->update([
                         "name" => $request->input('name', $user->name),
-                        "language" => $request->input('language', $user->language)
+                        "language" => $request->input('language', $user->language),
+                        "currency" => $request->input('currency', $user->currency)
                     ]);
                     $buyer->update([
                         "gender" => $request->filled('gender') ? $request->input('gender') : $buyer->gender,
@@ -651,7 +651,8 @@ class AuthController extends Controller
                 case 'vendor':
                     $user->update([
                         "name" => $request->input('name', $user->name),
-                        "language" => $request->input('language', $user->language)
+                        "language" => $request->input('language', $user->language),
+                        "currency" => $request->input('currency', $user->currency)
                     ]);
                     $vendorUploadedFile = null;
                     if ($request->hasFile('cover_image')) {
@@ -684,7 +685,8 @@ class AuthController extends Controller
                 case 'transport':
                     $user->update([
                         "name" => $request->input('name', $user->name),
-                        "language" => $request->input('language', $user->language)
+                        "language" => $request->input('language', $user->language),
+                        "currency" => $request->input('currency', $user->currency)
                     ]);
                     $transport->update([
                         "address" => $request->input('address', $user->address),
@@ -693,9 +695,27 @@ class AuthController extends Controller
                     ]);
                     break;
                 case 'driver':
+                    $driverUploadedFile = null;
+                    if ($request->hasFile('cover_image')) {
+                        $request->validate([
+                            'cover_image' => 'required|image|mimes:jpeg,png,jpg,gif'
+                        ]);
+                        // Delete old image if exists
+                        if (!empty($vendor->public_id)) {
+                            FileHelper::delete($vendor->public_id);
+                        }
+                        $path = $userType.'/cover_image';
+                        //Upload new image
+                        $file = $request->file('cover_image');
+                        $driverUploadedFile = FileHelper::upload($file, $path);
+                        $driver->cover_image = $driverUploadedFile[0]['url'];
+                        $driver->public_id = $driverUploadedFile[0]['public_id'];
+                        $driver->save();
+                    }
                     $user->update([
                         "name" => $request->input('name', $user->name),
                         "language" => $request->input('language', $user->language),
+                        "currency" => $request->input('currency', $user->currency),
                         "is_active" => $request->input('is_active', $user->is_active)
                     ]);
                     $driver->update([

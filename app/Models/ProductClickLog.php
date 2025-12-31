@@ -9,13 +9,7 @@ class ProductClickLog extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'vendor_id',
-        'product_id',
-        'user_id',
-        'ip',
-        'device',
-    ];
+    protected $guarded = [];
 
     // ---------------- Relations ----------------
 
