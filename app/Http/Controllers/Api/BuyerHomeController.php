@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\DB;
 
 class BuyerHomeController extends Controller
 {
-    //popular product
+     //popular product
     public function popularProducts(Request $request, $id)
     {
         $vendorId = (int) $id;
@@ -50,45 +50,42 @@ class BuyerHomeController extends Controller
         });
         
         //============for click ==================
-         //  Get user
-            $userId = $request->header('id');
-            $user = User::where('id', $userId)
-                ->select(['id'])
-                ->first();
-            if (!$user) {
-                return ResponseHelper::Out('failed', 'user not found', null, 404);
-            }
-
+         // user id from header
+        $userId = (int) $request->header('id');
+    
+        if (!$userId) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'User id missing in header'
+            ], 401);
+        }
+    
+        $user = User::select('id')->find($userId);
+     
+    
+        if (!$user) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'User not found'
+            ], 404);
+        }
+    
         $vendor = Vendor::findOrFail($vendorId);
+         // check already clicked or not
+            $alreadyClicked = VendorClick::where('vendor_id', $vendor->id)
+                ->where('user_id', $user->id)
+                ->exists();
 
-        // // check already clicked or not
-        $alreadyClicked = vendorClick::where('vendor_id', $vendor->id)
-            ->where('user_id', $user->id)
-            ->exists();
+        if ($alreadyClicked) {
+             return ResponseHelper::Out('success', 'Popular Product fetched successfully', $data, 200);
+        }
 
-        // if ($alreadyClicked) {
-        //     return response()->json([
-        //         'message' => 'Already clicked',
-        //         'click_count' => $vendor->click_count
-        //     ]);
-        // }
-
-        // DB::transaction(function () use ($vendor, $user) {
-
-        //     VendorClick::create([
-        //         'vendor_id' => $vendor->id,
-        //         'user_id'   => $user->id,
-        //     ]);
-
-        //     $vendor->increment('click_count');
-        // });
-
-        // return response()->json([
-        //     'message' => 'Click counted successfully',
-        //     'click_count' => $vendor->fresh()->click_count
-        // ]);
-
-        //========================click end===============
+        VendorClick::create([
+            'vendor_id' => $vendor->id,
+            'user_id'   => $user->id,
+        ]);
+        $vendor->update(['click' => $vendor->click + 1]);
+ 
         return ResponseHelper::Out('success', 'Popular Product fetched successfully', $data, 200);
     }
     //vendor first product
